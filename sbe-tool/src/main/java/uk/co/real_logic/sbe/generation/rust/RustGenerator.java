@@ -1772,7 +1772,7 @@ public class RustGenerator implements CodeGenerator
 
             indent(writer, level + 2, "let mut str = String::new();\n");
 
-            // Start from 1 to the token of this own composite field.
+            // Skip the first and last tokens as they are this composite start and end tokens.
             for (int i = 1, size = tokens.size() - 1; i < size; ) {
                 final Token token = tokens.get(i);
                 final String fieldName = RustUtil.formatPropertyName(token.name());
@@ -1891,45 +1891,45 @@ public class RustGenerator implements CodeGenerator
             }
             indent(writer, level + 2, "// END GROUPS\n\n");
 
-            // indent(writer, level + 2, "// START VAR_DATA \n");
-            // for (int i = 0, size = varData.size(); i < size;)
-            // {
-            //     final Token varDataToken = varData.get(i);
-            //     if (varDataToken.signal() != Signal.BEGIN_VAR_DATA)
-            //     {
-            //         throw new IllegalStateException("tokens must begin with BEGIN_VAR_DATA: token=" + varDataToken);
-            //     }
+            indent(writer, level + 2, "// START VAR_DATA \n");
+            for (int i = 0, size = varData.size(); i < size;)
+            {
+                final Token varDataToken = varData.get(i);
+                if (varDataToken.signal() != Signal.BEGIN_VAR_DATA)
+                {
+                    throw new IllegalStateException("tokens must begin with BEGIN_VAR_DATA: token=" + varDataToken);
+                }
     
-            //     final String characterEncoding = varData.get(i + 3).encoding().characterEncoding();
-            //     final String varDataName = formatPropertyName(varDataToken.name());
+                final String characterEncoding = varData.get(i + 3).encoding().characterEncoding();
+                final String varDataName = formatPropertyName(varDataToken.name());
 
-            //     indent(writer, level + 2, "str.push_str(\"%s%s\");\n", varDataName, Separator.KEY_VALUE);
+                indent(writer, level + 2, "str.push_str(\"%s%s\");\n", varDataName, Separator.KEY_VALUE);
 
-            //     indent(writer, level+2, "let coordinates = self.%s_decoder();\n",  varDataName);
-            //     indent(writer, level+2, "let %s = self.%s_slice(coordinates);\n",  varDataName, varDataName);
+                indent(writer, level+2, "let coordinates = self.%s_decoder();\n",  varDataName);
+                indent(writer, level+2, "let %s = self.%s_slice(coordinates);\n",  varDataName, varDataName);
 
-            //     indent(writer, level + 2, "// Character encoding: '%s'\n", characterEncoding);
-            //     if (isAsciiEncoding(characterEncoding))
-            //     {
-            //         indent(writer, level + 2, "for byte in %s {\n", varDataName);
-            //         indent(writer, level + 3, "str.push(char::from(*byte));\n");
-            //         indent(writer, level + 2, "}\n");
+                indent(writer, level + 2, "// Character encoding: '%s'\n", characterEncoding);
+                if (isAsciiEncoding(characterEncoding))
+                {
+                    indent(writer, level + 2, "for byte in %s {\n", varDataName);
+                    indent(writer, level + 3, "str.push(char::from(*byte));\n");
+                    indent(writer, level + 2, "}\n");
 
-            //     }
-            //     else if (isUtf8Encoding(characterEncoding))
-            //     {
-            //         indent(writer, level + 2, "str.push_str(&String::from_utf8_lossy(%s));\n", varDataName);
-            //     } else {
-            //         indent(writer, level + 2, "str.push_str(&format!(\"{:?}\", %s));\n", varDataName);
-            //     }
+                }
+                else if (isUtf8Encoding(characterEncoding))
+                {
+                    indent(writer, level + 2, "str.push_str(&String::from_utf8_lossy(%s));\n", varDataName);
+                } else {
+                    indent(writer, level + 2, "str.push_str(&format!(\"{:?}\", %s));\n", varDataName);
+                }
 
-            //     indent(writer, level+2, "drop(%s);\n", varDataName);
+                indent(writer, level+2, "drop(%s);\n", varDataName);
     
-            //     indent(writer, level+2, "str.push('%s');\n\n", Separator.FIELD);
+                indent(writer, level+2, "str.push('%s');\n\n", Separator.FIELD);
     
-            //     i += varDataToken.componentTokenCount();
-            // }
-            // indent(writer, level + 2, "// END VAR_DATA\n");
+                i += varDataToken.componentTokenCount();
+            }
+            indent(writer, level + 2, "// END VAR_DATA\n");
 
             indent(writer, level + 2, "str = str.trim_end_matches('%s').to_string();\n\n", Separator.FIELD);
 
