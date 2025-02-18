@@ -1172,6 +1172,8 @@ public class RustGenerator implements CodeGenerator
     {
         final Token beginToken = tokens.get(0);
         final String rustPrimitiveType = rustTypeName(beginToken.encoding().primitiveType());
+
+        indent(writer, 0, "use crate::*;\n\n");
         indent(writer, 0, "#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]\n");
         indent(writer, 0, "pub struct %s(pub %s);\n", bitSetType, rustPrimitiveType);
         indent(writer, 0, "impl %s {\n", bitSetType);
@@ -1246,7 +1248,39 @@ public class RustGenerator implements CodeGenerator
         writer.append(builder.toString()).append("]\",\n");
         indent(writer, 3, arguments + ")\n");
         indent(writer, 1, "}\n");
-        indent(writer, 0, "}\n");
+        indent(writer, 0, "}\n\n");
+
+        generateBitSetDisplay(bitSetType, tokens, writer, 0);
+    }
+
+    static void generateBitSetDisplay(
+        final String bitSetType,
+        final List<Token> tokens,
+        final Appendable writer,
+        final int level) throws IOException
+    {
+        indent(writer, level, "impl HumanReadable for %s {\n", bitSetType);
+        indent(writer, level + 1, "fn human_readable(mut self) -> SbeResult<(Self, String)> {\n");
+        indent(writer, level + 2, "let mut str = String::new();\n");
+
+        for (final Token token : tokens)
+        {
+            if (Signal.CHOICE != token.signal())
+            {
+                continue;
+            }
+
+            final String choiceName = formatFunctionName(token.name());
+
+            indent(writer, level + 2, "str.push_str(\"%s=\");\n", choiceName);
+            indent(writer, level + 2, "str.push_str(&self.get_%s().to_string());\n", choiceName);
+            indent(writer, level + 2, "str.push('%s');\n\n", Separator.ENTRY);
+
+        }
+
+        indent(writer, level + 2, "Ok((self, str))\n");
+        indent(writer, level + 1, "}\n");
+        indent(writer, level, "}\n");
     }
 
     static void appendImplEncoderTrait(
@@ -1948,6 +1982,7 @@ public class RustGenerator implements CodeGenerator
                             indent(writer, level, "str.push('%s');\n", Separator.END_ARRAY);
                         }
                     } else if (typeToken.encoding().presence() == Presence.REQUIRED) {
+                        // TODO: review
                         indent(writer, level, "str.push_str(&format!(\"{}\", self.%s()));\n", formattedFieldName);
                     } else {
                         indent(writer, level, "str.push_str(&format!(\"{:?}\", self.%s()));\n", formattedFieldName);
@@ -1983,8 +2018,7 @@ public class RustGenerator implements CodeGenerator
                 }
 
                 case BEGIN_SET:
-                    // TODO: implement human_readable or display
-                    indent(writer, level, "str.push_str(&format!(\"{:?}\", self.%s()));\n", formattedFieldName);
+                    indent(writer, level, "str.push_str(&self.%s().human_readable()?.1);\n", formattedFieldName);
                     break;
     
                 default:
