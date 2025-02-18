@@ -1824,7 +1824,7 @@ public class RustGenerator implements CodeGenerator
 
                 indent(writer, level + 2, "str.push_str(\"[%s]\");\n\n", msgName);
 
-                indent(writer, level + 2, "str.push('(');\n\n");
+                indent(writer, level + 2, "str.push('%s');\n\n", Separator.BEGIN_COMPOSITE);
 
                 indent(writer, level + 2, "str.push_str(\"sbeTemplateId=\");\n");
                 indent(writer, level + 2, "str.push_str(&SBE_TEMPLATE_ID.to_string());\n\n");
@@ -1846,7 +1846,7 @@ public class RustGenerator implements CodeGenerator
                 indent(writer, level + 2, "}\n");
                 indent(writer, level + 2, "str.push_str(&SBE_BLOCK_LENGTH.to_string());\n\n");
 
-                indent(writer, level + 2, "str.push_str(\"):\");\n\n");
+                indent(writer, level + 2, "str.push_str(\"%s:\");\n\n", Separator.END_COMPOSITE);
             }
 
             indent(writer, level + 2, "// START FIELDS\n");
