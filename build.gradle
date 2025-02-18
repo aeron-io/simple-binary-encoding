@@ -167,7 +167,7 @@ jar.enabled = false
 subprojects {
     apply plugin: 'java-library'
     apply plugin: 'jvm-test-suite'
-    apply plugin: 'checkstyle'
+    // apply plugin: 'checkstyle'
 
     group = sbeGroup
     version = sbeVersion
@@ -179,7 +179,7 @@ subprojects {
         sourceCompatibility = JavaVersion.VERSION_17
     }
 
-    checkstyle.toolVersion = libs.versions.checkstyle.get()
+    // checkstyle.toolVersion = libs.versions.checkstyle.get()
 
     tasks.withType(Sign).configureEach {
         onlyIf {

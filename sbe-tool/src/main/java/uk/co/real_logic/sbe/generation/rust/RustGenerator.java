@@ -1986,7 +1986,8 @@ public class RustGenerator implements CodeGenerator
                     } else {
                         indent(writer, level, "let display = match self.%s() {\n", formattedFieldName);
                         indent(writer, level + 1, "Some(value) => format!(\"{}\", value),\n");
-                        indent(writer, level + 1, "None => \"None\".to_string(),\n");
+                        // TODO: how to represent None?
+                        indent(writer, level + 1, "None => \"null\".to_string(),\n");
                         indent(writer, level, "};\n");
                         indent(writer, level, "str.push_str(&display);\n");
                     }
