@@ -1997,9 +1997,9 @@ public class RustGenerator implements CodeGenerator
                         indent(writer, level + 2, "self = self_;\n");
                         indent(writer, level + 1, "},\n");
                         indent(writer, level + 1, "Either::Right(mut %s) => {\n", formattedFieldName);
-                        indent(writer, level + 2, "let mut result = %s.human_readable()?;\n", formattedFieldName);
-                        indent(writer, level + 2, "str.push_str(&result.1);\n");
-                        indent(writer, level + 2, "self = result.0.parent()?;\n");
+                        indent(writer, level + 2, "let (mut %s, string) = %s.human_readable()?;\n", formattedFieldName, formattedFieldName);
+                        indent(writer, level + 2, "str.push_str(&string);\n");
+                        indent(writer, level + 2, "self = %s.parent()?;\n", formattedFieldName);
                         indent(writer, level + 1, "}\n");
                         indent(writer, level, "}\n");
                     } else {
