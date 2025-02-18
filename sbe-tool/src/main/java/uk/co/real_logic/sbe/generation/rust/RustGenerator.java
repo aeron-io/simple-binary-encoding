@@ -916,7 +916,6 @@ public class RustGenerator implements CodeGenerator
         final PrimitiveType primitiveType = encoding.primitiveType();
         final String rustPrimitiveType = rustTypeName(primitiveType);
         final String characterEncoding = encoding.characterEncoding();
-
         indent(sb, level, "/// primitive field - '%s'\n", encoding.presence());
 
         if (characterEncoding != null)
@@ -1165,7 +1164,6 @@ public class RustGenerator implements CodeGenerator
     {
         final Token beginToken = tokens.get(0);
         final String rustPrimitiveType = rustTypeName(beginToken.encoding().primitiveType());
-
         indent(writer, 0, "use crate::*;\n\n");
         indent(writer, 0, "#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]\n");
         indent(writer, 0, "pub struct %s(pub %s);\n", bitSetType, rustPrimitiveType);
@@ -1241,7 +1239,7 @@ public class RustGenerator implements CodeGenerator
         writer.append(builder.toString()).append("]\",\n");
         indent(writer, 3, arguments + ")\n");
         indent(writer, 1, "}\n");
-        indent(writer, 0, "}\n\n");
+        indent(writer, 0, "}\n");
 
         generateBitSetDisplay(bitSetType, tokens, writer, 0);
     }
@@ -1757,7 +1755,7 @@ public class RustGenerator implements CodeGenerator
             i += encodingToken.componentTokenCount();
         }
 
-        indent(out, 1, "}\n\n"); // end impl
+        indent(out, 1, "}\n"); // end impl
 
         generateCompositeDecoderDisplay(out, decoderName, tokens, 1);
 
@@ -2023,8 +2021,6 @@ public class RustGenerator implements CodeGenerator
                 default:
                     break;
             }
-    
             indent(writer, level, "str.push('%s');\n\n", Separator.FIELD);
         }
-    
 }

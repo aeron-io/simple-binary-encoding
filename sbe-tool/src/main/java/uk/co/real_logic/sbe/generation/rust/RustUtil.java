@@ -362,11 +362,6 @@ public class RustUtil
             this.symbol = symbol;
         }
 
-        // void appendToGeneratedBuilder(final Appendable builder, final String indent)
-        // {
-        //     builder.append(indent).append("builder.append('").append(symbol).append("');").append('\n');
-        // }
-
         /**
          * {@inheritDoc}
          */
