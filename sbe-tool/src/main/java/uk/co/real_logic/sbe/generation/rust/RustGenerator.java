@@ -26,6 +26,7 @@ import uk.co.real_logic.sbe.ir.Encoding;
 import uk.co.real_logic.sbe.ir.Ir;
 import uk.co.real_logic.sbe.ir.Signal;
 import uk.co.real_logic.sbe.ir.Token;
+import uk.co.real_logic.sbe.ir.Encoding.Presence;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -40,6 +41,7 @@ import static uk.co.real_logic.sbe.generation.rust.RustUtil.*;
 import static uk.co.real_logic.sbe.ir.GenerationUtil.collectFields;
 import static uk.co.real_logic.sbe.ir.GenerationUtil.collectGroups;
 import static uk.co.real_logic.sbe.ir.GenerationUtil.collectVarData;
+import static uk.co.real_logic.sbe.ir.GenerationUtil.findEndSignal;
 import static uk.co.real_logic.sbe.ir.Signal.BEGIN_ENUM;
 import static uk.co.real_logic.sbe.ir.Signal.BEGIN_SET;
 
@@ -56,7 +58,8 @@ public class RustGenerator implements CodeGenerator
     {
         Decoder
         {
-            String bufType()
+            @Override
+			String bufType()
             {
                 return READ_BUF_TYPE;
             }
@@ -64,7 +67,8 @@ public class RustGenerator implements CodeGenerator
 
         Encoder
         {
-            String bufType()
+            @Override
+			String bufType()
             {
                 return WRITE_BUF_TYPE;
             }
@@ -914,6 +918,12 @@ public class RustGenerator implements CodeGenerator
         final PrimitiveType primitiveType = encoding.primitiveType();
         final String rustPrimitiveType = rustTypeName(primitiveType);
         final String characterEncoding = encoding.characterEncoding();
+
+        // System.out.println("name: " + name);
+        // System.out.println("fieldToken: " + fieldToken.name());
+        // System.out.println("primitiveType: " + primitiveType);
+        // System.out.println("rustPrimitiveType: " + rustPrimitiveType);
+
         indent(sb, level, "/// primitive field - '%s'\n", encoding.presence());
 
         if (characterEncoding != null)
@@ -1720,8 +1730,36 @@ public class RustGenerator implements CodeGenerator
             i += encodingToken.componentTokenCount();
         }
 
-        indent(out, 1, "}\n"); // end impl
+        indent(out, 1, "}\n\n"); // end impl
+
+        generateCompositeDecoderDisplay(out, decoderName, tokens, 1);
+
         indent(out, 0, "} // end decoder mod \n");
+    }
+
+    private static void generateCompositeDecoderDisplay(
+        final Appendable writer,
+        final String decoderName,
+        final List<Token> tokens,
+        final int level) throws IOException {
+            indent(writer, level, "impl<'a, P> HumanReadable for %s<P> where P: Reader<'a> + ActingVersion + Default +'a {\n", decoderName);
+            indent(writer, level + 1, "fn human_readable(mut self) -> SbeResult<(Self, String)> {\n");
+
+            indent(writer, level + 2, "let mut str = String::new();\n");
+
+            // Start from 1 to the token of this own composite field.
+            for (int i = 1, size = tokens.size() - 1; i < size; ) {
+                final Token token = tokens.get(i);
+                final String fieldName = RustUtil.formatPropertyName(token.name());
+                writeTokenDisplay(fieldName, token, writer, level + 2);
+                i += token.componentTokenCount();
+            }
+
+            indent(writer, level + 2, "str = str.trim_end_matches('%s').to_string();\n\n", Separator.FIELD);
+
+            indent(writer, level + 2, "Ok((self, str))\n");
+            indent(writer, level + 1, "}\n");
+            indent(writer, level, "}\n");
     }
 
     private static void appendConstAccessor(
@@ -1736,4 +1774,210 @@ public class RustGenerator implements CodeGenerator
         indent(writer, level + 1, rustExpression + "\n");
         indent(writer, level, "}\n\n");
     }
+
+    static void generateDecoderDisplay(
+        final Appendable writer,
+        final String decoderName,
+        final String msgName,
+        final List<Token> fields,
+        final List<Token> groups,
+        final List<Token> varData,
+        final int level) throws IOException{
+            if (msgName != null){
+                indent(writer, level, "impl<'a> HumanReadable for %s<'a> {\n", decoderName);
+            } else {
+                indent(writer, level, "impl<'a, P> HumanReadable for %s<P> where P: Decoder<'a> + ActingVersion + Default +'a {\n", decoderName);
+            }
+            indent(writer, level + 1, "fn human_readable(mut self) -> SbeResult<(Self, String)> {\n");
+
+
+            indent(writer, level + 2, "let mut str = String::new();\n");
+            
+            if (msgName != null){
+                indent(writer, level + 2, "let original_limit = self.get_limit();\n");
+                indent(writer, level + 2, "self.set_limit(self.offset + self.acting_block_length as usize);\n\n");
+
+                indent(writer, level + 2, "str.push_str(\"[%s]\");\n\n", msgName);
+
+                indent(writer, level + 2, "str.push('(');\n\n");
+
+                indent(writer, level + 2, "str.push_str(\"sbeTemplateId=\");\n");
+                indent(writer, level + 2, "str.push_str(&SBE_TEMPLATE_ID.to_string());\n\n");
+
+                indent(writer, level + 2, "str.push_str(\"|sbeSchemaId=\");\n");
+                indent(writer, level + 2, "str.push_str(&SBE_SCHEMA_ID.to_string());\n\n");
+
+                indent(writer, level + 2, "str.push_str(\"|sbeSchemaVersion=\");\n");
+                indent(writer, level + 2, "if self.acting_version != SBE_SCHEMA_VERSION {\n");
+                indent(writer, level + 3, "str.push_str(&self.acting_version.to_string());\n");
+                indent(writer, level + 3, "str.push('/');\n");
+                indent(writer, level + 2, "}\n");
+                indent(writer, level + 2, "str.push_str(&SBE_SCHEMA_VERSION.to_string());\n\n");
+                
+                indent(writer, level + 2, "str.push_str(\"|sbeBlockLength=\");\n");
+                indent(writer, level + 2, "if self.acting_block_length != SBE_BLOCK_LENGTH {\n");
+                indent(writer, level + 3, "str.push_str(&self.acting_block_length.to_string());\n");
+                indent(writer, level + 3, "str.push('/');\n");
+                indent(writer, level + 2, "}\n");
+                indent(writer, level + 2, "str.push_str(&SBE_BLOCK_LENGTH.to_string());\n\n");
+
+                indent(writer, level + 2, "str.push_str(\"):\");\n\n");
+            }
+
+            indent(writer, level + 2, "// START FIELDS\n");
+            for (int i = 0, size = fields.size(); i < size;)
+            {
+                final Token fieldToken = fields.get(i);
+                if (fieldToken.signal() == Signal.BEGIN_FIELD)
+                {
+                    final Token encodingToken = fields.get(i + 1);
+                    final String fieldName = RustUtil.formatPropertyName(fieldToken.name());
+                    writeTokenDisplay(fieldName, encodingToken, writer, level + 2);
+
+                    i += fieldToken.componentTokenCount();
+                }
+                else
+                {
+                    ++i;
+                }
+            }
+            indent(writer, level + 2, "// END FIELDS\n\n");
+
+            indent(writer, level + 2, "// START GROUPS\n");
+            for (int i = 0, size = groups.size(); i < size; i++)
+            {
+                final Token groupToken = groups.get(i);
+
+                if (groupToken.signal() != Signal.BEGIN_GROUP)
+                {
+                    throw new IllegalStateException("tokens must begin with BEGIN_GROUP: token=" + groupToken);
+                }
+
+                final String groupName = formatPropertyName(groupToken.name());
+
+                indent(writer, level + 2, "let mut %s = self.%s_decoder();\n", groupName, groupName);
+                indent(writer, level + 2, "str.push('%s');\n", Separator.BEGIN_GROUP);
+                indent(writer, level + 2, "let mut result = %s.human_readable()?;\n", groupName);
+                indent(writer, level + 2, "str.push_str(&result.1);\n");
+                indent(writer, level + 2, "str.push('%s');\n", Separator.END_GROUP);
+                indent(writer, level + 2, "self = result.0.parent()?;\n");
+
+                i = findEndSignal(groups, i, Signal.END_GROUP, groupToken.name());
+            }
+            indent(writer, level + 2, "// END GROUPS\n\n");
+
+            // indent(writer, level + 2, "// START VAR_DATA \n");
+            // for (int i = 0, size = varData.size(); i < size;)
+            // {
+            //     final Token varDataToken = varData.get(i);
+            //     if (varDataToken.signal() != Signal.BEGIN_VAR_DATA)
+            //     {
+            //         throw new IllegalStateException("tokens must begin with BEGIN_VAR_DATA: token=" + varDataToken);
+            //     }
+    
+            //     final String characterEncoding = varData.get(i + 3).encoding().characterEncoding();
+            //     final String varDataName = formatPropertyName(varDataToken.name());
+
+            //     indent(writer, level + 2, "str.push_str(\"%s%s\");\n", varDataName, Separator.KEY_VALUE);
+
+            //     indent(writer, level+2, "let coordinates = self.%s_decoder();\n",  varDataName);
+            //     indent(writer, level+2, "let %s = self.%s_slice(coordinates);\n",  varDataName, varDataName);
+
+            //     indent(writer, level + 2, "// Character encoding: '%s'\n", characterEncoding);
+            //     if (isAsciiEncoding(characterEncoding))
+            //     {
+            //         indent(writer, level + 2, "for byte in %s {\n", varDataName);
+            //         indent(writer, level + 3, "str.push(char::from(*byte));\n");
+            //         indent(writer, level + 2, "}\n");
+
+            //     }
+            //     else if (isUtf8Encoding(characterEncoding))
+            //     {
+            //         indent(writer, level + 2, "str.push_str(&String::from_utf8_lossy(%s));\n", varDataName);
+            //     } else {
+            //         indent(writer, level + 2, "str.push_str(&format!(\"{:?}\", %s));\n", varDataName);
+            //     }
+
+            //     indent(writer, level+2, "drop(%s);\n", varDataName);
+    
+            //     indent(writer, level+2, "str.push('%s');\n\n", Separator.FIELD);
+    
+            //     i += varDataToken.componentTokenCount();
+            // }
+            // indent(writer, level + 2, "// END VAR_DATA\n");
+
+            indent(writer, level + 2, "str = str.trim_end_matches('%s').to_string();\n\n", Separator.FIELD);
+
+            if (msgName != null){
+                indent(writer, level + 2, "self.set_limit(original_limit);\n\n");
+            }
+
+            indent(writer, level + 2, "Ok((self, str))\n");
+            indent(writer, level + 1, "}\n");
+            indent(writer, level, "}\n");
+        }
+
+        private static void writeTokenDisplay(
+            final String fieldName, final Token typeToken, final Appendable writer, final int level)
+        throws IOException{
+            if (typeToken.encodedLength() <= 0 || typeToken.isConstantEncoding())
+            {
+                return;
+            }
+    
+            indent(writer, level, "// SIGNAL: %s\n", typeToken.signal());
+            indent(writer, level, "str.push_str(\"%s%s\");\n", fieldName, Separator.KEY_VALUE);
+    
+            final String formattedFieldName = formatPropertyName(fieldName);
+
+            switch (typeToken.signal())
+            {
+                case ENCODING:
+                    if (typeToken.arrayLength() > 1) {
+                        indent(writer, level, "let %s = self.%s();\n", formattedFieldName, formattedFieldName);
+                        if (typeToken.encoding().primitiveType() == PrimitiveType.CHAR) {
+                            indent(writer, level, "for byte in %s {\n", formattedFieldName);
+                            indent(writer, level + 1, "str.push(char::from(byte));\n");
+                            indent(writer, level, "}\n");
+                        } else {
+                            indent(writer, level, "str.push('%s');\n", Separator.BEGIN_ARRAY);
+                            indent(writer, level, "for v in %s {\n", formattedFieldName);
+                            indent(writer, level + 1, "str.push_str(&v.to_string());\n");
+                            indent(writer, level + 1, "str.push('%s');\n", Separator.ENTRY);
+                            indent(writer, level, "}\n");
+                            indent(writer, level, "str.push('%s');\n", Separator.END_ARRAY);
+                        }
+                    } else if (typeToken.encoding().presence() == Presence.REQUIRED) {
+                        indent(writer, level, "str.push_str(&format!(\"{}\", self.%s()));\n", formattedFieldName);
+                    } else {
+                        indent(writer, level, "str.push_str(&format!(\"{:?}\", self.%s()));\n", formattedFieldName);
+                    }
+                    break;
+
+                case BEGIN_ENUM:
+                    indent(writer, level, "str.push_str(&format!(\"{}\", self.%s()));\n", fieldName);
+                    break;
+    
+                case BEGIN_COMPOSITE:
+                {
+                    indent(writer, level, "let mut %s = self.%s_decoder();\n", formattedFieldName, formattedFieldName);
+                    indent(writer, level, "let result = %s.human_readable()?;\n", formattedFieldName);
+                    indent(writer, level, "%s = result.0;\n", formattedFieldName);
+                    indent(writer, level, "str.push_str(&result.1);\n");
+                    indent(writer, level, "self = %s.parent()?;\n", formattedFieldName);
+                    break;
+                }
+
+                case BEGIN_SET:
+                    // TODO: implement human_readable or display
+                    indent(writer, level, "str.push_str(&format!(\"{:?}\", self.%s()));\n", formattedFieldName);
+                    break;
+    
+                default:
+                    break;
+            }
+    
+            indent(writer, level, "str.push('%s');\n\n", Separator.FIELD);
+        }
+    
 }
