@@ -1882,10 +1882,10 @@ public class RustGenerator implements CodeGenerator
 
                 indent(writer, level + 2, "let mut %s = self.%s_decoder();\n", groupName, groupName);
                 indent(writer, level + 2, "str.push('%s');\n", Separator.BEGIN_GROUP);
-                indent(writer, level + 2, "let mut result = %s.human_readable()?;\n", groupName);
-                indent(writer, level + 2, "str.push_str(&result.1);\n");
+                indent(writer, level + 2, "let (mut %s, string) = %s.human_readable()?;\n", groupName, groupName);
+                indent(writer, level + 2, "str.push_str(&string);\n");
                 indent(writer, level + 2, "str.push('%s');\n", Separator.END_GROUP);
-                indent(writer, level + 2, "self = result.0.parent()?;\n");
+                indent(writer, level + 2, "self = %s.parent()?;\n\n", groupName);
 
                 i = findEndSignal(groups, i, Signal.END_GROUP, groupToken.name());
             }
@@ -1973,10 +1973,10 @@ public class RustGenerator implements CodeGenerator
                             indent(writer, level, "str.push('%s');\n", Separator.END_ARRAY);
                         }
                     } else if (typeToken.encoding().presence() == Presence.REQUIRED) {
-                        indent(writer, level, "str.push_str(&format!(\"{}\", self.%s()));\n", formattedFieldName);
+                        indent(writer, level, "str.push_str(&self.%s().to_string());\n", formattedFieldName);
                     } else {
                         indent(writer, level, "let display = match self.%s() {\n", formattedFieldName);
-                        indent(writer, level + 1, "Some(value) => format!(\"{}\", value),\n");
+                        indent(writer, level + 1, "Some(value) => value.to_string(),\n");
                         indent(writer, level + 1, "None => \"null\".to_string(),\n");
                         indent(writer, level, "};\n");
                         indent(writer, level, "str.push_str(&display);\n");
@@ -1984,7 +1984,7 @@ public class RustGenerator implements CodeGenerator
                     break;
 
                 case BEGIN_ENUM:
-                    indent(writer, level, "str.push_str(&format!(\"{}\", self.%s()));\n", fieldName);
+                    indent(writer, level, "str.push_str(&self.%s().to_string());\n", fieldName);
                     break;
     
                 case BEGIN_COMPOSITE:
@@ -2004,9 +2004,8 @@ public class RustGenerator implements CodeGenerator
                         indent(writer, level, "}\n");
                     } else {
                         indent(writer, level, "let mut %s = self.%s_decoder();\n", formattedFieldName, formattedFieldName);
-                        indent(writer, level, "let result = %s.human_readable()?;\n", formattedFieldName);
-                        indent(writer, level, "%s = result.0;\n", formattedFieldName);
-                        indent(writer, level, "str.push_str(&result.1);\n");
+                        indent(writer, level, "let (mut %s, string) = %s.human_readable()?;\n", formattedFieldName, formattedFieldName);
+                        indent(writer, level, "str.push_str(&string);\n");
                         indent(writer, level, "self = %s.parent()?;\n", formattedFieldName);
                     } 
                     indent(writer, level, "str.push('%s');\n", Separator.END_COMPOSITE);
