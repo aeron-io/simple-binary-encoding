@@ -1982,10 +1982,13 @@ public class RustGenerator implements CodeGenerator
                             indent(writer, level, "str.push('%s');\n", Separator.END_ARRAY);
                         }
                     } else if (typeToken.encoding().presence() == Presence.REQUIRED) {
-                        // TODO: review
                         indent(writer, level, "str.push_str(&format!(\"{}\", self.%s()));\n", formattedFieldName);
                     } else {
-                        indent(writer, level, "str.push_str(&format!(\"{:?}\", self.%s()));\n", formattedFieldName);
+                        indent(writer, level, "let display = match self.%s() {\n", formattedFieldName);
+                        indent(writer, level + 1, "Some(value) => format!(\"{}\", value),\n");
+                        indent(writer, level + 1, "None => \"None\".to_string(),\n");
+                        indent(writer, level, "};\n");
+                        indent(writer, level, "str.push_str(&display);\n");
                     }
                     break;
 
