@@ -1999,6 +1999,7 @@ public class RustGenerator implements CodeGenerator
     
                 case BEGIN_COMPOSITE:
                 {
+                    indent(writer, level, "str.push('%s');\n", Separator.BEGIN_COMPOSITE);
                     if (typeToken.version() > 0)
                     {
                         indent(writer, level, "match self.%s_decoder() {\n", formattedFieldName);
@@ -2018,6 +2019,7 @@ public class RustGenerator implements CodeGenerator
                         indent(writer, level, "str.push_str(&result.1);\n");
                         indent(writer, level, "self = %s.parent()?;\n", formattedFieldName);
                     } 
+                    indent(writer, level, "str.push('%s');\n", Separator.END_COMPOSITE);
                     break;
                 }
 
