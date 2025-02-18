@@ -1960,11 +1960,25 @@ public class RustGenerator implements CodeGenerator
     
                 case BEGIN_COMPOSITE:
                 {
-                    indent(writer, level, "let mut %s = self.%s_decoder();\n", formattedFieldName, formattedFieldName);
-                    indent(writer, level, "let result = %s.human_readable()?;\n", formattedFieldName);
-                    indent(writer, level, "%s = result.0;\n", formattedFieldName);
-                    indent(writer, level, "str.push_str(&result.1);\n");
-                    indent(writer, level, "self = %s.parent()?;\n", formattedFieldName);
+                    if (typeToken.version() > 0)
+                    {
+                        indent(writer, level, "match self.%s_decoder() {\n", formattedFieldName);
+                        indent(writer, level + 1, "Either::Left(self_) => {\n");
+                        indent(writer, level + 2, "self = self_;\n");
+                        indent(writer, level + 1, "},\n");
+                        indent(writer, level + 1, "Either::Right(mut %s) => {\n", formattedFieldName);
+                        indent(writer, level + 2, "let mut result = %s.human_readable()?;\n", formattedFieldName);
+                        indent(writer, level + 2, "str.push_str(&result.1);\n");
+                        indent(writer, level + 2, "self = result.0.parent()?;\n");
+                        indent(writer, level + 1, "}\n");
+                        indent(writer, level, "}\n");
+                    } else {
+                        indent(writer, level, "let mut %s = self.%s_decoder();\n", formattedFieldName, formattedFieldName);
+                        indent(writer, level, "let result = %s.human_readable()?;\n", formattedFieldName);
+                        indent(writer, level, "%s = result.0;\n", formattedFieldName);
+                        indent(writer, level, "str.push_str(&result.1);\n");
+                        indent(writer, level, "self = %s.parent()?;\n", formattedFieldName);
+                    } 
                     break;
                 }
 
