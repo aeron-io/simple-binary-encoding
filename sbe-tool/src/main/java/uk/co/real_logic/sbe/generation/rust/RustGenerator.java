@@ -2013,7 +2013,9 @@ public class RustGenerator implements CodeGenerator
                 }
 
                 case BEGIN_SET:
+                    indent(writer, level, "str.push('%s');\n", Separator.BEGIN_SET);
                     indent(writer, level, "str.push_str(&self.%s().human_readable()?.1);\n", formattedFieldName);
+                    indent(writer, level, "str.push('%s');\n", Separator.END_SET);
                     break;
     
                 default:
