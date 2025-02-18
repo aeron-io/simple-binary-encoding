@@ -1241,10 +1241,10 @@ public class RustGenerator implements CodeGenerator
         indent(writer, 1, "}\n");
         indent(writer, 0, "}\n");
 
-        generateBitSetDisplay(bitSetType, tokens, writer, 0);
+        appendImplHumanReadableForBitSet(bitSetType, tokens, writer, 0);
     }
 
-    static void generateBitSetDisplay(
+    static void appendImplHumanReadableForBitSet(
         final String bitSetType,
         final List<Token> tokens,
         final Appendable writer,
@@ -1757,12 +1757,12 @@ public class RustGenerator implements CodeGenerator
 
         indent(out, 1, "}\n"); // end impl
 
-        generateCompositeDecoderDisplay(out, decoderName, tokens, 1);
+        appendImplHumanReadableForComposite(out, decoderName, tokens, 1);
 
         indent(out, 0, "} // end decoder mod \n");
     }
 
-    private static void generateCompositeDecoderDisplay(
+    private static void appendImplHumanReadableForComposite(
         final Appendable writer,
         final String decoderName,
         final List<Token> tokens,
@@ -1776,7 +1776,7 @@ public class RustGenerator implements CodeGenerator
             for (int i = 1, size = tokens.size() - 1; i < size; ) {
                 final Token token = tokens.get(i);
                 final String fieldName = RustUtil.formatPropertyName(token.name());
-                writeTokenDisplay(fieldName, token, writer, level + 2);
+                writeHumanReadableKeyValue(fieldName, token, writer, level + 2);
                 i += token.componentTokenCount();
             }
 
@@ -1800,7 +1800,7 @@ public class RustGenerator implements CodeGenerator
         indent(writer, level, "}\n\n");
     }
 
-    static void generateDecoderDisplay(
+    static void appendImplHumanReadableForDecoder(
         final Appendable writer,
         final String decoderName,
         final String msgName,
@@ -1857,7 +1857,7 @@ public class RustGenerator implements CodeGenerator
                 {
                     final Token encodingToken = fields.get(i + 1);
                     final String fieldName = RustUtil.formatPropertyName(fieldToken.name());
-                    writeTokenDisplay(fieldName, encodingToken, writer, level + 2);
+                    writeHumanReadableKeyValue(fieldName, encodingToken, writer, level + 2);
 
                     i += fieldToken.componentTokenCount();
                 }
@@ -1942,7 +1942,7 @@ public class RustGenerator implements CodeGenerator
             indent(writer, level, "}\n");
         }
 
-        private static void writeTokenDisplay(
+        private static void writeHumanReadableKeyValue(
             final String fieldName, final Token typeToken, final Appendable writer, final int level)
         throws IOException{
             if (typeToken.encodedLength() <= 0 || typeToken.isConstantEncoding())

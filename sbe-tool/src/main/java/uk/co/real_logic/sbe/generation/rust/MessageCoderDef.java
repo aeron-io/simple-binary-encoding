@@ -108,8 +108,11 @@ class MessageCoderDef implements RustGenerator.ParentDef
 
         if (codecType == Encoder)
         {
-        } else {
-            RustGenerator.generateDecoderDisplay(sb, msgTypeName,msgToken.name(),fields, groups, varData, 1);
+        }
+        else
+        {
+            RustGenerator.appendImplHumanReadableForDecoder(sb, msgTypeName, msgToken.name(), fields, groups, varData,
+                1);
         }
 
         // append all subGroup generated code
