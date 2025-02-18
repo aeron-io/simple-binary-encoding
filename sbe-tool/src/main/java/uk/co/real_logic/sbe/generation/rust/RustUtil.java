@@ -84,12 +84,26 @@ public class RustUtil
             throw new IllegalArgumentException("Unknown Rust type name found for primitive " + type.primitiveName());
         }
 
-        return switch (type) {
-			case CHAR, INT8, INT16, INT32, INT64 -> value + '_' + typeName;
-			case UINT8, UINT16, UINT32, UINT64 -> "0x" + Long.toHexString(parseLong(value)) + '_' + typeName;
-			case FLOAT, DOUBLE -> value.endsWith("NaN") ? typeName + "::NAN" : value + '_' + typeName;
-			default -> throw new IllegalArgumentException("Unsupported literal generation for type: " + type.primitiveName());
-		};
+        switch (type)
+        {
+            case CHAR:
+            case INT8:
+            case INT16:
+            case INT32:
+            case INT64:
+                return value + '_' + typeName;
+            case UINT8:
+            case UINT16:
+            case UINT32:
+            case UINT64:
+                return "0x" + Long.toHexString(parseLong(value)) + '_' + typeName;
+            case FLOAT:
+            case DOUBLE:
+                return value.endsWith("NaN") ? typeName + "::NAN" : value + '_' + typeName;
+
+            default:
+                throw new IllegalArgumentException("Unsupported literal generation for type: " + type.primitiveName());
+        }
     }
 
     static byte eightBitCharacter(final String asciiCharacter)
@@ -357,7 +371,7 @@ public class RustUtil
          * {@inheritDoc}
          */
         @Override
-		public String toString()
+        public String toString()
         {
             return String.valueOf(symbol);
         }

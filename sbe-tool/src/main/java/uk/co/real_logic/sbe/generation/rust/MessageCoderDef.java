@@ -106,7 +106,7 @@ class MessageCoderDef implements RustGenerator.ParentDef
 
         indent(sb, 1, "}\n\n"); // impl end
 
-        if (codecType == Encoder) //impl Display
+        if (codecType == Encoder)
         {
         } else {
             RustGenerator.generateDecoderDisplay(sb, msgTypeName,msgToken.name(),fields, groups, varData, 1);
@@ -126,8 +126,7 @@ class MessageCoderDef implements RustGenerator.ParentDef
         dest.append(sb);
     }
 
-	@Override
-	public SubGroup addSubGroup(final String name, final int level, final Token groupToken)
+    public SubGroup addSubGroup(final String name, final int level, final Token groupToken)
     {
         final SubGroup subGroup = new SubGroup(name, level, groupToken);
         subGroups.add(subGroup);
