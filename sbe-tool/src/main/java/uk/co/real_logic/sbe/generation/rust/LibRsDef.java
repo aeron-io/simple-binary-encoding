@@ -70,7 +70,6 @@ class LibRsDef
             indent(libRs, 0, "#![allow(non_camel_case_types)]\n\n");
             indent(libRs, 0, "#![allow(ambiguous_glob_reexports)]\n\n");
             indent(libRs, 0, "#![allow(unused_mut)]\n\n");
-            indent(libRs, 0, "#![allow(dropping_references)]\n\n");
             indent(libRs, 0, "use ::core::{convert::TryInto};\n\n");
 
             final ArrayList<String> modules = new ArrayList<>();

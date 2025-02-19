@@ -1904,30 +1904,30 @@ public class RustGenerator implements CodeGenerator
                 final String varDataName = formatPropertyName(varDataToken.name());
 
                 indent(writer, level + 2, "str.push_str(\"%s%s\");\n", varDataName, Separator.KEY_VALUE);
-
-                indent(writer, level+2, "let coordinates = self.%s_decoder();\n",  varDataName);
+                
+                indent(writer, level + 2, "{\n");
+                indent(writer, level + 3, "let coordinates = self.%s_decoder();\n",  varDataName);
                 // Using get_buf instead of the specific get_slice_at method to avoid
                 // the problems due to the lifetime of the method.
-                indent(writer, level+2, "let %s = self.get_buf().get_slice_at(coordinates.0, coordinates.1);\n",  varDataName);
+                indent(writer, level + 3, "let %s = self.get_buf().get_slice_at(coordinates.0, coordinates.1);\n",  varDataName);
 
-                indent(writer, level + 2, "// Character encoding: '%s'\n", characterEncoding);
+                indent(writer, level + 3, "// Character encoding: '%s'\n", characterEncoding);
                 if (isAsciiEncoding(characterEncoding))
                 {
-                    indent(writer, level + 2, "for byte in %s {\n", varDataName);
-                    indent(writer, level + 3, "str.push(char::from(*byte));\n");
-                    indent(writer, level + 2, "}\n");
+                    indent(writer, level + 3, "for byte in %s {\n", varDataName);
+                    indent(writer, level + 4, "str.push(char::from(*byte));\n");
+                    indent(writer, level + 3, "}\n");
 
                 }
                 else if (isUtf8Encoding(characterEncoding))
                 {
-                    indent(writer, level + 2, "str.push_str(&String::from_utf8_lossy(%s));\n", varDataName);
+                    indent(writer, level + 3, "str.push_str(&String::from_utf8_lossy(%s));\n", varDataName);
                 } else {
-                    indent(writer, level + 2, "str.push_str(&format!(\"{:?}\", %s));\n", varDataName);
+                    indent(writer, level + 3, "str.push_str(&format!(\"{:?}\", %s));\n", varDataName);
                 }
-
-                indent(writer, level+2, "drop(%s);\n", varDataName);
+                indent(writer, level + 2, "}\n");
     
-                indent(writer, level+2, "str.push('%s');\n\n", Separator.FIELD);
+                indent(writer, level + 2, "str.push('%s');\n\n", Separator.FIELD);
     
                 i += varDataToken.componentTokenCount();
             }
