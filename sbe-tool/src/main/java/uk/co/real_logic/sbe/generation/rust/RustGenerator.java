@@ -1266,8 +1266,11 @@ public class RustGenerator implements CodeGenerator
             indent(writer, level + 2, "str.push_str(\"%s=\");\n", choiceName);
             indent(writer, level + 2, "str.push_str(&self.get_%s().to_string());\n", choiceName);
             indent(writer, level + 2, "str.push('%s');\n\n", Separator.ENTRY);
-
         }
+
+        indent(writer, level + 2, "if str.ends_with('%s') {\n", Separator.ENTRY);
+        indent(writer, level + 3, "str.pop();\n");
+        indent(writer, level + 2, "}\n");
 
         indent(writer, level + 2, "Ok((self, str))\n");
         indent(writer, level + 1, "}\n");
@@ -1933,7 +1936,9 @@ public class RustGenerator implements CodeGenerator
             }
             indent(writer, level + 2, "// END VAR_DATA\n");
 
-            indent(writer, level + 2, "str = str.trim_end_matches('%s').to_string();\n\n", Separator.FIELD);
+            indent(writer, level + 2, "if str.ends_with('%s') {\n", Separator.FIELD);
+            indent(writer, level + 3, "str.pop();\n");
+            indent(writer, level + 2, "}\n");
 
             if (msgName != null){
                 indent(writer, level + 2, "self.set_limit(original_limit);\n\n");
@@ -1971,6 +1976,9 @@ public class RustGenerator implements CodeGenerator
                             indent(writer, level, "for v in %s {\n", formattedFieldName);
                             indent(writer, level + 1, "str.push_str(&v.to_string());\n");
                             indent(writer, level + 1, "str.push('%s');\n", Separator.ENTRY);
+                            indent(writer, level, "}\n");
+                            indent(writer, level, "if str.ends_with('%s') {\n", Separator.ENTRY);
+                            indent(writer, level + 1, "str.pop();\n");
                             indent(writer, level, "}\n");
                             indent(writer, level, "str.push('%s');\n", Separator.END_ARRAY);
                         }
