@@ -1884,11 +1884,25 @@ public class RustGenerator implements CodeGenerator
                 final String groupName = formatPropertyName(groupToken.name());
 
                 indent(writer, level + 2, "let mut %s = self.%s_decoder();\n", groupName, groupName);
+                indent(writer, level + 2, "let %s_original_offset = %s.offset;\n", groupName, groupName);
+                indent(writer, level + 2, "let %s_original_index = %s.index;\n", groupName, groupName);
                 indent(writer, level + 2, "str.push('%s');\n", Separator.BEGIN_GROUP);
-                indent(writer, level + 2, "let (mut %s, string) = %s.human_readable()?;\n", groupName, groupName);
-                indent(writer, level + 2, "str.push_str(&string);\n");
+
+                indent(writer, level + 2, "while %s.advance()?.is_some() {\n", groupName);
+                indent(writer, level + 3, "let result = %s.human_readable()?;\n", groupName);
+                indent(writer, level + 3, "%s = result.0;\n", groupName);
+                indent(writer, level + 3, "str.push_str(&result.1);\n");
+                indent(writer, level + 3, "str.push('%s');\n", Separator.ENTRY);
+                indent(writer, level + 2, "}\n");
+
+                indent(writer, level + 2, "if str.ends_with('%s') {\n", Separator.ENTRY);
+                indent(writer, level + 3, "str.pop();\n");
+                indent(writer, level + 2, "}\n");
+
                 indent(writer, level + 2, "str.push('%s');\n", Separator.END_GROUP);
-                indent(writer, level + 2, "self = %s.parent()?;\n\n", groupName);
+                indent(writer, level + 2, "%s.offset = %s_original_offset;\n", groupName, groupName);
+                indent(writer, level + 2, "%s.index = %s_original_index;\n", groupName, groupName);
+                indent(writer, level + 2, "self = %s.parent()?;\n", groupName);
 
                 i = findEndSignal(groups, i, Signal.END_GROUP, groupToken.name());
             }
