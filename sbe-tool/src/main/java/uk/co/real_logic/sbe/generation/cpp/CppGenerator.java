@@ -55,6 +55,7 @@ public class CppGenerator implements CodeGenerator
     private static final String INDENT = "    ";
     private static final String TWO_INDENT = INDENT + INDENT;
     private static final String THREE_INDENT = TWO_INDENT + INDENT;
+    private static final String DEFAULT_FILE_EXTENSION = ".h";
 
     private final Ir ir;
     private final OutputManager outputManager;
@@ -107,6 +108,15 @@ public class CppGenerator implements CodeGenerator
         this.precedenceChecksFlagName = precedenceChecks.context().precedenceChecksFlagName();
         this.shouldSupportTypesPackageNames = shouldSupportTypesPackageNames;
         this.outputManager = outputManager;
+    }
+
+    private String getFileExtension()
+    {
+        if (outputManager instanceof WithFileExtension)
+        {
+            return ((WithFileExtension)outputManager).getFileExtension();
+        }
+        return DEFAULT_FILE_EXTENSION;
     }
 
     /**
@@ -1818,7 +1828,7 @@ public class CppGenerator implements CodeGenerator
             sb.append("\n");
             for (final String incName : typesToInclude)
             {
-                sb.append("#include \"").append(toUpperFirstChar(incName)).append(".h\"\n");
+                sb.append("#include \"").append(toUpperFirstChar(incName)).append(getFileExtension()).append("\"\n");
             }
         }
 
