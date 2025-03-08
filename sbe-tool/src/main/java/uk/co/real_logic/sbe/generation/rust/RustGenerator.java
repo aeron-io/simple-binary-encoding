@@ -50,6 +50,7 @@ public class RustGenerator implements CodeGenerator
 {
     static final String WRITE_BUF_TYPE = "WriteBuf";
     static final String READ_BUF_TYPE = "ReadBuf";
+    static final String ANONYMOUS_LIFETIME = "'_";
     static final String BUF_LIFETIME = "'a";
 
     enum CodecType
@@ -187,9 +188,19 @@ public class RustGenerator implements CodeGenerator
         return rustTypeName(ir.headerStructure().schemaVersionType());
     }
 
-    static String withLifetime(final String typeName)
+    static String withAnonymousLifetime(final String typeName)
     {
-        return format("%s<%s>", typeName, BUF_LIFETIME);
+        return withLifetime(typeName, ANONYMOUS_LIFETIME);
+    }
+
+    static String withBufLifetime(final String typeName)
+    {
+        return withLifetime(typeName, BUF_LIFETIME);
+    }
+
+    private static String withLifetime(final String typeName, final String lifetime)
+    {
+        return format("%s<%s>", typeName, lifetime);
     }
 
     static void appendImplWithLifetimeHeader(
@@ -1243,14 +1254,14 @@ public class RustGenerator implements CodeGenerator
         final Appendable out,
         final String typeName) throws IOException
     {
-        indent(out, 1, "impl<%s> %s for %s {\n", BUF_LIFETIME, withLifetime("Writer"), withLifetime(typeName));
+        indent(out, 1, "impl<%s> %s for %s {\n", BUF_LIFETIME, withBufLifetime("Writer"), withBufLifetime(typeName));
         indent(out, 2, "#[inline]\n");
         indent(out, 2, "fn get_buf_mut(&mut self) -> &mut WriteBuf<'a> {\n");
         indent(out, 3, "&mut self.buf\n");
         indent(out, 2, "}\n");
         indent(out, 1, "}\n\n");
 
-        indent(out, 1, "impl<%s> %s for %s {\n", BUF_LIFETIME, withLifetime("Encoder"), withLifetime(typeName));
+        indent(out, 1, "impl<%s> %s for %s {\n", BUF_LIFETIME, withBufLifetime("Encoder"), withBufLifetime(typeName));
         indent(out, 2, "#[inline]\n");
         indent(out, 2, "fn get_limit(&self) -> usize {\n");
         indent(out, 3, "self.limit\n");
@@ -1268,21 +1279,21 @@ public class RustGenerator implements CodeGenerator
         final Appendable out,
         final String typeName) throws IOException
     {
-        indent(out, 1, "impl<%s> %s for %s {\n", BUF_LIFETIME, "ActingVersion", withLifetime(typeName));
+        indent(out, 1, "impl %s for %s {\n", "ActingVersion", withAnonymousLifetime(typeName));
         indent(out, 2, "#[inline]\n");
         indent(out, 2, "fn acting_version(&self) -> %s {\n", schemaVersionType);
         indent(out, 3, "self.acting_version\n");
         indent(out, 2, "}\n");
         indent(out, 1, "}\n\n");
 
-        indent(out, 1, "impl<%s> %s for %s {\n", BUF_LIFETIME, withLifetime("Reader"), withLifetime(typeName));
+        indent(out, 1, "impl<%s> %s for %s {\n", BUF_LIFETIME, withBufLifetime("Reader"), withBufLifetime(typeName));
         indent(out, 2, "#[inline]\n");
         indent(out, 2, "fn get_buf(&self) -> &ReadBuf<'a> {\n");
         indent(out, 3, "&self.buf\n");
         indent(out, 2, "}\n");
         indent(out, 1, "}\n\n");
 
-        indent(out, 1, "impl<%s> %s for %s {\n", BUF_LIFETIME, withLifetime("Decoder"), withLifetime(typeName));
+        indent(out, 1, "impl<%s> %s for %s {\n", BUF_LIFETIME, withBufLifetime("Decoder"), withBufLifetime(typeName));
         indent(out, 2, "#[inline]\n");
         indent(out, 2, "fn get_limit(&self) -> usize {\n");
         indent(out, 3, "self.limit\n");
