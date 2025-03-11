@@ -106,12 +106,9 @@ class MessageCoderDef implements RustGenerator.ParentDef
 
         indent(sb, 1, "}\n\n"); // impl end
 
-        if (codecType == Encoder)
+        if (codecType == Decoder)
         {
-        }
-        else
-        {
-            RustGenerator.appendImplHumanReadableForDecoder(sb, msgTypeName, msgToken.name(), fields, groups, varData,
+            RustGenerator.appendImplSbeToStringForDecoder(sb, msgTypeName, msgToken.name(), fields, groups, varData,
                 1);
         }
 

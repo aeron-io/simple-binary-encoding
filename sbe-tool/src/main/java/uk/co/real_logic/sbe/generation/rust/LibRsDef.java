@@ -99,7 +99,7 @@ class LibRsDef
 
             generateEncoderTraits(libRs);
             generateDecoderTraits(schemaVersionType, libRs);
-            generateHumanReadableTrait(libRs);
+            generateSbeToString(libRs);
             generateReadBuf(libRs, byteOrder);
             generateWriteBuf(libRs, byteOrder);
         }
@@ -133,10 +133,14 @@ class LibRsDef
         indent(writer, 0, "}\n\n");
     }
 
-    static void generateHumanReadableTrait(final Writer writer) throws IOException
+    static void generateSbeToString(final Writer writer) throws IOException
     {
-        indent(writer, 0, "pub trait HumanReadable: Sized {\n");
-        indent(writer, 1, "fn human_readable(self) -> SbeResult<(Self, String)>;\n");
+        indent(writer, 0, "/// Returns a human-readable string representation of the SBE message.\n\n");
+        indent(writer, 0, "/// This trait works like `ToString`, but it takes `self` as value\n");
+        indent(writer, 0, "/// to be compatible with the generated decoders.\n");
+        indent(writer, 0, "pub trait SbeToString: Sized {\n");
+        indent(writer, 1, "/// Returns a human-readable string along with the consumed `self`.\n");
+        indent(writer, 1, "fn sbe_to_string(self) -> SbeResult<(Self, String)>;\n");
         indent(writer, 0, "}\n\n");
     }
 

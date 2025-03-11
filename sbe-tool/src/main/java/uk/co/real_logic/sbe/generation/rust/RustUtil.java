@@ -339,7 +339,7 @@ public class RustUtil
     }
 
     /**
-     * Separator symbols for `HumanReadable` implementations on codecs.
+     * Separator symbols for `SbeToString` implementations on codecs.
      */
     enum Separator
     {
