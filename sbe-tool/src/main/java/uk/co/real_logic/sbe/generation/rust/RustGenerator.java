@@ -1924,8 +1924,8 @@ public class RustGenerator implements CodeGenerator
                 
                 indent(writer, level + 2, "{\n");
                 indent(writer, level + 3, "let coordinates = self.%s_decoder();\n",  varDataName);
-                // Using get_buf instead of the specific get_slice_at method to avoid
-                // the problems due to the lifetime of the method.
+                // We're using get_buf instead of the specific get_slice_at method, because when using the latter,
+                // the compiler complained about the lifetimes of the values.
                 indent(writer, level + 3, "let %s = self.get_buf().get_slice_at(coordinates.0, coordinates.1);\n",  varDataName);
 
                 indent(writer, level + 3, "// Character encoding: '%s'\n", characterEncoding);
