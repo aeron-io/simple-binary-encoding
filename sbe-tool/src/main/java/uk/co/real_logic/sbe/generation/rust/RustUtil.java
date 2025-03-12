@@ -152,7 +152,7 @@ public class RustUtil
         }
         return sanitizeMethodOrProperty(toLowerSnakeCase(value));
     }
-    
+
     static String formatPropertyName(final String value)
     {
         if (value.isEmpty())
