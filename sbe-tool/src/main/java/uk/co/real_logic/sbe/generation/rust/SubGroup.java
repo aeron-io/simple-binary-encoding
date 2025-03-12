@@ -234,7 +234,7 @@ class SubGroup implements RustGenerator.ParentDef
 
         indent(sb, level - 1, "}\n\n"); // close impl
 
-        RustGenerator.appendImplSbeToStringForDecoder(sb, name, null, fields, groups, varData, level - 1);
+        RustGenerator.appendImplSbeToStringForSubgroupDecoder(sb, name, fields, groups, varData, level - 1);
     }
 
     void appendTo(final Appendable dest) throws IOException
