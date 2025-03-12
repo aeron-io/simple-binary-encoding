@@ -171,7 +171,7 @@ jar.enabled = false
 subprojects {
     apply plugin: 'java-library'
     apply plugin: 'jvm-test-suite'
-    // apply plugin: 'checkstyle'
+    apply plugin: 'checkstyle'
 
     group = sbeGroup
     version = sbeVersion

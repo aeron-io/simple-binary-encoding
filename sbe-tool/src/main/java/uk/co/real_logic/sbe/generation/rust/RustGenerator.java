@@ -1139,7 +1139,7 @@ public class RustGenerator implements CodeGenerator
 
             // function to return slice form given coord
             indent(sb, level, "#[inline]\n");
-            indent(sb, level, "pub fn %s_slice(&'a self, coordinates: (usize, usize)) -> &'a [u8] {\n", propertyName);
+            indent(sb, level, "pub fn %s_slice(&'a self, coord: (usize, usize)) -> &'a [u8] {\n", propertyName);
 
             if (varDataToken.version() > 0)
             {
@@ -1149,8 +1149,8 @@ public class RustGenerator implements CodeGenerator
                 indent(sb, level + 1, "}\n\n");
             }
 
-            indent(sb, level + 1, "debug_assert!(self.get_limit() >= coordinates.0 + coordinates.1);\n");
-            indent(sb, level + 1, "self.get_buf().get_slice_at(coordinates.0, coordinates.1)\n");
+            indent(sb, level + 1, "debug_assert!(self.get_limit() >= coord.0 + coord.1);\n");
+            indent(sb, level + 1, "self.get_buf().get_slice_at(coord.0, coord.1)\n");
             indent(sb, level, "}\n\n");
 
             i += varDataToken.componentTokenCount();
