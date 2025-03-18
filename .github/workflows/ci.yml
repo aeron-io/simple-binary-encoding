@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [ '17', '21', '23' ]
+        java: [ '17', '21', '24' ]
         os: [ 'ubuntu-24.04', 'windows-latest', 'macos-latest' ]
     steps:
       - name: Checkout code
