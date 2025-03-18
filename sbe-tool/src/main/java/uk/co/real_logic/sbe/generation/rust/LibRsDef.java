@@ -135,7 +135,8 @@ class LibRsDef
 
     static void generateSbeToString(final Writer writer) throws IOException
     {
-        indent(writer, 0, "/// Returns a human-readable string representation of the SBE message.\n\n");
+        indent(writer, 0, "/// Returns a human-readable string representation of the SBE message.\n");
+        indent(writer, 0, "///\n");
         indent(writer, 0, "/// This trait works like `ToString`, but it takes `self` as value\n");
         indent(writer, 0, "/// to be compatible with the generated decoders.\n");
         indent(writer, 0, "pub trait SbeToString: Sized {\n");
