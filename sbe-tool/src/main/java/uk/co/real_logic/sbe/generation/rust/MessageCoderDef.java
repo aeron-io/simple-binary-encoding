@@ -26,7 +26,7 @@ import java.util.List;
 
 import static uk.co.real_logic.sbe.generation.rust.RustGenerator.CodecType.Encoder;
 import static uk.co.real_logic.sbe.generation.rust.RustGenerator.CodecType.Decoder;
-import static uk.co.real_logic.sbe.generation.rust.RustGenerator.withLifetime;
+import static uk.co.real_logic.sbe.generation.rust.RustGenerator.withBufLifetime;
 import static uk.co.real_logic.sbe.generation.rust.RustUtil.*;
 
 class MessageCoderDef implements RustGenerator.ParentDef
@@ -171,8 +171,8 @@ class MessageCoderDef implements RustGenerator.ParentDef
             indent(out, 1, "#[derive(Debug, Default)]\n");
         }
 
-        indent(out, 1, "pub struct %s {\n", withLifetime(structName));
-        indent(out, 2, "buf: %s,\n", withLifetime(this.codecType.bufType()));
+        indent(out, 1, "pub struct %s {\n", withBufLifetime(structName));
+        indent(out, 2, "buf: %s,\n", withBufLifetime(this.codecType.bufType()));
         indent(out, 2, "initial_offset: usize,\n");
         indent(out, 2, "offset: usize,\n");
         indent(out, 2, "limit: usize,\n");
@@ -190,7 +190,7 @@ class MessageCoderDef implements RustGenerator.ParentDef
         {
             indent(out, 2, "pub fn wrap(\n");
             indent(out, 3, "mut self,\n");
-            indent(out, 3, "buf: %s,\n", withLifetime(this.codecType.bufType()));
+            indent(out, 3, "buf: %s,\n", withBufLifetime(this.codecType.bufType()));
             indent(out, 3, "offset: usize,\n");
             indent(out, 3, "acting_block_length: %s,\n", blockLengthType());
             indent(out, 3, "acting_version: %s,\n", schemaVersionType());
@@ -200,7 +200,7 @@ class MessageCoderDef implements RustGenerator.ParentDef
         else
         {
             indent(out, 2, "pub fn wrap(mut self, buf: %s, offset: usize) -> Self {\n",
-                withLifetime(this.codecType.bufType()));
+                withBufLifetime(this.codecType.bufType()));
             indent(out, 3, "let limit = offset + SBE_BLOCK_LENGTH as usize;\n");
         }
 
