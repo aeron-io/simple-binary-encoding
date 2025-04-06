@@ -1771,7 +1771,7 @@ public class JavaDtoGenerator implements CodeGenerator
                 fields.add(fieldName);
 
                 classBuilder.appendField()
-                    .append(indent).append("boolean ").append(fieldName).append(";\n");
+                    .append(indent).append("private boolean ").append(fieldName).append(";\n");
 
                 classBuilder.appendPublic()
                     .append("\n")
@@ -1782,7 +1782,7 @@ public class JavaDtoGenerator implements CodeGenerator
 
                 classBuilder.appendPublic()
                     .append("\n")
-                    .append(indent).append(dtoClassName).append(" ")
+                    .append(indent).append("public ").append(dtoClassName).append(" ")
                     .append(formattedPropertyName).append("(boolean value)\n")
                     .append(indent).append("{\n")
                     .append(indent).append(INDENT).append("this.").append(fieldName).append(" = value;\n")
@@ -1792,7 +1792,8 @@ public class JavaDtoGenerator implements CodeGenerator
         }
 
         final StringBuilder clearBuilder = classBuilder.appendPublic()
-            .append(indent).append(dtoClassName).append(" clear()\n")
+            .append("\n")
+            .append(indent).append("public ").append(dtoClassName).append(" clear()\n")
             .append(indent).append("{\n");
 
         for (final String field : fields)
