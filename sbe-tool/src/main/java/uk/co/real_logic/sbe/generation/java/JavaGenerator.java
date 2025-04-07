@@ -49,6 +49,7 @@ public class JavaGenerator implements CodeGenerator
     static final String MESSAGE_HEADER_ENCODER_TYPE = "MessageHeaderEncoder";
     static final String MESSAGE_HEADER_DECODER_TYPE = "MessageHeaderDecoder";
 
+    @SuppressWarnings("JavadocVariable")
     enum CodecType
     {
         DECODER,

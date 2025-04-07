@@ -163,6 +163,7 @@ public class CSharpUtil
             indent + "/// </summary>\n";
     }
 
+    @SuppressWarnings("JavadocVariable")
     enum Separators
     {
         BEGIN_GROUP('['),

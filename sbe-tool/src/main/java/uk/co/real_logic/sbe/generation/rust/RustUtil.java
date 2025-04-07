@@ -313,6 +313,7 @@ public class RustUtil
         return indent(appendable, level).append(format(f, args));
     }
 
+    @SuppressWarnings("JavadocVariable")
     enum ReservedKeyword
     {
         Abstract, AlignOf, As, Async, Become, Box, Break, Const, Continue,

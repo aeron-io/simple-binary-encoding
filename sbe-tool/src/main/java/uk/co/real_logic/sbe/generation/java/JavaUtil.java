@@ -39,6 +39,7 @@ public class JavaUtil
     /**
      * Separator symbols for {@link Object#toString()} implementations on codecs.
      */
+    @SuppressWarnings("JavadocVariable")
     enum Separator
     {
         BEGIN_GROUP('['),
