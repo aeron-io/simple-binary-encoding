@@ -3,8 +3,6 @@ name: Slow checks
 on:
   workflow_call:
   workflow_dispatch:
-    branches:
-      - '**'
   schedule:
     - cron: '0 12 * * *'
   push:
@@ -58,6 +56,8 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: ${{ env.JAVA_VERSION }}
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
       - name: Setup dotnet
         uses: actions/setup-dotnet@v2
         with:
