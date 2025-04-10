@@ -1,4 +1,4 @@
-<messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe" package="issue1060" id="1060" version="2"
+<messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe" package="issue1066" id="1066" version="2"
 	semanticVersion="1.0.0" byteOrder="littleEndian">
 	<types>
 		<composite name="messageHeader">
@@ -11,7 +11,7 @@
 			<type name="version" primitiveType="uint16" description="Schema version." />
 		</composite>
 	</types>
-	<message name="issue1060" id="1">
+	<message name="issue1066" id="1">
 		<field name="field" id="1" type="uint16" semanticType="Int" sinceVersion="2"
 			presence="optional" />
 	</message>
