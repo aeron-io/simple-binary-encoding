@@ -233,6 +233,8 @@ class SubGroup implements RustGenerator.ParentDef
         RustGenerator.generateDecoderVarData(sb, varData, level, true);
 
         indent(sb, level - 1, "}\n\n"); // close impl
+
+        RustGenerator.appendImplSbeToStringForSubgroupDecoder(sb, name, fields, groups, varData, level - 1);
     }
 
     void appendTo(final Appendable dest) throws IOException
