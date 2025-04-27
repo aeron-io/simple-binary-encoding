@@ -1650,7 +1650,10 @@ public class GolangGenerator implements CodeGenerator
         String comma = "";
         for (final Token token : tokens)
         {
-            // In Go a composite‐literal’s elements must either be untyped constants (which are assignable to any compatible numeric type) or exactly the same type as the field. So the untyped constants, such 0, 1 works fine, but if using the primite type such as uint64{0} would not works here.
+          // In Go a composite‐literal’s elements must either be untyped constants.
+          //  (which are assignable to any compatible numeric type) or exactly the same type as the field.
+          // So the untyped constants, such 0, 1 works fine,
+          //  but if using the primite type such as uint64{0} would not works here.
             sb.append(comma)
                 .append(token.encoding().constValue().toString());
             comma = ", ";
