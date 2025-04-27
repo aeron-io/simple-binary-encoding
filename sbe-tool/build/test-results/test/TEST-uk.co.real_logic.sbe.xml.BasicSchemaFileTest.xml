@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="uk.co.real_logic.sbe.xml.BasicSchemaFileTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2025-04-27T08:25:29" hostname="chendengliangdeMacBook-Pro.local" time="0.033">
+  <properties/>
+  <testcase name="shouldHandleBasicFile" classname="uk.co.real_logic.sbe.xml.BasicSchemaFileTest" time="0.006"/>
+  <testcase name="shouldHandleBasicAllTypes" classname="uk.co.real_logic.sbe.xml.BasicSchemaFileTest" time="0.011"/>
+  <testcase name="shouldHandleBasicFileWithGroup" classname="uk.co.real_logic.sbe.xml.BasicSchemaFileTest" time="0.005"/>
+  <testcase name="shouldHandleConstantHeaderField" classname="uk.co.real_logic.sbe.xml.BasicSchemaFileTest" time="0.005"/>
+  <testcase name="shouldHandleBasicFileWithVariableLengthData" classname="uk.co.real_logic.sbe.xml.BasicSchemaFileTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

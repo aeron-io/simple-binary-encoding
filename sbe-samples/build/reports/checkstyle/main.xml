@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="8.17">
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/src/main/java/uk/co/real_logic/sbe/examples/ExampleTokenListener.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/src/main/java/uk/co/real_logic/sbe/examples/ExampleUsingGeneratedStub.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/src/main/java/uk/co/real_logic/sbe/examples/ExampleUsingGeneratedStubExtension.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/src/main/java/uk/co/real_logic/sbe/examples/OtfExample.java">
+</file>
+</checkstyle>

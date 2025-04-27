@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="uk.co.real_logic.sbe.ir.BasicXmlIrGenerationTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2025-04-27T08:25:29" hostname="chendengliangdeMacBook-Pro.local" time="0.044">
+  <properties/>
+  <testcase name="shouldGenerateCorrectIrForMessageWithRepeatingGroupWithEmbeddedDimensions" classname="uk.co.real_logic.sbe.ir.BasicXmlIrGenerationTest" time="0.009"/>
+  <testcase name="shouldGenerateCorrectIrForMessageWithRepeatingGroupWithEmbeddedDimensionsDefaultDimensionType" classname="uk.co.real_logic.sbe.ir.BasicXmlIrGenerationTest" time="0.009"/>
+  <testcase name="shouldGenerateCorrectIrForMessageWithVariableLengthField" classname="uk.co.real_logic.sbe.ir.BasicXmlIrGenerationTest" time="0.005"/>
+  <testcase name="shouldGenerateCorrectIrForMessageWithVariableLengthFieldWithEmbeddedLength" classname="uk.co.real_logic.sbe.ir.BasicXmlIrGenerationTest" time="0.007"/>
+  <testcase name="shouldGenerateCorrectIrForBasicMessage" classname="uk.co.real_logic.sbe.ir.BasicXmlIrGenerationTest" time="0.005"/>
+  <testcase name="shouldGenerateCorrectIrForMessageHeader" classname="uk.co.real_logic.sbe.ir.BasicXmlIrGenerationTest" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

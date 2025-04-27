@@ -14,9 +14,9 @@
 build-local.properties
 deps
 /bin
-build
+# build
 .gradle
-target
+3 target
 GTAGS
 GRTAGS
 GPATH
@@ -29,15 +29,15 @@ out
 codecs
 
 # cpp build linux
-cppbuild/CMakeCache.txt
-cppbuild/CMakeFiles/
-cppbuild/CTestTestfile.cmake
-cppbuild/Makefile
-cppbuild/Testing/
-cppbuild/aeron-common/
-cppbuild/aeron-samples/
-cppbuild/binaries/
-cppbuild/cmake_install.cmake
+# cppbuild/CMakeCache.txt
+# cppbuild/CMakeFiles/
+# cppbuild/CTestTestfile.cmake
+# cppbuild/Makefile
+# cppbuild/Testing/
+# cppbuild/aeron-common/
+# cppbuild/aeron-samples/
+# cppbuild/binaries/
+# cppbuild/cmake_install.cmake
 
 # cpp build windows
 cppbuild/*.opensdf

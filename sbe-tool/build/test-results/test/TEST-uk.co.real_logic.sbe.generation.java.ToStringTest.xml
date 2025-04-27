@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="uk.co.real_logic.sbe.generation.java.ToStringTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2025-04-27T08:25:33" hostname="chendengliangdeMacBook-Pro.local" time="0.004">
+  <properties/>
+  <testcase name="emptyMessagePrinted" classname="uk.co.real_logic.sbe.generation.java.ToStringTest" time="0.004"/>
+  <testcase name="exampleMessagePrinted" classname="uk.co.real_logic.sbe.generation.java.ToStringTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

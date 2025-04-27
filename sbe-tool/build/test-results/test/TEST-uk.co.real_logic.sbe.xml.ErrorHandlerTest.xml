@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="uk.co.real_logic.sbe.xml.ErrorHandlerTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2025-04-27T08:25:29" hostname="chendengliangdeMacBook-Pro.local" time="0.045">
+  <properties/>
+  <testcase name="shouldExitAfterTypesWhenDupTypesDefined" classname="uk.co.real_logic.sbe.xml.ErrorHandlerTest" time="0.007"/>
+  <testcase name="shouldExitInvalidFieldNames" classname="uk.co.real_logic.sbe.xml.ErrorHandlerTest" time="0.006"/>
+  <testcase name="shouldExitAfterMessageWhenGroupDimensionsNotComposite" classname="uk.co.real_logic.sbe.xml.ErrorHandlerTest" time="0.004"/>
+  <testcase name="shouldNotExitOnTypeErrorsAndWarnings" classname="uk.co.real_logic.sbe.xml.ErrorHandlerTest" time="0.01"/>
+  <testcase name="shouldExitAfterTypes" classname="uk.co.real_logic.sbe.xml.ErrorHandlerTest" time="0.003"/>
+  <testcase name="shouldExitAfterTypesWhenCompositeOffsetsIncorrect" classname="uk.co.real_logic.sbe.xml.ErrorHandlerTest" time="0.004"/>
+  <testcase name="shouldExitAfterMessage" classname="uk.co.real_logic.sbe.xml.ErrorHandlerTest" time="0.006"/>
+  <testcase name="shouldExitAfterMessageWhenDupMessageIdsDefined" classname="uk.co.real_logic.sbe.xml.ErrorHandlerTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

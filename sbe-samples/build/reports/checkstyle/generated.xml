@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="8.17">
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/BooleanType.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/BoostType.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/BoosterDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/BoosterEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/CarDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/CarEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/EngineDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/EngineEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/GroupSizeEncodingDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/GroupSizeEncodingEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/MessageHeaderDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/MessageHeaderEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/MetaAttribute.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/Model.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/OptionalExtrasDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/OptionalExtrasEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/VarStringEncodingDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/baseline/VarStringEncodingEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/BooleanType.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/BoostType.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/BoosterDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/BoosterEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/CarDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/CarEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/EngineDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/EngineEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/GroupSizeEncodingDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/GroupSizeEncodingEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/MessageHeaderDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/MessageHeaderEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/MetaAttribute.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/Model.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/OptionalExtrasDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/OptionalExtrasEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/VarStringEncodingDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/generated/extension/VarStringEncodingEncoder.java">
+</file>
+</checkstyle>

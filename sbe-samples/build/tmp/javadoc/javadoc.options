@@ -1,0 +1,10 @@
+-bottom '<i>Copyright &#169; 2014-2019 Real Logic Ltd. All Rights Reserved.</i>'
+-classpath '/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/classes/java/main:/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/resources/main:/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/classes/java/generated:/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/libs/sbe-tool-1.12.0.jar:/Users/ethan/.gradle/caches/modules-2/files-2.1/org.agrona/agrona/0.9.31/56014757f084ead33d6a29f8dbad9b4cb765bdf/agrona-0.9.31.jar'
+-d '/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/build/docs/javadoc'
+-doctitle '<h1>Simple Binary Encoding</h1>'
+-quiet 
+-windowtitle '<h1>Simple Binary Encoding</h1>'
+'/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/src/main/java/uk/co/real_logic/sbe/examples/ExampleTokenListener.java'
+'/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/src/main/java/uk/co/real_logic/sbe/examples/ExampleUsingGeneratedStub.java'
+'/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/src/main/java/uk/co/real_logic/sbe/examples/ExampleUsingGeneratedStubExtension.java'
+'/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-samples/src/main/java/uk/co/real_logic/sbe/examples/OtfExample.java'

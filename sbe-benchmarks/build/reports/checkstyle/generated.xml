@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="8.17">
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/BooleanType.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/CarDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/CarEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/EngineDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/EngineEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/GroupSizeEncodingDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/GroupSizeEncodingEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/MessageHeaderDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/MessageHeaderEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/MetaAttribute.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/Model.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/OptionalExtrasDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/OptionalExtrasEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/VarStringEncodingDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/VarStringEncodingEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/BooleanType.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/CtiCode.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/CustOrderHandlingInst.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/CustomerOrFirm.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/Decimal64Decoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/Decimal64Encoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/GroupSizeEncodingDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/GroupSizeEncodingEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/HandInst.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/IntQty32Decoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/IntQty32Encoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/MDEntryType.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/MDQuoteType.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/MDUpdateAction.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/MMProtectionReset.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/MarketDataIncrementalRefreshDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/MarketDataIncrementalRefreshEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/MarketDataIncrementalRefreshTradesDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/MarketDataIncrementalRefreshTradesEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/MarketStateIdentifier.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/MassQuoteDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/MassQuoteEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/MatchEventIndicator.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/MessageHeaderDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/MessageHeaderEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/MetaAttribute.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/NewOrderDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/NewOrderEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/NoAllocs.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/OFMOverride.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/OpenCloseSettleFlag.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/OptionalPriceDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/OptionalPriceEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/OrdType.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/OrderCancelReplaceRequestDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/OrderCancelReplaceRequestEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/OrderCancelRequestDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/OrderCancelRequestEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/QuoteConditionDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/QuoteConditionEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/SecurityIDSource.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/Side.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/TickDirection.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/TimeInForce.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/TradeConditionDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-benchmarks/build/generated/uk/co/real_logic/sbe/benchmarks/fix/TradeConditionEncoder.java">
+</file>
+</checkstyle>

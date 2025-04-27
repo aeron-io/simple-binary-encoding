@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="uk.co.real_logic.sbe.xml.SetTypeTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2025-04-27T08:25:29" hostname="chendengliangdeMacBook-Pro.local" time="0.038">
+  <properties/>
+  <testcase name="shouldThrowExceptionWhenDuplicateNameSpecified" classname="uk.co.real_logic.sbe.xml.SetTypeTest" time="0.004"/>
+  <testcase name="shouldThrowExceptionWhenIllegalEncodingTypeSpecified" classname="uk.co.real_logic.sbe.xml.SetTypeTest" time="0.002"/>
+  <testcase name="shouldHandleEncodingTypesWithNamedTypes" classname="uk.co.real_logic.sbe.xml.SetTypeTest" time="0.023"/>
+  <testcase name="shouldThrowExceptionWhenValueOutOfBoundsSpecified" classname="uk.co.real_logic.sbe.xml.SetTypeTest" time="0.002"/>
+  <testcase name="shouldHandleSetTypeList" classname="uk.co.real_logic.sbe.xml.SetTypeTest" time="0.002"/>
+  <testcase name="shouldThrowExceptionWhenDuplicateValueSpecified" classname="uk.co.real_logic.sbe.xml.SetTypeTest" time="0.002"/>
+  <testcase name="shouldHandleBinarySetType" classname="uk.co.real_logic.sbe.xml.SetTypeTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

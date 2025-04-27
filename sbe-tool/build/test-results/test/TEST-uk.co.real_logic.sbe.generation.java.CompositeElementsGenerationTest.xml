@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="uk.co.real_logic.sbe.generation.java.CompositeElementsGenerationTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2025-04-27T08:25:33" hostname="chendengliangdeMacBook-Pro.local" time="0.051">
+  <properties/>
+  <testcase name="shouldOtfDecodeCorrectly" classname="uk.co.real_logic.sbe.generation.java.CompositeElementsGenerationTest" time="0.047"/>
+  <testcase name="shouldDecodeCorrectly" classname="uk.co.real_logic.sbe.generation.java.CompositeElementsGenerationTest" time="0.002"/>
+  <testcase name="shouldDisplayCorrectly" classname="uk.co.real_logic.sbe.generation.java.CompositeElementsGenerationTest" time="0.001"/>
+  <testcase name="shouldEncodeCorrectly" classname="uk.co.real_logic.sbe.generation.java.CompositeElementsGenerationTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

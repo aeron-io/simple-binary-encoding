@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" tests="22" skipped="0" failures="0" errors="0" timestamp="2025-04-27T08:25:34" hostname="chendengliangdeMacBook-Pro.local" time="2.875">
+  <properties/>
+  <testcase name="shouldGenerateGetString" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.294"/>
+  <testcase name="shouldGenerateCharEnumStub" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.055"/>
+  <testcase name="shouldValidateMissingMutableBufferClass" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.009"/>
+  <testcase name="shouldGenerateRepeatingGroupDecoder" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.233"/>
+  <testcase name="shouldGenerateBasicMessage" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.112"/>
+  <testcase name="shouldGenerateReadOnlyMessage" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.196"/>
+  <testcase name="shouldGenerateUint8EnumStub" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.069"/>
+  <testcase name="shouldGenerateVarDataCodecs" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.316"/>
+  <testcase name="shouldGenerateCompositeDecoder" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.082"/>
+  <testcase name="shouldGenerateMessageHeaderStub" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.077"/>
+  <testcase name="shouldGenerateCompositeDecoding" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.242"/>
+  <testcase name="shouldGenerateMessageHeaderDecoderStub" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.047"/>
+  <testcase name="shouldGenerateCompositeEncoder" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.053"/>
+  <testcase name="shouldGenerateGetFixedLengthStringUsingAppendable" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.191"/>
+  <testcase name="shouldGeneratePutCharSequence" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.205"/>
+  <testcase name="shouldGenerateGetVariableStringUsingAppendable" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.207"/>
+  <testcase name="shouldGenerateBitSetCodecs" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.221"/>
+  <testcase name="shouldValidateNotImplementedMutableBufferClass" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.006"/>
+  <testcase name="shouldGenerateChoiceSetStub" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.055"/>
+  <testcase name="shouldGenerateEnumCodecs" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.184"/>
+  <testcase name="shouldValidateNotImplementedReadOnlyBufferClass" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.012"/>
+  <testcase name="shouldValidateMissingReadOnlyBufferClass" classname="uk.co.real_logic.sbe.generation.java.JavaGeneratorTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="8.17">
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/EncodedCarTestBase.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/TargetCodeGeneratorTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/TestTargetLanguage.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/TestUtil.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/codec/java/TypesTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/generation/csharp/Issue567GroupSizeTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/generation/java/CompositeElementsGenerationTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/generation/java/ConstantCharArrayTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/generation/java/GenerateFixBinaryTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/generation/java/JavaGeneratorTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/generation/java/PackageOutputManagerTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/generation/java/ReflectionUtil.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/generation/java/SchemaExtensionTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/generation/java/ToStringTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/generation/rust/RustFlatFileOutputManagerTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/generation/rust/RustGeneratorTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/generation/rust/RustTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/generation/rust/RustUtilTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/generation/rust/SingleStringOutputManager.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/ir/BasicXmlIrGenerationTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/ir/CompositeElementsIrTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/ir/CompositeOffsetsTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/ir/CompositeRefsTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/ir/EncodedIrTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/ir/GroupWithDataIrTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/ir/ValueRefsTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/json/JsonPrinterTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/xml/BasicSchemaFileTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/xml/CompositeElementsTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/xml/CompositeTypeTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/xml/CyclicReferencesTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/xml/EmbeddedLengthAndCountFileTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/xml/EncodedDataTypeTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/xml/EnumTypeTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/xml/ErrorHandlerTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/xml/GroupWithDataTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/xml/OffsetFileTest.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/test/java/uk/co/real_logic/sbe/xml/SetTypeTest.java">
+</file>
+</checkstyle>

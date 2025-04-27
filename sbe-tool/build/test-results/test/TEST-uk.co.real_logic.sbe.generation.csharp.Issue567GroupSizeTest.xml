@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="uk.co.real_logic.sbe.generation.csharp.Issue567GroupSizeTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2025-04-27T08:25:37" hostname="chendengliangdeMacBook-Pro.local" time="0.023">
+  <properties/>
+  <testcase name="shouldThrowWhenUsingATypeThatIsNotConstrainedToFitInAnIntAsTheGroupSize" classname="uk.co.real_logic.sbe.generation.csharp.Issue567GroupSizeTest" time="0.015"/>
+  <testcase name="shouldGenerateWhenUsingATypeThatIsConstrainedToFitInAnIntAsTheGroupSize" classname="uk.co.real_logic.sbe.generation.csharp.Issue567GroupSizeTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="8.17">
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/baseline/BooleanType.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/baseline/CarDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/baseline/CarEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/baseline/EngineDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/baseline/EngineEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/baseline/GroupSizeEncodingDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/baseline/GroupSizeEncodingEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/baseline/MessageHeaderDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/baseline/MessageHeaderEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/baseline/MetaAttribute.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/baseline/Model.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/baseline/OptionalExtrasDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/baseline/OptionalExtrasEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/baseline/VarStringEncodingDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/baseline/VarStringEncodingEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/composite/elements/EnumOne.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/composite/elements/InnerDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/composite/elements/InnerEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/composite/elements/MessageHeaderDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/composite/elements/MessageHeaderEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/composite/elements/MetaAttribute.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/composite/elements/MsgDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/composite/elements/MsgEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/composite/elements/OuterDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/composite/elements/OuterEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/composite/elements/SetOneDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/build/generated/composite/elements/SetOneEncoder.java">
+</file>
+</checkstyle>

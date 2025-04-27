@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="uk.co.real_logic.sbe.generation.rust.RustGeneratorTest" tests="9" skipped="4" failures="0" errors="0" timestamp="2025-04-27T08:25:30" hostname="chendengliangdeMacBook-Pro.local" time="0.147">
+  <properties/>
+  <testcase name="nullOutputManagerTossesNpe" classname="uk.co.real_logic.sbe.generation.rust.RustGeneratorTest" time="0.001"/>
+  <testcase name="checkValidRustFromAllExampleSchema" classname="uk.co.real_logic.sbe.generation.rust.RustGeneratorTest" time="0.035">
+    <skipped/>
+  </testcase>
+  <testcase name="constantEnumFields" classname="uk.co.real_logic.sbe.generation.rust.RustGeneratorTest" time="0.014">
+    <skipped/>
+  </testcase>
+  <testcase name="fullGenerateBasicTypes" classname="uk.co.real_logic.sbe.generation.rust.RustGeneratorTest" time="0.009"/>
+  <testcase name="generateSharedImports" classname="uk.co.real_logic.sbe.generation.rust.RustGeneratorTest" time="0.02"/>
+  <testcase name="nullIrTossesNpe" classname="uk.co.real_logic.sbe.generation.rust.RustGeneratorTest" time="0.001"/>
+  <testcase name="generateBasicEnum" classname="uk.co.real_logic.sbe.generation.rust.RustGeneratorTest" time="0.008"/>
+  <testcase name="fullGenerateBroadUseCase" classname="uk.co.real_logic.sbe.generation.rust.RustGeneratorTest" time="0.038">
+    <skipped/>
+  </testcase>
+  <testcase name="constantFieldsCase" classname="uk.co.real_logic.sbe.generation.rust.RustGeneratorTest" time="0.019">
+    <skipped/>
+  </testcase>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

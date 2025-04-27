@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="uk.co.real_logic.sbe.ir.CompositeElementsIrTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2025-04-27T08:25:28" hostname="chendengliangdeMacBook-Pro.local" time="0.142">
+  <properties/>
+  <testcase name="shouldGenerateCorrectIrForCompositeWithRefSchema" classname="uk.co.real_logic.sbe.ir.CompositeElementsIrTest" time="0.105"/>
+  <testcase name="shouldGenerateCorrectIrForCompositeElementsWithOffsetsSchemaRc4" classname="uk.co.real_logic.sbe.ir.CompositeElementsIrTest" time="0.023"/>
+  <testcase name="shouldGenerateCorrectIrForCompositeElementsSchema" classname="uk.co.real_logic.sbe.ir.CompositeElementsIrTest" time="0.012"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

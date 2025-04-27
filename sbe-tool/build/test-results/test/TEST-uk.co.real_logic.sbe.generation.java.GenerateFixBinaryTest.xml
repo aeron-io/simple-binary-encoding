@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="uk.co.real_logic.sbe.generation.java.GenerateFixBinaryTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2025-04-27T08:25:30" hostname="chendengliangdeMacBook-Pro.local" time="2.685">
+  <properties/>
+  <testcase name="shouldGenerateValidJava" classname="uk.co.real_logic.sbe.generation.java.GenerateFixBinaryTest" time="2.459"/>
+  <testcase name="shouldGenerateAndEncodeIr" classname="uk.co.real_logic.sbe.generation.java.GenerateFixBinaryTest" time="0.226"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

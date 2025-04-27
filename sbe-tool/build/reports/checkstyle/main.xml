@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="8.17">
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/PrimitiveType.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/PrimitiveValue.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/SbeTool.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/codec/java/GroupOrder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/codec/java/MethodSelector.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/CodeGenerator.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/Generators.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/NamedToken.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/TargetCodeGenerator.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/TargetCodeGeneratorLoader.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/cpp/CppGenerator.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/cpp/CppUtil.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/cpp/NamespaceOutputManager.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/csharp/CSharp.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/csharp/CSharpGenerator.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/csharp/CSharpNamespaceOutputManager.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/csharp/CSharpUtil.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/golang/GolangGenerator.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/golang/GolangOutputManager.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/golang/GolangUtil.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/java/JavaGenerator.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/java/JavaUtil.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/rust/Rust.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/rust/RustCodecType.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/rust/RustFlatFileOutputManager.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/rust/RustGenerator.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/rust/RustUtil.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/generation/rust/SplitCompositeTokens.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/Encoding.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/GenerationUtil.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/HeaderStructure.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/Ir.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/IrDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/IrEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/IrUtil.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/MessageComponents.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/Signal.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/Token.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/generated/ByteOrderCodec.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/generated/FrameCodecDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/generated/FrameCodecEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/generated/MessageHeaderDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/generated/MessageHeaderEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/generated/MetaAttribute.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/generated/PresenceCodec.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/generated/PrimitiveTypeCodec.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/generated/SignalCodec.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/generated/TokenCodecDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/generated/TokenCodecEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/generated/VarDataEncodingDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/ir/generated/VarDataEncodingEncoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/json/JsonPrinter.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/json/JsonTokenListener.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/otf/AbstractTokenListener.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/otf/OtfHeaderDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/otf/OtfMessageDecoder.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/otf/TokenListener.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/otf/Types.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/util/ValidationUtil.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/xml/CompositeType.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/xml/EncodedDataType.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/xml/EnumType.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/xml/ErrorHandler.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/xml/Field.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/xml/IrGenerator.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/xml/Message.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/xml/MessageSchema.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/xml/ParserOptions.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/xml/Presence.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/xml/SetType.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/xml/Type.java">
+</file>
+<file name="/Users/ethan/dev/project-repo/git/research/2-communi-core/simple-binary-encoding/sbe-tool/src/main/java/uk/co/real_logic/sbe/xml/XmlSchemaParser.java">
+</file>
+</checkstyle>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="uk.co.real_logic.sbe.ir.GroupWithDataIrTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2025-04-27T08:25:29" hostname="chendengliangdeMacBook-Pro.local" time="0.072">
+  <properties/>
+  <testcase name="shouldGenerateCorrectIrForSingleVarDataInRepeatingGroup" classname="uk.co.real_logic.sbe.ir.GroupWithDataIrTest" time="0.021"/>
+  <testcase name="shouldGenerateCorrectIrForMultipleVarDataInRepeatingGroup" classname="uk.co.real_logic.sbe.ir.GroupWithDataIrTest" time="0.026"/>
+  <testcase name="shouldGenerateCorrectIrForOnlyMultipleVarDataInRepeatingGroup" classname="uk.co.real_logic.sbe.ir.GroupWithDataIrTest" time="0.013"/>
+  <testcase name="shouldGenerateCorrectIrForVarDataInNestedRepeatingGroup" classname="uk.co.real_logic.sbe.ir.GroupWithDataIrTest" time="0.012"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
