@@ -172,14 +172,14 @@ subprojects {
     group = sbeGroup
     version = sbeVersion
 
+    checkstyle.toolVersion = libs.versions.checkstyle.get()
+
     java {
         toolchain {
             languageVersion = JavaLanguageVersion.of(buildJavaVersion)
         }
         sourceCompatibility = JavaVersion.VERSION_17
     }
-
-    checkstyle.toolVersion = libs.versions.checkstyle.get()
 
     tasks.withType(Sign).configureEach {
         onlyIf {
