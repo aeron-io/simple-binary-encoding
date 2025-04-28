@@ -131,7 +131,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [ '11', '12', '13', '14' ]
+        version: [ '11', '12', '13', '14', '15' ]
     env:
       CC: gcc-${{ matrix.version }}
       CXX: g++-${{ matrix.version }}
@@ -167,7 +167,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [ '13', '14', '15', '16', '17', '18' ]
+        version: [ '13', '14', '15', '16', '17', '18', '19', '20' ]
     env:
       CC: clang-${{ matrix.version }}
       CXX: clang++-${{ matrix.version }}
