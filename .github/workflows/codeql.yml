@@ -146,7 +146,7 @@ jobs:
       fail-fast: false
       matrix:
         language: ['cpp']
-        version: [ '15' ]
+        version: [ '14' ]
     env:
       CC: gcc-${{ matrix.version }}
       CXX: g++-${{ matrix.version }}
