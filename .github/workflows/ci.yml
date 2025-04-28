@@ -298,7 +298,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [ '1.22.x' ]
+        version: [ '1.23.x', '1.24.x' ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
