@@ -1,6 +1,6 @@
 [versions]
 agrona = "2.1.0"
-checkstyle = "10.23.1"
+checkstyle = "10.24.0"
 commons-codec = "1.15"
 commons-lang3 = "3.8.1"
 hamcrest = "3.0"
