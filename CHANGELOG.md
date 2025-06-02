@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.35.1] - 2025-06-02
+### Changed
+* Bump `Agrona` to 2.2.1.
+* Bump `JUnit` to 5.13.0.
+
 ## [1.35.0] - 2025-05-26
 ### Changed
 * Update `Implementation-Vendor`.
@@ -69,6 +74,7 @@
 * **Java:** Prevent collision when field name is 'value'.
 * **Java:** Preserve byte order throughout IR transformations.
 
+[1.35.1]: https://github.com/aeron-io/simple-binary-encoding/releases/tag/1.35.1
 [1.35.0]: https://github.com/aeron-io/simple-binary-encoding/releases/tag/1.35.0
 [1.34.1]: https://github.com/aeron-io/simple-binary-encoding/releases/tag/1.34.1
 [1.34.0]: https://github.com/aeron-io/simple-binary-encoding/releases/tag/1.34.0
