@@ -1122,7 +1122,7 @@ tasks.named('dependencyUpdates').configure {
 tasks.register('uploadArtifactsToCentralPortal', uk.co.real_logic.sbe.build.SonatypeCentralPortalUploadRepositoryTask) {
     portalUsername.set(sonatypeCentralPortalUsername)
     portalPassword.set(sonatypeCentralPortalPassword)
-    groupId.set(aeronGroup)
+    groupId.set(sbeGroup)
     snapshotRelease.set(!isReleaseVersion)
 }
 
