@@ -2,9 +2,10 @@
 
 ## [1.35.2] - 2025-06-06
 ### Changed
-* Publish release artifacts to Central Portal using OSSRH Staging API service.
-* Bump `Agrona` to 2.2.2.
-* Bump `Checkstyle` to 10.25.0.
+* **Java:** Publish release artifacts to Central Portal using OSSRH Staging API service.
+* **Java:** Bump `Agrona` to 2.2.2.
+* **Java:** Bump `Checkstyle` to 10.25.0.
+* **Java:** Bump `Gradle` to 8.14.2.
 
 ## [1.35.1] - 2025-06-02
 ### Changed
