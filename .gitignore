@@ -19,14 +19,16 @@
 build-local.properties
 deps
 */bin
-build
-.gradle
-target
+build/
+!buildSrc/
+!buildSrc/src/**/build
+.gradle/
+target/
 GTAGS
 GRTAGS
 GPATH
 prop
-out
+out/
 .vs/
 .vscode
 

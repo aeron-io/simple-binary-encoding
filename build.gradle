@@ -53,26 +53,30 @@ def toolchainLauncher = javaToolchains.launcherFor {
 def sbeGroup = 'uk.co.real-logic'
 def sbeVersion = file('version.txt').text.trim()
 
+def getConfigProperty(final String projectPropertyName, final String envVarName) {
+    String value = project.findProperty(projectPropertyName)
+    if (!value) {
+        value = System.getenv(envVarName)
+        if (!value) {
+            return null
+        }
+    }
+
+    value = value.trim()
+
+    return value ? value : null
+}
+
 ext {
     isReleaseVersion = !sbeVersion.endsWith('-SNAPSHOT')
-    releasesRepoUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
-    snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
 
-    if (!project.hasProperty('ossrhUsername')) {
-        ossrhUsername = ''
-    }
+    sonatypeCentralPortalReleasesRepoUrl = 'https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/'
+    sonatypeCentralPortalSnapshotsRepoUrl = 'https://central.sonatype.com/repository/maven-snapshots/'
+    sonatypeCentralPortalUsername = getConfigProperty('sonatypeCentralPortalUsername', 'SONATYPE_CENTRAL_PORTAL_USERNAME')
+    sonatypeCentralPortalPassword = getConfigProperty('sonatypeCentralPortalPassword', 'SONATYPE_CENTRAL_PORTAL_PASSWORD')
 
-    if (!project.hasProperty('ossrhPassword')) {
-        ossrhPassword = ''
-    }
-
-    if (!project.hasProperty('signingKey')) {
-        signingKey = null
-    }
-
-    if (!project.hasProperty('signingPassword')) {
-        signingPassword = null
-    }
+    signingKey = getConfigProperty('signingKey', 'SIGNING_GPG_SECRET_KEY')         // NOTE: ASCII armored secret key
+    signingPassword = getConfigProperty('signingPassword', 'SIGNING_GPG_PASSWORD') // NOTE: Plain text
 }
 
 def projectPom = {
@@ -389,10 +393,10 @@ project(':sbe-tool') {
 
         repositories {
             maven {
-                url = !isReleaseVersion ? snapshotsRepoUrl : releasesRepoUrl
+                url = !isReleaseVersion ? sonatypeCentralPortalSnapshotsRepoUrl : sonatypeCentralPortalReleasesRepoUrl
                 credentials {
-                    username = ossrhUsername
-                    password = ossrhPassword
+                    username = sonatypeCentralPortalUsername
+                    password = sonatypeCentralPortalPassword
                 }
             }
         }
@@ -459,10 +463,10 @@ project(':sbe-all') {
         }
         repositories {
             maven {
-                url = !isReleaseVersion ? snapshotsRepoUrl : releasesRepoUrl
+                url = !isReleaseVersion ? sonatypeCentralPortalSnapshotsRepoUrl : sonatypeCentralPortalReleasesRepoUrl
                 credentials {
-                    username = ossrhUsername
-                    password = ossrhPassword
+                    username = sonatypeCentralPortalUsername
+                    password = sonatypeCentralPortalPassword
                 }
             }
         }
@@ -579,10 +583,10 @@ project(':sbe-samples') {
 
         repositories {
             maven {
-                url = !isReleaseVersion ? snapshotsRepoUrl : releasesRepoUrl
+                url = !isReleaseVersion ? sonatypeCentralPortalSnapshotsRepoUrl : sonatypeCentralPortalReleasesRepoUrl
                 credentials {
-                    username = ossrhUsername
-                    password = ossrhPassword
+                    username = sonatypeCentralPortalUsername
+                    password = sonatypeCentralPortalPassword
                 }
             }
         }
@@ -1113,6 +1117,13 @@ tasks.named('dependencyUpdates').configure {
     rejectVersionIf {
         isNonStable(it.candidate.version)
     }
+}
+
+tasks.register('uploadArtifactsToCentralPortal', uk.co.real_logic.sbe.build.SonatypeCentralPortalUploadRepositoryTask) {
+    portalUsername.set(sonatypeCentralPortalUsername)
+    portalPassword.set(sonatypeCentralPortalPassword)
+    groupId.set(aeronGroup)
+    snapshotRelease.set(!isReleaseVersion)
 }
 
 wrapper {

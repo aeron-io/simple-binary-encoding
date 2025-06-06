@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.35.2] - 2025-06-06
+### Changed
+* Publish release artifacts to Central Portal using OSSRH Staging API service.
+* Bump `Agrona` to 2.2.2.
+* Bump `Checkstyle` to 10.25.0.
+
 ## [1.35.1] - 2025-06-02
 ### Changed
 * Bump `Agrona` to 2.2.1.
@@ -74,6 +80,7 @@
 * **Java:** Prevent collision when field name is 'value'.
 * **Java:** Preserve byte order throughout IR transformations.
 
+[1.35.2]: https://github.com/aeron-io/simple-binary-encoding/releases/tag/1.35.2
 [1.35.1]: https://github.com/aeron-io/simple-binary-encoding/releases/tag/1.35.1
 [1.35.0]: https://github.com/aeron-io/simple-binary-encoding/releases/tag/1.35.0
 [1.34.1]: https://github.com/aeron-io/simple-binary-encoding/releases/tag/1.34.1
