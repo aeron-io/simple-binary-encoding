@@ -371,14 +371,20 @@ public class JavaDtoGenerator implements CodeGenerator
                     .append(formatPropertyName(propertyName)).append("HeaderLength();\n");
 
                 final String characterEncoding = varDataToken.encoding().characterEncoding();
-                final String lengthAccessor = characterEncoding == null ? ".length" : ".length()";
-                lengthBuilder.append(indent).append(INDENT).append("encodedLength += ")
-                    .append("this.").append(fieldName).append(lengthAccessor);
+                lengthBuilder.append(indent).append(INDENT).append("encodedLength += ");
 
-                final int elementByteLength = varDataToken.encoding().primitiveType().size();
-                if (elementByteLength != 1)
+                if (characterEncoding == null)
                 {
-                    lengthBuilder.append(" * ").append(elementByteLength);
+                    lengthBuilder.append("this.").append(fieldName).append(".length");
+                }
+                else if (JavaUtil.isAsciiEncoding(characterEncoding))
+                {
+                    lengthBuilder.append("this.").append(fieldName).append(".length()");
+                }
+                else
+                {
+                    lengthBuilder.append("this.").append(fieldName)
+                        .append(".getBytes(").append(JavaUtil.charset(characterEncoding)).append(").length");
                 }
 
                 lengthBuilder.append(";\n\n");
