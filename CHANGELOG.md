@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.35.4] - 2025-06-12
+### Changed
+* **Rust:** Return None for optional primite field if its version is less than actingVersion. ([#1067](https://github.com/aeron-io/simple-binary-encoding/pull/1067))
+* **Java:** Adjust Java Dto generateComputeEncodedLength to acount for character encoding. ([#1072](https://github.com/aeron-io/simple-binary-encoding/pull/1072))
+* **Java:** Bump `JUnit` to 5.13.1.
+* **Java:** Bump `jqwik` to 1.9.3.
+
 ## [1.35.3] - 2025-06-06
 ### Changed
 * **Java:** Publish release artifacts to Central Portal using OSSRH Staging API service.
@@ -81,6 +88,7 @@
 * **Java:** Prevent collision when field name is 'value'.
 * **Java:** Preserve byte order throughout IR transformations.
 
+[1.35.4]: https://github.com/aeron-io/simple-binary-encoding/releases/tag/1.35.4
 [1.35.3]: https://github.com/aeron-io/simple-binary-encoding/releases/tag/1.35.3
 [1.35.1]: https://github.com/aeron-io/simple-binary-encoding/releases/tag/1.35.1
 [1.35.0]: https://github.com/aeron-io/simple-binary-encoding/releases/tag/1.35.0
