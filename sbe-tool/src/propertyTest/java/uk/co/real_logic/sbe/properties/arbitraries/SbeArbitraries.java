@@ -360,6 +360,24 @@ public final class SbeArbitraries
 
     private static Arbitrary<Encoder> encodedTypeEncoder(
         final Encoding encoding,
+        final boolean isOptional,
+        final CharGenerationMode charGenerationMode)
+    {
+        final Arbitrary<Encoder> inRangeEncoder = encodedTypeEncoder(encoding, charGenerationMode);
+
+        if (isOptional)
+        {
+            final Arbitrary<Encoder> nullEncoder = nullEncoder(encoding);
+            return Arbitraries.oneOf(inRangeEncoder, nullEncoder);
+        }
+        else
+        {
+            return inRangeEncoder;
+        }
+    }
+
+    private static Arbitrary<Encoder> encodedTypeEncoder(
+        final Encoding encoding,
         final CharGenerationMode charGenerationMode)
     {
         final PrimitiveValue minValue = encoding.applicableMinValue();
@@ -458,13 +476,96 @@ public final class SbeArbitraries
         }
     }
 
+    private static Arbitrary<Encoder> nullEncoder(final Encoding encoding)
+    {
+        final PrimitiveValue nullValue = encoding.applicableNullValue();
+
+        switch (encoding.primitiveType())
+        {
+            case CHAR:
+                return Arbitraries.just((char)nullValue.longValue()).map(c ->
+                    (builder, buffer, offset, limit) ->
+                    {
+                        builder.appendLine().append(c).append(" @ ").append(offset)
+                            .append("[").append(BitUtil.SIZE_OF_BYTE).append("]");
+                        buffer.putChar(offset, c, encoding.byteOrder());
+                    });
+
+            case UINT8:
+            case INT8:
+                return Arbitraries.just((short)nullValue.longValue())
+                    .map(b -> (builder, buffer, offset, limit) ->
+                    {
+                        builder.appendLine().append((byte)(short)b).append(" @ ").append(offset)
+                            .append("[").append(BitUtil.SIZE_OF_BYTE).append("]");
+                        buffer.putByte(offset, (byte)(short)b);
+                    });
+
+            case UINT16:
+            case INT16:
+                return Arbitraries.just((int)nullValue.longValue())
+                    .map(s -> (builder, buffer, offset, limit) ->
+                    {
+                        builder.appendLine().append((short)(int)s).append(" @ ").append(offset)
+                            .append("[").append(BitUtil.SIZE_OF_SHORT).append("]");
+                        buffer.putShort(offset, (short)(int)s, encoding.byteOrder());
+                    });
+
+            case UINT32:
+            case INT32:
+                return Arbitraries.just(nullValue.longValue())
+                    .map(i -> (builder, buffer, offset, limit) ->
+                    {
+                        builder.appendLine().append((int)(long)i).append(" @ ").append(offset)
+                            .append("[").append(BitUtil.SIZE_OF_INT).append("]");
+                        buffer.putInt(offset, (int)(long)i, encoding.byteOrder());
+                    });
+
+            case UINT64:
+            case INT64:
+                return Arbitraries.just(nullValue.longValue())
+                    .map(l -> (builder, buffer, offset, limit) ->
+                    {
+                        builder.appendLine().append(l).append(" @ ").append(offset)
+                            .append("[").append(BitUtil.SIZE_OF_LONG).append("]");
+                        buffer.putLong(offset, l, encoding.byteOrder());
+                    });
+
+            case FLOAT:
+                return Arbitraries.just((float)nullValue.doubleValue())
+                    .map(f -> (builder, buffer, offset, limit) ->
+                    {
+                        builder.appendLine().append(f).append(" @ ").append(offset)
+                            .append("[").append(BitUtil.SIZE_OF_FLOAT).append("]");
+                        buffer.putFloat(offset, f, encoding.byteOrder());
+                    });
+
+            case DOUBLE:
+                return Arbitraries.just(nullValue.doubleValue())
+                    .map(d -> (builder, buffer, offset, limit) ->
+                    {
+                        builder.appendLine().append(d).append(" @ ").append(offset)
+                            .append("[").append(BitUtil.SIZE_OF_DOUBLE).append("]");
+                        buffer.putDouble(offset, d, encoding.byteOrder());
+                    });
+
+            default:
+                throw new IllegalArgumentException("Unsupported type: " + encoding.primitiveType());
+        }
+    }
+
     private static Arbitrary<Encoder> encodedTypeEncoder(
         final int offset,
+        final Token memberToken,
         final Token typeToken,
         final CharGenerationMode charGenerationMode)
     {
         final Encoding encoding = typeToken.encoding();
-        final Arbitrary<Encoder> arbEncoder = encodedTypeEncoder(encoding, charGenerationMode);
+        final Arbitrary<Encoder> arbEncoder = encodedTypeEncoder(
+            encoding,
+            memberToken.isOptionalEncoding(),
+            charGenerationMode
+        );
 
         if (typeToken.arrayLength() == 1)
         {
@@ -548,6 +649,7 @@ public final class SbeArbitraries
     private static Arbitrary<Encoder> enumEncoder(
         final int offset,
         final List<Token> tokens,
+        final Token memberToken,
         final Token typeToken,
         final MutableInteger cursor,
         final int endIdxInclusive)
@@ -569,7 +671,7 @@ public final class SbeArbitraries
             encoders.add(caseEncoder);
         }
 
-        if (encoders.isEmpty())
+        if (memberToken.isOptionalEncoding() || encoders.isEmpty())
         {
             final Encoder nullEncoder = integerValueEncoder(
                 typeToken.encoding(),
@@ -727,7 +829,7 @@ public final class SbeArbitraries
                     case BEGIN_ENUM:
                         final int endEnumTokenCount = 1;
                         final int lastValidValueIdx = nextFieldIdx - endFieldTokenCount - endEnumTokenCount - 1;
-                        fieldEncoder = enumEncoder(offset, tokens, typeToken, cursor, lastValidValueIdx);
+                        fieldEncoder = enumEncoder(offset, tokens, memberToken, typeToken, cursor, lastValidValueIdx);
                         break;
 
                     case BEGIN_SET:
@@ -737,7 +839,7 @@ public final class SbeArbitraries
                         break;
 
                     case ENCODING:
-                        fieldEncoder = encodedTypeEncoder(offset, typeToken, charGenerationMode);
+                        fieldEncoder = encodedTypeEncoder(offset, memberToken, typeToken, charGenerationMode);
                         break;
 
                     default:
