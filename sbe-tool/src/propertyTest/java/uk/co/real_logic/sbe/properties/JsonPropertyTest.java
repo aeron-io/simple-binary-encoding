@@ -46,8 +46,8 @@ public class JsonPropertyTest
     @Provide
     Arbitrary<SbeArbitraries.EncodedMessage> encodedMessage()
     {
-        final SbeArbitraries.CharGenerationMode mode =
-            SbeArbitraries.CharGenerationMode.JSON_PRINTER_COMPATIBLE;
-        return SbeArbitraries.encodedMessage(mode);
+        final SbeArbitraries.CharGenerationConfig config =
+            SbeArbitraries.CharGenerationConfig.jsonPrinterCompatibleAndNullTerminates();
+        return SbeArbitraries.encodedMessage(config);
     }
 }

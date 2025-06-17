@@ -31,7 +31,6 @@ import uk.co.real_logic.sbe.ir.generated.MessageHeaderDecoder;
 import uk.co.real_logic.sbe.properties.arbitraries.SbeArbitraries;
 import uk.co.real_logic.sbe.properties.utils.InMemoryOutputManager;
 import org.agrona.*;
-import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.io.DirectBufferInputStream;
 
 import java.io.IOException;
@@ -115,10 +114,7 @@ public class DtosPropertyTest
                     encodedMessage.buffer(), MessageHeaderDecoder.ENCODED_LENGTH, blockLength, actingVersion);
                 outputBuffer.setMemory(0, outputBuffer.capacity(), (byte)0);
                 final int outputLength = (int)encodeWith.invoke(null, dto, outputBuffer, 0);
-                if (!areEqual(inputBuffer, inputLength, outputBuffer, outputLength))
-                {
-                    fail("Input and output differ");
-                }
+                assertEqual(inputBuffer, inputLength, outputBuffer, outputLength);
             }
         }
         catch (final Throwable throwable)
@@ -319,9 +315,9 @@ public class DtosPropertyTest
     @Provide
     Arbitrary<SbeArbitraries.EncodedMessage> encodedMessage()
     {
-        final SbeArbitraries.CharGenerationMode mode =
-            SbeArbitraries.CharGenerationMode.JSON_PRINTER_COMPATIBLE;
-        return SbeArbitraries.encodedMessage(mode);
+        final SbeArbitraries.CharGenerationConfig config =
+            SbeArbitraries.CharGenerationConfig.jsonPrinterCompatibleAndNullTerminates();
+        return SbeArbitraries.encodedMessage(config);
     }
 
     private static void copyResourceToFile(
@@ -346,13 +342,33 @@ public class DtosPropertyTest
         }
     }
 
-    private boolean areEqual(
+    private void assertEqual(
         final ExpandableArrayBuffer inputBuffer,
         final int inputLength,
         final ExpandableArrayBuffer outputBuffer,
         final int outputLength)
     {
-        return new UnsafeBuffer(inputBuffer, 0, inputLength).equals(new UnsafeBuffer(outputBuffer, 0, outputLength));
+        final boolean lengthsDiffer = inputLength != outputLength;
+        final int minLength = Math.min(inputLength, outputLength);
+
+        for (int i = 0; i < minLength; i++)
+        {
+            if (inputBuffer.getByte(i) != outputBuffer.getByte(i))
+            {
+                throw new AssertionError(
+                    "Input and output differ at byte " + i + ".\n" +
+                        "Input length: " + inputLength + ", Output length: " + outputLength + "\n" +
+                        "Input: " + inputBuffer.getByte(i) + ", Output: " + outputBuffer.getByte(i) +
+                        (lengthsDiffer ? "\nLengths differ." : ""));
+            }
+        }
+
+        if (lengthsDiffer)
+        {
+            throw new AssertionError(
+                "Input and output differ in length.\n" +
+                    "Input length: " + inputLength + ", Output length: " + outputLength);
+        }
     }
 
     private void addGeneratedSourcesFootnotes(

@@ -114,10 +114,38 @@ public final class SbeArbitraries
         ).as(EncodedDataTypeSchema::new);
     }
 
-    public enum CharGenerationMode
+    public static class CharGenerationConfig
     {
-        UNRESTRICTED,
-        JSON_PRINTER_COMPATIBLE
+        private final boolean alphaOnly;
+        private final boolean nullCharTerminatesData;
+
+        public CharGenerationConfig(
+            final boolean alphaOnly,
+            final boolean nullCharTerminatesData)
+        {
+            this.alphaOnly = alphaOnly;
+            this.nullCharTerminatesData = nullCharTerminatesData;
+        }
+
+        boolean alphaOnly()
+        {
+            return alphaOnly;
+        }
+
+        boolean nullCharTerminatesData()
+        {
+            return nullCharTerminatesData;
+        }
+
+        public static CharGenerationConfig unrestricted()
+        {
+            return new CharGenerationConfig(false, false);
+        }
+
+        public static CharGenerationConfig jsonPrinterCompatibleAndNullTerminates()
+        {
+            return new CharGenerationConfig(true, true);
+        }
     }
 
     private static Arbitrary<EnumTypeSchema> enumTypeSchema()
@@ -343,27 +371,24 @@ public final class SbeArbitraries
         }
     }
 
-    public static CharacterArbitrary chars(final CharGenerationMode mode)
+    public static CharacterArbitrary chars(final CharGenerationConfig config)
     {
-        switch (mode)
+        if (config.alphaOnly())
         {
-            case UNRESTRICTED:
-                return Arbitraries.chars();
-
-            case JSON_PRINTER_COMPATIBLE:
-                return Arbitraries.chars().alpha();
-
-            default:
-                throw new IllegalArgumentException("Unsupported mode: " + mode);
+            return Arbitraries.chars().alpha();
+        }
+        else
+        {
+            return Arbitraries.chars();
         }
     }
 
     private static Arbitrary<Encoder> encodedTypeEncoder(
         final Encoding encoding,
         final boolean isOptional,
-        final CharGenerationMode charGenerationMode)
+        final CharGenerationConfig charGenerationConfig)
     {
-        final Arbitrary<Encoder> inRangeEncoder = encodedTypeEncoder(encoding, charGenerationMode);
+        final Arbitrary<Encoder> inRangeEncoder = encodedTypeEncoder(encoding, charGenerationConfig);
 
         if (isOptional)
         {
@@ -378,7 +403,7 @@ public final class SbeArbitraries
 
     private static Arbitrary<Encoder> encodedTypeEncoder(
         final Encoding encoding,
-        final CharGenerationMode charGenerationMode)
+        final CharGenerationConfig charGenerationConfig)
     {
         final PrimitiveValue minValue = encoding.applicableMinValue();
         final PrimitiveValue maxValue = encoding.applicableMaxValue();
@@ -387,7 +412,7 @@ public final class SbeArbitraries
         {
             case CHAR:
                 assert minValue.longValue() <= maxValue.longValue();
-                return chars(charGenerationMode).map(c ->
+                return chars(charGenerationConfig).map(c ->
                     (builder, buffer, offset, limit) ->
                     {
                         builder.appendLine().append(c).append(" @ ").append(offset)
@@ -558,13 +583,13 @@ public final class SbeArbitraries
         final int offset,
         final Token memberToken,
         final Token typeToken,
-        final CharGenerationMode charGenerationMode)
+        final CharGenerationConfig charGenerationConfig)
     {
         final Encoding encoding = typeToken.encoding();
         final Arbitrary<Encoder> arbEncoder = encodedTypeEncoder(
             encoding,
             memberToken.isOptionalEncoding(),
-            charGenerationMode
+            charGenerationConfig
         );
 
         if (typeToken.arrayLength() == 1)
@@ -577,11 +602,28 @@ public final class SbeArbitraries
             return arbEncoder.list().ofSize(typeToken.arrayLength())
                 .map(encoders -> (builder, buffer, bufferOffset, limit) ->
                 {
+                    boolean hasNullTerminated = false;
+
                     for (int i = 0; i < typeToken.arrayLength(); i++)
                     {
                         builder.beginScope("[" + i + "]");
                         final int elementOffset = bufferOffset + offset + i * encoding.primitiveType().size();
-                        encoders.get(i).encode(builder, buffer, elementOffset, limit);
+                        if (hasNullTerminated)
+                        {
+                            buffer.putByte(elementOffset, (byte)0);
+                        }
+                        else
+                        {
+                            encoders.get(i).encode(builder, buffer, elementOffset, limit);
+                        }
+
+                        if (encoding.primitiveType() == PrimitiveType.CHAR &&
+                            charGenerationConfig.nullCharTerminatesData() &&
+                            buffer.getByte(elementOffset) == 0)
+                        {
+                            hasNullTerminated = true;
+                        }
+
                         builder.endScope();
                     }
                 });
@@ -786,7 +828,7 @@ public final class SbeArbitraries
         final MutableInteger cursor,
         final int endIdxInclusive,
         final boolean expectFields,
-        final CharGenerationMode charGenerationMode)
+        final CharGenerationConfig charGenerationConfig)
     {
         final List<Arbitrary<Encoder>> encoders = new ArrayList<>();
         while (cursor.get() <= endIdxInclusive)
@@ -820,7 +862,7 @@ public final class SbeArbitraries
                         final int endCompositeTokenCount = 1;
                         final int lastMemberIdx = nextFieldIdx - endCompositeTokenCount - endFieldTokenCount - 1;
                         final Arbitrary<Encoder> encoder = fieldsEncoder(
-                            tokens, cursor, lastMemberIdx, false, charGenerationMode);
+                            tokens, cursor, lastMemberIdx, false, charGenerationConfig);
                         fieldEncoder = encoder.map(e ->
                             (builder, buffer, bufferOffset, limit) ->
                                 e.encode(builder, buffer, bufferOffset + offset, limit));
@@ -839,7 +881,7 @@ public final class SbeArbitraries
                         break;
 
                     case ENCODING:
-                        fieldEncoder = encodedTypeEncoder(offset, memberToken, typeToken, charGenerationMode);
+                        fieldEncoder = encodedTypeEncoder(offset, memberToken, typeToken, charGenerationConfig);
                         break;
 
                     default:
@@ -868,7 +910,7 @@ public final class SbeArbitraries
         final List<Token> tokens,
         final MutableInteger cursor,
         final int endIdxInclusive,
-        final CharGenerationMode charGenerationMode)
+        final CharGenerationConfig charGenerationConfig)
     {
         final List<Arbitrary<Encoder>> encoders = new ArrayList<>();
 
@@ -894,9 +936,9 @@ public final class SbeArbitraries
 
 
             final Arbitrary<Encoder> groupElement = Combinators.combine(
-                fieldsEncoder(tokens, cursor, nextFieldIdx - 1, true, charGenerationMode),
-                groupsEncoder(tokens, cursor, nextFieldIdx - 1, charGenerationMode),
-                varDataEncoder(tokens, cursor, nextFieldIdx - 1, charGenerationMode)
+                fieldsEncoder(tokens, cursor, nextFieldIdx - 1, true, charGenerationConfig),
+                groupsEncoder(tokens, cursor, nextFieldIdx - 1, charGenerationConfig),
+                varDataEncoder(tokens, cursor, nextFieldIdx - 1, charGenerationConfig)
             ).as((fieldsEncoder, groupsEncoder, varDataEncoder) ->
                 (builder, buffer, ignored, limit) ->
                 {
@@ -946,7 +988,7 @@ public final class SbeArbitraries
         final List<Token> tokens,
         final MutableInteger cursor,
         final int endIdxInclusive,
-        final CharGenerationMode charGenerationMode)
+        final CharGenerationConfig charGenerationConfig)
     {
         final List<Arbitrary<Encoder>> encoders = new ArrayList<>();
 
@@ -969,7 +1011,7 @@ public final class SbeArbitraries
             final String characterEncoding = varDataToken.encoding().characterEncoding();
             final Arbitrary<Byte> arbitraryByte = null == characterEncoding ?
                 Arbitraries.bytes() :
-                chars(charGenerationMode).map(c -> (byte)c.charValue());
+                chars(charGenerationConfig).map(c -> (byte)c.charValue());
             encoders.add(arbitraryByte.list()
                 .ofMaxSize((int)Math.min(lengthToken.encoding().applicableMaxValue().longValue(), 260L))
                 .map(bytes -> (builder, buffer, ignored, limit) ->
@@ -1003,7 +1045,7 @@ public final class SbeArbitraries
     private static Arbitrary<Encoder> messageValueEncoder(
         final Ir ir,
         final short messageId,
-        final CharGenerationMode charGenerationMode)
+        final CharGenerationConfig charGenerationConfig)
     {
         final List<Token> tokens = ir.getMessage(messageId);
         final MutableInteger cursor = new MutableInteger(1);
@@ -1015,11 +1057,11 @@ public final class SbeArbitraries
         }
 
         final Arbitrary<Encoder> fieldsEncoder = fieldsEncoder(
-            tokens, cursor, tokens.size() - 1, true, charGenerationMode);
+            tokens, cursor, tokens.size() - 1, true, charGenerationConfig);
         final Arbitrary<Encoder> groupsEncoder = groupsEncoder(
-            tokens, cursor, tokens.size() - 1, charGenerationMode);
+            tokens, cursor, tokens.size() - 1, charGenerationConfig);
         final Arbitrary<Encoder> varDataEncoder = varDataEncoder(
-            tokens, cursor, tokens.size() - 1, charGenerationMode);
+            tokens, cursor, tokens.size() - 1, charGenerationConfig);
         return Combinators.combine(fieldsEncoder, groupsEncoder, varDataEncoder)
             .as((fields, groups, varData) -> (builder, buffer, offset, limit) ->
             {
@@ -1087,7 +1129,7 @@ public final class SbeArbitraries
         }
     }
 
-    public static Arbitrary<EncodedMessage> encodedMessage(final CharGenerationMode mode)
+    public static Arbitrary<EncodedMessage> encodedMessage(final CharGenerationConfig charGenerationConfig)
     {
         return SbeArbitraries.messageSchema().flatMap(testSchema ->
         {
@@ -1101,7 +1143,7 @@ public final class SbeArbitraries
                     .build();
                 final uk.co.real_logic.sbe.xml.MessageSchema parsedSchema = parse(in, options);
                 final Ir ir = new IrGenerator().generate(parsedSchema);
-                return SbeArbitraries.messageValueEncoder(ir, testSchema.templateId(), mode)
+                return SbeArbitraries.messageValueEncoder(ir, testSchema.templateId(), charGenerationConfig)
                     .map(encoder ->
                     {
                         final EncodingLogger logger = new EncodingLogger();
