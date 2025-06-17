@@ -19,6 +19,7 @@ package uk.co.real_logic.sbe.generation.java;
 import uk.co.real_logic.sbe.PrimitiveType;
 import uk.co.real_logic.sbe.generation.CodeGenerator;
 import uk.co.real_logic.sbe.generation.Generators;
+import uk.co.real_logic.sbe.ir.Encoding;
 import uk.co.real_logic.sbe.ir.Ir;
 import uk.co.real_logic.sbe.ir.Signal;
 import uk.co.real_logic.sbe.ir.Token;
@@ -36,6 +37,9 @@ import java.util.function.Predicate;
 
 import static uk.co.real_logic.sbe.generation.Generators.toLowerFirstChar;
 import static uk.co.real_logic.sbe.generation.Generators.toUpperFirstChar;
+import static uk.co.real_logic.sbe.generation.common.DtoValidationUtil.NativeIntegerSupport.SIGNED_ONLY;
+import static uk.co.real_logic.sbe.generation.common.DtoValidationUtil.nativeTypeRepresentsValuesGreaterThanValidRange;
+import static uk.co.real_logic.sbe.generation.common.DtoValidationUtil.nativeTypeRepresentsValuesLessThanValidRange;
 import static uk.co.real_logic.sbe.generation.java.JavaUtil.*;
 import static uk.co.real_logic.sbe.ir.GenerationUtil.collectFields;
 import static uk.co.real_logic.sbe.ir.GenerationUtil.collectGroups;
@@ -1485,37 +1489,17 @@ public class JavaDtoGenerator implements CodeGenerator
         final String typeName = javaTypeName(typeToken.encoding().primitiveType());
         final String formattedPropertyName = formatPropertyName(propertyName);
         final String fieldName = formatFieldName(propertyName);
-        final String validateMethod = "validate" + toUpperFirstChar(propertyName);
 
-        final boolean representedWithinJavaType = typeToken.encoding().primitiveType() != PrimitiveType.UINT64;
-
-        final StringBuilder validationCall = new StringBuilder();
-
-        if (representedWithinJavaType)
-        {
-            final StringBuilder validateBuilder = classBuilder.appendPrivate().append("\n")
-                .append(indent).append("private static void ").append(validateMethod).append("(")
-                .append(typeName).append(" value)\n")
-                .append(indent).append("{\n");
-
-            validateBuilder.append(indent).append(INDENT)
-                .append("if (value < ")
-                .append(decoderClassName).append(".").append(formattedPropertyName).append("MinValue() || ")
-                .append("value").append(" > ")
-                .append(decoderClassName).append(".").append(formattedPropertyName).append("MaxValue())\n")
-                .append(indent).append(INDENT)
-                .append("{\n")
-                .append(indent).append(INDENT).append(INDENT)
-                .append("throw new IllegalArgumentException(\"")
-                .append(propertyName)
-                .append(": value is out of allowed range: \" + ")
-                .append("value").append(");\n")
-                .append(indent).append(INDENT)
-                .append("}\n")
-                .append(indent).append("}\n");
-
-            validationCall.append(indent).append(INDENT).append(validateMethod).append("(value);\n");
-        }
+        final String validateMethod = generateSingleValueValidateMethod(
+            classBuilder,
+            decoderClassName,
+            propertyName,
+            fieldToken,
+            typeToken,
+            indent,
+            typeName,
+            formattedPropertyName
+        );
 
         classBuilder.appendField()
             .append(indent).append("private ").append(typeName).append(" ").append(fieldName).append(";\n");
@@ -1528,14 +1512,134 @@ public class JavaDtoGenerator implements CodeGenerator
             .append(indent).append(INDENT).append("return this.").append(fieldName).append(";\n")
             .append(indent).append("}\n");
 
-        classBuilder.appendPublic().append("\n")
+        final StringBuilder setterBuilder = classBuilder.appendPublic().append("\n")
             .append(generateDocumentation(indent, fieldToken))
             .append(indent).append("public void ").append(formattedPropertyName).append("(")
             .append(typeName).append(" value)\n")
-            .append(indent).append("{\n")
-            .append(validationCall)
+            .append(indent).append("{\n");
+
+        if (null != validateMethod)
+        {
+            setterBuilder.append(indent).append(INDENT).append(validateMethod).append("(value);\n");
+        }
+
+        setterBuilder
             .append(indent).append(INDENT).append("this.").append(fieldName).append(" = value;\n")
             .append(indent).append("}\n");
+    }
+
+    private static String generateSingleValueValidateMethod(
+        final ClassBuilder classBuilder,
+        final String decoderClassName,
+        final String propertyName,
+        final Token fieldToken,
+        final Token typeToken,
+        final String indent,
+        final String typeName,
+        final String formattedPropertyName)
+    {
+        final boolean mustPreventLesser =
+            nativeTypeRepresentsValuesLessThanValidRange(fieldToken, typeToken.encoding(), SIGNED_ONLY);
+
+        final boolean mustPreventGreater =
+            nativeTypeRepresentsValuesGreaterThanValidRange(fieldToken, typeToken.encoding(), SIGNED_ONLY);
+
+        if (!mustPreventLesser && !mustPreventGreater)
+        {
+            return null;
+        }
+
+        final String validateMethod = "validate" + toUpperFirstChar(propertyName);
+
+        final StringBuilder validateBuilder = classBuilder.appendPrivate().append("\n")
+            .append(indent).append("private static void ").append(validateMethod).append("(")
+            .append(typeName).append(" value)\n")
+            .append(indent).append("{\n");
+
+        final boolean allowsNull = fieldToken.isOptionalEncoding();
+
+        if (allowsNull)
+        {
+            validateBuilder.append(indent).append(INDENT)
+                .append("if (value == ")
+                .append(decoderClassName).append(".").append(formattedPropertyName).append("NullValue())\n")
+                .append(indent).append(INDENT)
+                .append("{\n")
+                .append(indent).append(INDENT).append(INDENT)
+                .append("return;\n")
+                .append(indent).append(INDENT)
+                .append("}\n\n");
+        }
+
+        if (mustPreventLesser)
+        {
+            validateBuilder.append(indent).append(INDENT)
+                .append("if (");
+
+            generateGreaterThanExpression(
+                validateBuilder,
+                typeToken.encoding(),
+                decoderClassName + "." + formattedPropertyName + "MinValue()",
+                "value"
+            );
+
+            validateBuilder
+                .append(")\n")
+                .append(indent).append(INDENT)
+                .append("{\n")
+                .append(indent).append(INDENT).append(INDENT)
+                .append("throw new IllegalArgumentException(\"")
+                .append(propertyName)
+                .append(": value is below allowed minimum: \" + ")
+                .append("value").append(");\n")
+                .append(indent).append(INDENT)
+                .append("}\n\n");
+        }
+
+        if (mustPreventGreater)
+        {
+            validateBuilder.append(indent).append(INDENT)
+                .append("if (");
+
+            generateGreaterThanExpression(
+                validateBuilder,
+                typeToken.encoding(),
+                "value",
+                decoderClassName + "." + formattedPropertyName + "MaxValue()"
+            );
+
+            validateBuilder
+                .append(")\n")
+                .append(indent).append(INDENT)
+                .append("{\n")
+                .append(indent).append(INDENT).append(INDENT)
+                .append("throw new IllegalArgumentException(\"")
+                .append(propertyName)
+                .append(": value is above allowed maximum: \" + ")
+                .append("value").append(");\n")
+                .append(indent).append(INDENT)
+                .append("}\n\n");
+        }
+
+        validateBuilder.append(indent).append("}\n");
+
+        return validateMethod;
+    }
+
+    private static void generateGreaterThanExpression(
+        final StringBuilder builder,
+        final Encoding encoding,
+        final String lhs,
+        final String rhs)
+    {
+        if (encoding.primitiveType() == PrimitiveType.UINT64)
+        {
+            builder.append("Long.compareUnsigned(").append(lhs).append(", ").append(rhs).append(") > 0");
+        }
+        else
+        {
+            builder.append(lhs).append(" > ").append(rhs);
+        }
     }
 
     private void generateConstPropertyMethods(
