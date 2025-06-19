@@ -15,10 +15,10 @@
  */
 package uk.co.real_logic.sbe.otf;
 
-import org.agrona.DirectBuffer;
 import uk.co.real_logic.sbe.PrimitiveType;
 import uk.co.real_logic.sbe.PrimitiveValue;
 import uk.co.real_logic.sbe.ir.Encoding;
+import org.agrona.DirectBuffer;
 
 import java.nio.ByteOrder;
 
@@ -27,6 +27,11 @@ import java.nio.ByteOrder;
  */
 public class Types
 {
+    private static final char[] HEX_DIGIT = {
+        '0', '1', '2', '3', '4', '5', '6', '7',
+        '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+    };
+
     /**
      * Get an integer value from a buffer at a given index for a {@link PrimitiveType}.
      *
@@ -187,7 +192,9 @@ public class Types
         switch (encoding.primitiveType())
         {
             case CHAR:
-                sb.append('\'').append((char)buffer.getByte(index)).append('\'');
+                sb.append('\"');
+                jsonEscape((char)buffer.getByte(index), sb);
+                sb.append('\"');
                 break;
 
             case INT8:
@@ -227,15 +234,15 @@ public class Types
                 final float value = buffer.getFloat(index, encoding.byteOrder());
                 if (Float.isNaN(value))
                 {
-                    sb.append("0/0");
+                    sb.append("\"0/0\"");
                 }
                 else if (value == Float.POSITIVE_INFINITY)
                 {
-                    sb.append("1/0");
+                    sb.append("\"1/0\"");
                 }
                 else if (value == Float.NEGATIVE_INFINITY)
                 {
-                    sb.append("-1/0");
+                    sb.append("\"-1/0\"");
                 }
                 else
                 {
@@ -249,15 +256,15 @@ public class Types
                 final double value = buffer.getDouble(index, encoding.byteOrder());
                 if (Double.isNaN(value))
                 {
-                    sb.append("0/0");
+                    sb.append("\"0/0\"");
                 }
                 else if (value == Double.POSITIVE_INFINITY)
                 {
-                    sb.append("1/0");
+                    sb.append("\"1/0\"");
                 }
                 else if (value == Double.NEGATIVE_INFINITY)
                 {
-                    sb.append("-1/0");
+                    sb.append("\"-1/0\"");
                 }
                 else
                 {
@@ -280,7 +287,9 @@ public class Types
         switch (encoding.primitiveType())
         {
             case CHAR:
-                sb.append('\'').append((char)value.longValue()).append('\'');
+                sb.append('\"');
+                jsonEscape((char)value.longValue(), sb);
+                sb.append('\"');
                 break;
 
             case INT8:
@@ -299,15 +308,15 @@ public class Types
                 final float floatValue = (float)value.doubleValue();
                 if (Float.isNaN(floatValue))
                 {
-                    sb.append("0/0");
+                    sb.append("\"0/0\"");
                 }
                 else if (floatValue == Float.POSITIVE_INFINITY)
                 {
-                    sb.append("1/0");
+                    sb.append("\"1/0\"");
                 }
                 else if (floatValue == Float.NEGATIVE_INFINITY)
                 {
-                    sb.append("-1/0");
+                    sb.append("\"-1/0\"");
                 }
                 else
                 {
@@ -321,15 +330,15 @@ public class Types
                 final double doubleValue = value.doubleValue();
                 if (Double.isNaN(doubleValue))
                 {
-                    sb.append("0/0");
+                    sb.append("\"0/0\"");
                 }
                 else if (doubleValue == Double.POSITIVE_INFINITY)
                 {
-                    sb.append("1/0");
+                    sb.append("\"1/0\"");
                 }
                 else if (doubleValue == Double.NEGATIVE_INFINITY)
                 {
-                    sb.append("-1/0");
+                    sb.append("\"-1/0\"");
                 }
                 else
                 {
@@ -338,5 +347,71 @@ public class Types
                 break;
             }
         }
+    }
+
+    /**
+     * Escape a string for use in a JSON string.
+     *
+     * @param str    the string to escape
+     * @param output to append the escaped string to
+     */
+    public static void jsonEscape(final String str, final StringBuilder output)
+    {
+        for (int i = 0, length = str.length(); i < length; i++)
+        {
+            jsonEscape(str.charAt(i), output);
+        }
+    }
+
+    /**
+     * Escape a character for use in a JSON string.
+     *
+     * @param c      the character to escape
+     * @param output to append the escaped character to
+     */
+    public static void jsonEscape(final char c, final StringBuilder output)
+    {
+        if ('"' == c || '\\' == c)
+        {
+            output.append('\\');
+            output.append(c);
+        }
+        else if ('\b' == c)
+        {
+            output.append("\\b");
+        }
+        else if ('\f' == c)
+        {
+            output.append("\\f");
+        }
+        else if ('\n' == c)
+        {
+            output.append("\\n");
+        }
+        else if ('\r' == c)
+        {
+            output.append("\\r");
+        }
+        else if ('\t' == c)
+        {
+            output.append("\\t");
+        }
+        else if (c <= 0x1F || Character.isHighSurrogate(c) || Character.isLowSurrogate(c))
+        {
+            jsonUnicodeEncode(c, output);
+        }
+        else
+        {
+            output.append(c);
+        }
+    }
+
+    private static void jsonUnicodeEncode(final char c, final StringBuilder output)
+    {
+        output.append('\\').append('u')
+            .append(HEX_DIGIT[(c >>> 12) & 0x0F])
+            .append(HEX_DIGIT[(c >>> 8) & 0x0F])
+            .append(HEX_DIGIT[(c >>> 4) & 0x0F])
+            .append(HEX_DIGIT[c & 0x0F]);
     }
 }

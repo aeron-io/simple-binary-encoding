@@ -29,9 +29,11 @@ import uk.co.real_logic.sbe.properties.schema.*;
 import uk.co.real_logic.sbe.xml.IrGenerator;
 import uk.co.real_logic.sbe.xml.ParserOptions;
 import org.agrona.BitUtil;
+import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.MutableInteger;
+import org.agrona.concurrent.UnsafeBuffer;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -116,20 +118,12 @@ public final class SbeArbitraries
 
     public static class CharGenerationConfig
     {
-        private final boolean alphaOnly;
         private final boolean nullCharTerminatesData;
 
         public CharGenerationConfig(
-            final boolean alphaOnly,
             final boolean nullCharTerminatesData)
         {
-            this.alphaOnly = alphaOnly;
             this.nullCharTerminatesData = nullCharTerminatesData;
-        }
-
-        boolean alphaOnly()
-        {
-            return alphaOnly;
         }
 
         boolean nullCharTerminatesData()
@@ -139,12 +133,12 @@ public final class SbeArbitraries
 
         public static CharGenerationConfig unrestricted()
         {
-            return new CharGenerationConfig(false, false);
+            return new CharGenerationConfig(false);
         }
 
-        public static CharGenerationConfig jsonPrinterCompatibleAndNullTerminates()
+        public static CharGenerationConfig firstNullTerminatesCharArray()
         {
-            return new CharGenerationConfig(true, true);
+            return new CharGenerationConfig(true);
         }
     }
 
@@ -371,24 +365,28 @@ public final class SbeArbitraries
         }
     }
 
-    public static CharacterArbitrary chars(final CharGenerationConfig config)
+    public static CharacterArbitrary chars(final Encoding encoding)
     {
-        if (config.alphaOnly())
+        final char minCharValue = (char)encoding.applicableMinValue().longValue();
+        char maxCharValue = (char)encoding.applicableMaxValue().longValue();
+
+        final String characterEncoding = encoding.characterEncoding();
+        if (null != characterEncoding && characterEncoding.equals("US-ASCII"))
         {
-            return Arbitraries.chars().alpha();
+            maxCharValue = (char)Math.min(maxCharValue, 0x7f);
         }
-        else
-        {
-            return Arbitraries.chars();
-        }
+
+        return Arbitraries.chars().range(
+            minCharValue,
+            maxCharValue
+        );
     }
 
     private static Arbitrary<Encoder> encodedTypeEncoder(
         final Encoding encoding,
-        final boolean isOptional,
-        final CharGenerationConfig charGenerationConfig)
+        final boolean isOptional)
     {
-        final Arbitrary<Encoder> inRangeEncoder = encodedTypeEncoder(encoding, charGenerationConfig);
+        final Arbitrary<Encoder> inRangeEncoder = encodedTypeEncoder(encoding);
 
         if (isOptional)
         {
@@ -402,8 +400,7 @@ public final class SbeArbitraries
     }
 
     private static Arbitrary<Encoder> encodedTypeEncoder(
-        final Encoding encoding,
-        final CharGenerationConfig charGenerationConfig)
+        final Encoding encoding)
     {
         final PrimitiveValue minValue = encoding.applicableMinValue();
         final PrimitiveValue maxValue = encoding.applicableMaxValue();
@@ -412,7 +409,7 @@ public final class SbeArbitraries
         {
             case CHAR:
                 assert minValue.longValue() <= maxValue.longValue();
-                return chars(charGenerationConfig).map(c ->
+                return chars(encoding).map(c ->
                     (builder, buffer, offset, limit) ->
                     {
                         builder.appendLine().append(c).append(" @ ").append(offset)
@@ -588,8 +585,7 @@ public final class SbeArbitraries
         final Encoding encoding = typeToken.encoding();
         final Arbitrary<Encoder> arbEncoder = encodedTypeEncoder(
             encoding,
-            memberToken.isOptionalEncoding(),
-            charGenerationConfig
+            memberToken.isOptionalEncoding()
         );
 
         if (typeToken.arrayLength() == 1)
@@ -938,7 +934,7 @@ public final class SbeArbitraries
             final Arbitrary<Encoder> groupElement = Combinators.combine(
                 fieldsEncoder(tokens, cursor, nextFieldIdx - 1, true, charGenerationConfig),
                 groupsEncoder(tokens, cursor, nextFieldIdx - 1, charGenerationConfig),
-                varDataEncoder(tokens, cursor, nextFieldIdx - 1, charGenerationConfig)
+                varDataEncoder(tokens, cursor, nextFieldIdx - 1)
             ).as((fieldsEncoder, groupsEncoder, varDataEncoder) ->
                 (builder, buffer, ignored, limit) ->
                 {
@@ -987,8 +983,7 @@ public final class SbeArbitraries
     private static Arbitrary<Encoder> varDataEncoder(
         final List<Token> tokens,
         final MutableInteger cursor,
-        final int endIdxInclusive,
-        final CharGenerationConfig charGenerationConfig)
+        final int endIdxInclusive)
     {
         final List<Arbitrary<Encoder>> encoders = new ArrayList<>();
 
@@ -1011,7 +1006,7 @@ public final class SbeArbitraries
             final String characterEncoding = varDataToken.encoding().characterEncoding();
             final Arbitrary<Byte> arbitraryByte = null == characterEncoding ?
                 Arbitraries.bytes() :
-                chars(charGenerationConfig).map(c -> (byte)c.charValue());
+                chars(varDataToken.encoding()).map(c -> (byte)c.charValue());
             encoders.add(arbitraryByte.list()
                 .ofMaxSize((int)Math.min(lengthToken.encoding().applicableMaxValue().longValue(), 260L))
                 .map(bytes -> (builder, buffer, ignored, limit) ->
@@ -1061,7 +1056,7 @@ public final class SbeArbitraries
         final Arbitrary<Encoder> groupsEncoder = groupsEncoder(
             tokens, cursor, tokens.size() - 1, charGenerationConfig);
         final Arbitrary<Encoder> varDataEncoder = varDataEncoder(
-            tokens, cursor, tokens.size() - 1, charGenerationConfig);
+            tokens, cursor, tokens.size() - 1);
         return Combinators.combine(fieldsEncoder, groupsEncoder, varDataEncoder)
             .as((fields, groups, varData) -> (builder, buffer, offset, limit) ->
             {
@@ -1085,14 +1080,14 @@ public final class SbeArbitraries
     {
         private final String schema;
         private final Ir ir;
-        private final ExpandableArrayBuffer buffer;
+        private final DirectBuffer buffer;
         private final int length;
         private final String encodingLog;
 
         private EncodedMessage(
             final String schema,
             final Ir ir,
-            final ExpandableArrayBuffer buffer,
+            final DirectBuffer buffer,
             final int length,
             final String encodingLog)
         {
@@ -1113,7 +1108,7 @@ public final class SbeArbitraries
             return ir;
         }
 
-        public ExpandableArrayBuffer buffer()
+        public DirectBuffer buffer()
         {
             return buffer;
         }
@@ -1123,9 +1118,57 @@ public final class SbeArbitraries
             return length;
         }
 
+        /**
+         * A log of the steps taken to encode the input message. This information is useful for debugging problems in
+         * the arbitrary message generator.
+         *
+         * @return a log of the steps taken to encode the message
+         */
+        @SuppressWarnings("unused")
         public String encodingLog()
         {
             return encodingLog;
+        }
+
+        /**
+         * Takes the XML schema and Base64 input message from a (possibly shrunken) example and creates an
+         * {@link EncodedMessage} instance that can be used to drive property-based test logic. This data is output
+         * when a test fails.
+         *
+         * @param schemaXml    the schema to use
+         * @param inputMessage the input message (as a base64 encoded string)
+         * @return an encoded message for use with property-based tests
+         */
+        @SuppressWarnings("unused")
+        public static EncodedMessage fromDebugOutput(
+            final String schemaXml,
+            final String inputMessage)
+        {
+            try (InputStream in = new ByteArrayInputStream(schemaXml.getBytes(StandardCharsets.UTF_8)))
+            {
+                final ParserOptions options = ParserOptions.builder()
+                    .suppressOutput(false)
+                    .warningsFatal(true)
+                    .stopOnError(true)
+                    .build();
+                final uk.co.real_logic.sbe.xml.MessageSchema parsedSchema = parse(in, options);
+                final Ir ir = new IrGenerator().generate(parsedSchema);
+
+                final byte[] messageBytes = Base64.getDecoder().decode(inputMessage);
+                final UnsafeBuffer buffer = new UnsafeBuffer(messageBytes);
+
+                return new EncodedMessage(
+                    schemaXml,
+                    ir,
+                    buffer,
+                    buffer.capacity(),
+                    ""
+                );
+            }
+            catch (final Exception exception)
+            {
+                throw new RuntimeException(exception);
+            }
         }
     }
 

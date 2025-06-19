@@ -36,19 +36,17 @@ import org.agrona.io.DirectBufferInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
 import static uk.co.real_logic.sbe.SbeTool.JAVA_DEFAULT_DECODING_BUFFER_TYPE;
 import static uk.co.real_logic.sbe.SbeTool.JAVA_DEFAULT_ENCODING_BUFFER_TYPE;
+import static uk.co.real_logic.sbe.properties.PropertyTestUtil.addSchemaAndInputMessageFootnotes;
 
 @SuppressWarnings("ReadWriteStringCanBeUsed")
 @EnableFootnotes
@@ -64,8 +62,7 @@ public class DtosPropertyTest
     void javaDtoEncodeShouldBeTheInverseOfDtoDecode(
         @ForAll("encodedMessage") final SbeArbitraries.EncodedMessage encodedMessage,
         final Footnotes footnotes)
-        throws IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
-        IllegalAccessException
+        throws Exception
     {
         final String packageName = encodedMessage.ir().applicableNamespace();
         final InMemoryOutputManager outputManager = new InMemoryOutputManager(packageName);
@@ -94,36 +91,36 @@ public class DtosPropertyTest
                 fail("Code generation failed.", generationException);
             }
 
-            try (URLClassLoader generatedClassLoader = outputManager.compileGeneratedSources())
-            {
-                final Class<?> dtoClass =
-                    generatedClassLoader.loadClass(packageName + ".TestMessageDto");
+            final Class<?> dtoClass = outputManager.compileAndLoad(packageName + ".TestMessageDto");
 
-                final Method decodeFrom =
-                    dtoClass.getMethod("decodeFrom", DirectBuffer.class, int.class, int.class, int.class);
+            final Method decodeFrom =
+                dtoClass.getMethod("decodeFrom", DirectBuffer.class, int.class, int.class, int.class);
 
-                final Method encodeWith =
-                    dtoClass.getMethod("encodeWithHeaderWith", dtoClass, MutableDirectBuffer.class, int.class);
+            final Method encodeWith =
+                dtoClass.getMethod("encodeWithHeaderWith", dtoClass, MutableDirectBuffer.class, int.class);
 
-                final int inputLength = encodedMessage.length();
-                final ExpandableArrayBuffer inputBuffer = encodedMessage.buffer();
-                final MessageHeaderDecoder header = new MessageHeaderDecoder().wrap(inputBuffer, 0);
-                final int blockLength = header.blockLength();
-                final int actingVersion = header.version();
-                final Object dto = decodeFrom.invoke(null,
-                    encodedMessage.buffer(), MessageHeaderDecoder.ENCODED_LENGTH, blockLength, actingVersion);
-                outputBuffer.setMemory(0, outputBuffer.capacity(), (byte)0);
-                final int outputLength = (int)encodeWith.invoke(null, dto, outputBuffer, 0);
-                assertEqual(inputBuffer, inputLength, outputBuffer, outputLength);
-            }
+            final int inputLength = encodedMessage.length();
+            final DirectBuffer inputBuffer = encodedMessage.buffer();
+            final MessageHeaderDecoder header = new MessageHeaderDecoder().wrap(inputBuffer, 0);
+            final int blockLength = header.blockLength();
+            final int actingVersion = header.version();
+            final Object dto = decodeFrom.invoke(
+                null,
+                encodedMessage.buffer(), MessageHeaderDecoder.ENCODED_LENGTH, blockLength, actingVersion);
+            outputBuffer.setMemory(0, outputBuffer.capacity(), (byte)0);
+            final int outputLength = (int)encodeWith.invoke(null, dto, outputBuffer, 0);
+            assertEqual(inputBuffer, inputLength, outputBuffer, outputLength);
         }
         catch (final Throwable throwable)
         {
-            addInputFootnotes(footnotes, encodedMessage);
+            if (null != footnotes)
+            {
+                addSchemaAndInputMessageFootnotes(footnotes, encodedMessage);
 
-            final StringBuilder generatedSources = new StringBuilder();
-            outputManager.dumpSources(generatedSources);
-            footnotes.addFootnote(generatedSources.toString());
+                final StringBuilder generatedSources = new StringBuilder();
+                outputManager.dumpSources(generatedSources);
+                footnotes.addFootnote(generatedSources.toString());
+            }
 
             throw throwable;
         }
@@ -176,14 +173,12 @@ public class DtosPropertyTest
             if (!Arrays.equals(inputBytes, outputBytes))
             {
                 throw new AssertionError(
-                    "Input and output files differ\n\n" +
-                        "DIR:" + tempDir + "\n\n" +
-                        "SCHEMA:\n" + encodedMessage.schema());
+                    "Input and output files differ\n\nDIR:" + tempDir);
             }
         }
         catch (final Throwable throwable)
         {
-            addInputFootnotes(footnotes, encodedMessage);
+            addSchemaAndInputMessageFootnotes(footnotes, encodedMessage);
             addGeneratedSourcesFootnotes(footnotes, tempDir, ".cs");
 
             throw throwable;
@@ -235,14 +230,12 @@ public class DtosPropertyTest
             final byte[] outputBytes = Files.readAllBytes(tempDir.resolve("output.dat"));
             if (!Arrays.equals(inputBytes, outputBytes))
             {
-                throw new AssertionError(
-                    "Input and output files differ\n\n" +
-                    "SCHEMA:\n" + encodedMessage.schema());
+                throw new AssertionError("Input and output files differ");
             }
         }
         catch (final Throwable throwable)
         {
-            addInputFootnotes(footnotes, encodedMessage);
+            addSchemaAndInputMessageFootnotes(footnotes, encodedMessage);
             addGeneratedSourcesFootnotes(footnotes, tempDir, ".cpp");
 
             throw throwable;
@@ -316,7 +309,7 @@ public class DtosPropertyTest
     Arbitrary<SbeArbitraries.EncodedMessage> encodedMessage()
     {
         final SbeArbitraries.CharGenerationConfig config =
-            SbeArbitraries.CharGenerationConfig.jsonPrinterCompatibleAndNullTerminates();
+            SbeArbitraries.CharGenerationConfig.firstNullTerminatesCharArray();
         return SbeArbitraries.encodedMessage(config);
     }
 
@@ -342,10 +335,23 @@ public class DtosPropertyTest
         }
     }
 
+    private static String readResourceFileAsString(final String resourcePath) throws IOException
+    {
+        try (InputStream inputStream = DtosPropertyTest.class.getResourceAsStream(resourcePath))
+        {
+            if (inputStream == null)
+            {
+                throw new IllegalArgumentException("Resource not found: " + resourcePath);
+            }
+
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
     private void assertEqual(
-        final ExpandableArrayBuffer inputBuffer,
+        final DirectBuffer inputBuffer,
         final int inputLength,
-        final ExpandableArrayBuffer outputBuffer,
+        final DirectBuffer outputBuffer,
         final int outputLength)
     {
         final boolean lengthsDiffer = inputLength != outputLength;
@@ -398,16 +404,5 @@ public class DtosPropertyTest
         {
             LangUtil.rethrowUnchecked(exn);
         }
-    }
-
-    public void addInputFootnotes(final Footnotes footnotes, final SbeArbitraries.EncodedMessage encodedMessage)
-    {
-        final byte[] messageBytes = new byte[encodedMessage.length()];
-        encodedMessage.buffer().getBytes(0, messageBytes);
-        final byte[] base64EncodedMessageBytes = Base64.getEncoder().encode(messageBytes);
-
-        footnotes.addFootnote("Schema:" + System.lineSeparator() + encodedMessage.schema());
-        footnotes.addFootnote("Input Message:" + System.lineSeparator() +
-            new String(base64EncodedMessageBytes, StandardCharsets.UTF_8));
     }
 }
