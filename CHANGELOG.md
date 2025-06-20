@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.35.5] - 2025-06-20
+### Changed
+* **Java/C++/C#:** Fix a bug in overzealous DTO validation. ([#1073](https://github.com/aeron-io/simple-binary-encoding/pull/1073))
+* **Java:** Bump `Agrona` to 2.2.3.
+
 ## [1.35.4] - 2025-06-12
 ### Changed
 * **Rust:** Return None for optional primite field if its version is less than actingVersion. ([#1067](https://github.com/aeron-io/simple-binary-encoding/pull/1067))
@@ -88,6 +93,7 @@
 * **Java:** Prevent collision when field name is 'value'.
 * **Java:** Preserve byte order throughout IR transformations.
 
+[1.35.5]: https://github.com/aeron-io/simple-binary-encoding/releases/tag/1.35.5
 [1.35.4]: https://github.com/aeron-io/simple-binary-encoding/releases/tag/1.35.4
 [1.35.3]: https://github.com/aeron-io/simple-binary-encoding/releases/tag/1.35.3
 [1.35.1]: https://github.com/aeron-io/simple-binary-encoding/releases/tag/1.35.1
