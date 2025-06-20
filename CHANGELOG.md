@@ -3,6 +3,7 @@
 ## [1.35.5] - 2025-06-20
 ### Changed
 * **Java/C++/C#:** Fix a bug in overzealous DTO validation. ([#1073](https://github.com/aeron-io/simple-binary-encoding/pull/1073))
+* **Java:** Improve JsonPrinter's conformance with the JSON specification (e.g., escaping control characters and using correct delimiters).
 * **Java:** Bump `Agrona` to 2.2.3.
 
 ## [1.35.4] - 2025-06-12
