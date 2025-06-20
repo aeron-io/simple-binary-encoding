@@ -15,12 +15,17 @@
  */
 package uk.co.real_logic.sbe.properties.schema;
 
+import uk.co.real_logic.sbe.ir.Encoding;
 import org.agrona.collections.MutableInteger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import uk.co.real_logic.sbe.ir.Encoding;
 
+import java.io.File;
+import java.io.StringWriter;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
@@ -28,11 +33,6 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.File;
-import java.io.StringWriter;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -355,7 +355,6 @@ public final class TestXmlSchemaWriter
         }
     }
 
-    @SuppressWarnings("EnhancedSwitchMigration")
     private static final class TypeSchemaConverter implements TypeSchemaVisitor
     {
         private final Document document;
@@ -465,7 +464,8 @@ public final class TestXmlSchemaWriter
             final Element varDataElement = createTypeElement(document, "varData", "uint8");
             varDataElement.setAttribute("length", "0");
 
-            if (varData.dataEncoding().equals(VarDataSchema.Encoding.ASCII))
+            final VarDataSchema.Encoding encoding = varData.dataEncoding();
+            if (encoding.equals(VarDataSchema.Encoding.ASCII))
             {
                 varDataElement.setAttribute("characterEncoding", "US-ASCII");
             }

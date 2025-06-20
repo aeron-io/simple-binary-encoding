@@ -19,16 +19,23 @@ import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
+import net.jqwik.api.footnotes.EnableFootnotes;
+import net.jqwik.api.footnotes.Footnotes;
 import uk.co.real_logic.sbe.json.JsonPrinter;
 import uk.co.real_logic.sbe.properties.arbitraries.SbeArbitraries;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import static uk.co.real_logic.sbe.properties.PropertyTestUtil.addSchemaAndInputMessageFootnotes;
+
 public class JsonPropertyTest
 {
     @Property
-    void shouldGenerateValidJson(@ForAll("encodedMessage") final SbeArbitraries.EncodedMessage encodedMessage)
+    @EnableFootnotes
+    void shouldGenerateValidJson(
+        @ForAll("encodedMessage") final SbeArbitraries.EncodedMessage encodedMessage,
+        final Footnotes footnotes)
     {
         final StringBuilder output = new StringBuilder();
         final JsonPrinter printer = new JsonPrinter(encodedMessage.ir());
@@ -39,15 +46,16 @@ public class JsonPropertyTest
         }
         catch (final JSONException e)
         {
-            throw new AssertionError("Invalid JSON: " + output + "\n\nSchema:\n" + encodedMessage.schema(), e);
+            addSchemaAndInputMessageFootnotes(footnotes, encodedMessage);
+            throw new AssertionError("Invalid JSON: " + output);
         }
     }
 
     @Provide
     Arbitrary<SbeArbitraries.EncodedMessage> encodedMessage()
     {
-        final SbeArbitraries.CharGenerationMode mode =
-            SbeArbitraries.CharGenerationMode.JSON_PRINTER_COMPATIBLE;
-        return SbeArbitraries.encodedMessage(mode);
+        final SbeArbitraries.CharGenerationConfig config =
+            SbeArbitraries.CharGenerationConfig.unrestricted();
+        return SbeArbitraries.encodedMessage(config);
     }
 }

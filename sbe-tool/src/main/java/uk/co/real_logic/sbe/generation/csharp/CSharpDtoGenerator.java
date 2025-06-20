@@ -35,6 +35,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static uk.co.real_logic.sbe.generation.common.DtoValidationUtil.NativeIntegerSupport.SIGNED_AND_UNSIGNED;
+import static uk.co.real_logic.sbe.generation.common.DtoValidationUtil.nativeTypeRepresentsValuesGreaterThanValidRange;
+import static uk.co.real_logic.sbe.generation.common.DtoValidationUtil.nativeTypeRepresentsValuesLessThanValidRange;
 import static uk.co.real_logic.sbe.generation.csharp.CSharpUtil.*;
 import static uk.co.real_logic.sbe.ir.GenerationUtil.collectFields;
 import static uk.co.real_logic.sbe.ir.GenerationUtil.collectGroups;
@@ -1285,7 +1288,9 @@ public class CSharpDtoGenerator implements CodeGenerator
                 .append("}\n");
         }
 
-        final boolean mustPreventLesser = !encoding.applicableMinValue().equals(encoding.primitiveType().minValue());
+        final boolean mustPreventLesser =
+            nativeTypeRepresentsValuesLessThanValidRange(fieldToken, typeToken.encoding(), SIGNED_AND_UNSIGNED);
+
         if (mustPreventLesser)
         {
             sb.append(indent).append(INDENT)
@@ -1299,7 +1304,9 @@ public class CSharpDtoGenerator implements CodeGenerator
                 .append("}\n");
         }
 
-        final boolean mustPreventGreater = !encoding.applicableMaxValue().equals(encoding.primitiveType().maxValue());
+        final boolean mustPreventGreater =
+            nativeTypeRepresentsValuesGreaterThanValidRange(fieldToken, typeToken.encoding(), SIGNED_AND_UNSIGNED);
+
         if (mustPreventGreater)
         {
             sb.append(indent).append(INDENT)

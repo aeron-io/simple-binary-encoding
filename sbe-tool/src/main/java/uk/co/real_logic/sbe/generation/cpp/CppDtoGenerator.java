@@ -35,6 +35,9 @@ import java.util.stream.Collectors;
 
 import static uk.co.real_logic.sbe.generation.Generators.toLowerFirstChar;
 import static uk.co.real_logic.sbe.generation.Generators.toUpperFirstChar;
+import static uk.co.real_logic.sbe.generation.common.DtoValidationUtil.NativeIntegerSupport.SIGNED_AND_UNSIGNED;
+import static uk.co.real_logic.sbe.generation.common.DtoValidationUtil.nativeTypeRepresentsValuesGreaterThanValidRange;
+import static uk.co.real_logic.sbe.generation.common.DtoValidationUtil.nativeTypeRepresentsValuesLessThanValidRange;
 import static uk.co.real_logic.sbe.generation.cpp.CppUtil.*;
 import static uk.co.real_logic.sbe.ir.GenerationUtil.collectFields;
 import static uk.co.real_logic.sbe.ir.GenerationUtil.collectGroups;
@@ -1591,8 +1594,11 @@ public class CppDtoGenerator implements CodeGenerator
 
         String value = "value";
 
-        final boolean mustPreventLesser = !encoding.applicableMinValue().equals(encoding.primitiveType().minValue());
-        final boolean mustPreventGreater = !encoding.applicableMaxValue().equals(encoding.primitiveType().maxValue());
+        final boolean mustPreventLesser =
+            nativeTypeRepresentsValuesLessThanValidRange(fieldToken, encoding, SIGNED_AND_UNSIGNED);
+
+        final boolean mustPreventGreater =
+            nativeTypeRepresentsValuesGreaterThanValidRange(fieldToken, encoding, SIGNED_AND_UNSIGNED);
 
         if (fieldToken.isOptionalEncoding())
         {

@@ -15,13 +15,13 @@
  */
 package uk.co.real_logic.sbe.json;
 
-import org.agrona.DirectBuffer;
-import org.agrona.PrintBufferUtil;
 import uk.co.real_logic.sbe.PrimitiveValue;
 import uk.co.real_logic.sbe.ir.Encoding;
 import uk.co.real_logic.sbe.ir.Token;
 import uk.co.real_logic.sbe.otf.TokenListener;
 import uk.co.real_logic.sbe.otf.Types;
+import org.agrona.DirectBuffer;
+import org.agrona.PrintBufferUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.util.List;
@@ -236,7 +236,7 @@ public class JsonTokenListener implements TokenListener
             final String str = charsetName != null ? new String(tempBuffer, 0, length, charsetName) :
                 PrintBufferUtil.hexDump(tempBuffer);
 
-            escape(str);
+            Types.jsonEscape(str, output);
 
             doubleQuote();
             next();
@@ -290,7 +290,7 @@ public class JsonTokenListener implements TokenListener
                         final long longValue = constOrNotPresentValue.longValue();
                         if (PrimitiveValue.NULL_VALUE_CHAR != longValue)
                         {
-                            escape(new String(new byte[]{ (byte)longValue }, characterEncoding));
+                            Types.jsonEscape(new String(new byte[] {(byte)longValue}, characterEncoding), output);
                         }
                     }
                     catch (final UnsupportedEncodingException ex)
@@ -300,7 +300,7 @@ public class JsonTokenListener implements TokenListener
                 }
                 else
                 {
-                    escape(constOrNotPresentValue.toString());
+                    Types.jsonEscape(constOrNotPresentValue.toString(), output);
                 }
 
                 doubleQuote();
@@ -371,7 +371,7 @@ public class JsonTokenListener implements TokenListener
             final byte c = buffer.getByte(index + (i * elementSize));
             if (c > 0)
             {
-                escape((char)c);
+                Types.jsonEscape((char)c, output);
             }
             else
             {
@@ -466,23 +466,5 @@ public class JsonTokenListener implements TokenListener
         }
 
         return Types.getLong(buffer, bufferIndex, typeToken.encoding());
-    }
-
-    private void escape(final String str)
-    {
-        for (int i = 0, length = str.length(); i < length; i++)
-        {
-            escape(str.charAt(i));
-        }
-    }
-
-    private void escape(final char c)
-    {
-        if ('"' == c || '\\' == c || '\b' == c || '\f' == c || '\n' == c || '\r' == c || '\t' == c)
-        {
-            output.append('\\');
-        }
-
-        output.append(c);
     }
 }
