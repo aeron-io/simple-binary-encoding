@@ -11,7 +11,7 @@ json = "20250517"
 junit = "5.13.1"
 mockito = "5.18.0"
 plexus = "3.3.0"
-shadow = "8.3.6"
+shadow = "8.3.7"
 versions = "0.52.0"
 
 [libraries]
