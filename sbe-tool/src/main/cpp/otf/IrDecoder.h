@@ -137,6 +137,10 @@ public:
         return result;
     }
 
+    int schemaId() const {
+        return m_id;
+    }
+
 protected:
     // OS specifics
     static long long getFileSize(const char *filename)
