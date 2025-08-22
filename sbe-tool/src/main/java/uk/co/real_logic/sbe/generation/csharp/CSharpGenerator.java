@@ -1141,7 +1141,7 @@ public class CSharpGenerator implements CodeGenerator
             generateDocumentation(indent, fieldToken),
             typeName, propName, offset,
             generateArrayFieldNotPresentCondition(fieldToken.version(),
-            indent + INDENT + INDENT, "new " + typeName + "[0]"),
+            indent + INDENT + INDENT, "System.Array.Empty<" + typeName + ">()"),
             accessOrderListenerCallDoubleIndent));
 
         sb.append(String.format("\n" +
@@ -1155,7 +1155,7 @@ public class CSharpGenerator implements CodeGenerator
             generateDocumentation(indent, fieldToken),
             typeName, propName, offset,
             generateArrayFieldNotPresentCondition(fieldToken.version(),
-            indent + INDENT + INDENT, "new " + typeName + "[0]"),
+            indent + INDENT + INDENT, "System.Array.Empty<" + typeName + ">()"),
             accessOrderListenerCall));
 
         if (typeToken.encoding().primitiveType() == PrimitiveType.CHAR)
