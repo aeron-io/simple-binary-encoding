@@ -247,6 +247,7 @@ public:
         }
 
         char code_buf[4];
+        memset(code_buf, 0, sizeof(code_buf));
         CGT(engine) engine = {};
         if (CGT(car_engine)(&car, &engine))
         {
@@ -338,6 +339,7 @@ public:
         }
 
         char code_buf[4];
+        memset(code_buf, 0, sizeof(code_buf));
         CGT(engine) engine = {};
         if (CGT(car_engine)(&car, &engine))
         {
