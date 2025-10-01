@@ -28,8 +28,9 @@ import static java.io.File.separatorChar;
  * {@link OutputManager} for managing the creation of C++11 source files as the target of code generation.
  * The character encoding for the {@link java.io.Writer} is UTF-8.
  */
-public class NamespaceOutputManager implements OutputManager
+public class NamespaceOutputManager implements OutputManager, WithFileExtension
 {
+    private String fileExt;
     private final File outputDir;
 
     /**
@@ -51,6 +52,9 @@ public class NamespaceOutputManager implements OutputManager
         {
             throw new IllegalStateException("Unable to create directory: " + packageDirName);
         }
+
+        // Defaults to .h to maintain backward compatibility
+        fileExt = System.getProperty("sbe.cpp.file.extension", ".h");
     }
 
     /**
@@ -65,7 +69,19 @@ public class NamespaceOutputManager implements OutputManager
      */
     public Writer createOutput(final String name) throws IOException
     {
-        final File targetFile = new File(outputDir, name + ".h");
+        final File targetFile = new File(outputDir, name + fileExt);
         return Files.newBufferedWriter(targetFile.toPath(), StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public void withFileExtension(final String fileExtension)
+    {
+        this.fileExt = fileExtension;
+    }
+
+    @Override
+    public String getFileExtension()
+    {
+        return this.fileExt;
     }
 }
