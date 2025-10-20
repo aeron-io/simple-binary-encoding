@@ -69,6 +69,7 @@ class LibRsDef
             indent(libRs, 0, "#![allow(clippy::all)]\n");
             indent(libRs, 0, "#![allow(non_camel_case_types)]\n\n");
             indent(libRs, 0, "#![allow(ambiguous_glob_reexports)]\n\n");
+            indent(libRs, 0, "#![allow(unused_mut)]\n\n");
             indent(libRs, 0, "use ::core::{convert::TryInto};\n\n");
 
             final ArrayList<String> modules = new ArrayList<>();
@@ -98,7 +99,7 @@ class LibRsDef
 
             generateEncoderTraits(libRs);
             generateDecoderTraits(schemaVersionType, libRs);
-
+            generateSbeToString(libRs);
             generateReadBuf(libRs, byteOrder);
             generateWriteBuf(libRs, byteOrder);
         }
@@ -129,6 +130,18 @@ class LibRsDef
         indent(writer, 0, "pub trait Decoder<'a>: Reader<'a> {\n");
         indent(writer, 1, "fn get_limit(&self) -> usize;\n");
         indent(writer, 1, "fn set_limit(&mut self, limit: usize);\n");
+        indent(writer, 0, "}\n\n");
+    }
+
+    static void generateSbeToString(final Writer writer) throws IOException
+    {
+        indent(writer, 0, "/// Returns a human-readable string representation of the SBE message.\n");
+        indent(writer, 0, "///\n");
+        indent(writer, 0, "/// This trait works like `ToString`, but it takes `self` as value\n");
+        indent(writer, 0, "/// to be compatible with the generated decoders.\n");
+        indent(writer, 0, "pub trait SbeToString: Sized {\n");
+        indent(writer, 1, "/// Returns a human-readable string along with the consumed `self`.\n");
+        indent(writer, 1, "fn sbe_to_string(self) -> SbeResult<(Self, String)>;\n");
         indent(writer, 0, "}\n\n");
     }
 
