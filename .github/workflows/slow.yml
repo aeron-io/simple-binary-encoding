@@ -57,7 +57,7 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ env.JAVA_VERSION }}
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
       - name: Setup dotnet
         uses: actions/setup-dotnet@v5
         with:
@@ -74,12 +74,12 @@ jobs:
           ./gradlew tarTestLogs
       - name: Upload crash logs
         if: always() && steps.copy_test_logs.outputs.file == 'build/distributions/test_logs.tbz2'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: crash-logs-${{ matrix.os }}-property-tests-java-${{matrix.java}}-dotnet-${{matrix.dotnet}}
           path: ${{ steps.copy_test_logs.outputs.file }}
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: property-tests

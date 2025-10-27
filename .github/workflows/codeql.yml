@@ -56,7 +56,7 @@ jobs:
           echo "BUILD_JAVA_VERSION=${{ matrix.java }}" >> $GITHUB_ENV
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -114,7 +114,7 @@ jobs:
           echo "BUILD_JAVA_VERSION=${{ env.JAVA_VERSION }}" >> $GITHUB_ENV
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Setup dotnet
         uses: actions/setup-dotnet@v5
@@ -169,7 +169,7 @@ jobs:
           echo "BUILD_JAVA_VERSION=${{ env.JAVA_VERSION }}" >> $GITHUB_ENV
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Install compiler
         run: |
