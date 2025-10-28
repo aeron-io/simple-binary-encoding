@@ -83,7 +83,7 @@ jobs:
       fail-fast: false
       matrix:
         language: [ 'csharp' ]
-        dotnet: [ '10' ]
+        dotnet: [ '9' ]
     env:
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
