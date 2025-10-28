@@ -38,22 +38,8 @@ jobs:
       - name: Use faster temporary storage (Windows)
         if: runner.os == 'Windows'
         run: |
-          $fast_dir = "D:\fast-dir"
-          New-Item -ItemType Directory -Path "$fast_dir"
-          New-Item -ItemType Directory -Path "$fast_dir\temp"
-          New-Item -ItemType Directory -Path "$fast_dir\.m2"
-          New-Item -ItemType Directory -Path "$fast_dir\.gradle"
-
-          if (Test-Path "$env:userprofile\.m2")
-          {
-            Remove-Item "$env:userprofile\.m2" -Recurse
-          }
-          New-Item -ItemType SymbolicLink -Path "$env:userprofile\.m2" -Target "$fast_dir\.m2"
-
-          echo "TMP=$fast_dir\temp" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "TEMP=$fast_dir\temp" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "M2_HOME=$fast_dir\.m2" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "GRADLE_USER_HOME=$fast_dir\.gradle" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "TMP=$env:RUNNER_TEMP" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "TEMP=$env:RUNNER_TEMP" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Checkout code
         uses: actions/checkout@v5
         with:
@@ -263,22 +249,8 @@ jobs:
     steps:
       - name: Use faster temporary storage (Windows)
         run: |
-          $fast_dir = "D:\fast-dir"
-          New-Item -ItemType Directory -Path "$fast_dir"
-          New-Item -ItemType Directory -Path "$fast_dir\temp"
-          New-Item -ItemType Directory -Path "$fast_dir\.m2"
-          New-Item -ItemType Directory -Path "$fast_dir\.gradle"
-
-          if (Test-Path "$env:userprofile\.m2")
-          {
-            Remove-Item "$env:userprofile\.m2" -Recurse
-          }
-          New-Item -ItemType SymbolicLink -Path "$env:userprofile\.m2" -Target "$fast_dir\.m2"
-
-          echo "TMP=$fast_dir\temp" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "TEMP=$fast_dir\temp" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "M2_HOME=$fast_dir\.m2" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "GRADLE_USER_HOME=$fast_dir\.gradle" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "TMP=$env:RUNNER_TEMP" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "TEMP=$env:RUNNER_TEMP" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Checkout code
         uses: actions/checkout@v5
         with:
