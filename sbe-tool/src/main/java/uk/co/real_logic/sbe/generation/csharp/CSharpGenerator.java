@@ -2069,6 +2069,18 @@ public class CSharpGenerator implements CodeGenerator
         if (fieldToken.isConstantEncoding())
         {
             final String constValue = fieldToken.encoding().constValue().toString();
+            
+            // If constValue already contains the type prefix (e.g., "filterType.TrailingDelta"),
+            // extract just the enum value name
+            final String enumValue;
+            if (constValue.contains("."))
+            {
+                enumValue = constValue.substring(constValue.lastIndexOf('.') + 1);
+            }
+            else
+            {
+                enumValue = constValue;
+            }
 
             return String.format("\n" +
                 "%1$s" +
@@ -2076,13 +2088,14 @@ public class CSharpGenerator implements CodeGenerator
                 indent + INDENT + "{\n" +
                 indent + INDENT + INDENT + "get\n" +
                 indent + INDENT + INDENT + "{\n" +
-                indent + INDENT + INDENT + INDENT + "return %4$s;\n" +
+                indent + INDENT + INDENT + INDENT + "return %4$s.%5$s;\n" +
                 indent + INDENT + INDENT + "}\n" +
                 indent + INDENT + "}\n\n",
                 generateDocumentation(indent + INDENT, fieldToken),
                 enumName,
                 toUpperFirstChar(propertyName),
-                constValue);
+                enumName,
+                enumValue);
         }
         else
         {
