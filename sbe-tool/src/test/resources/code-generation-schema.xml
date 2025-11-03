@@ -74,6 +74,10 @@
             <choice name="sportsPack">1</choice>
             <choice name="cruiseControl">2</choice>
         </set>
+        <enum name="lowerCaseEnum" encodingType="uint8">
+            <validValue name="one">0</validValue>
+            <validValue name="TwO">5</validValue>
+        </enum>
     </types>
     <sbe:message name="Car" id="1" description="Description of a basic Car">
         <field name="serialNumber" id="1" type="uint64"/>
@@ -187,5 +191,8 @@
         <data name="go"             id="100" type="varStringEncoding"/>
         <data name="package"        id="101" type="varStringEncoding"/>
         <data name="var"            id="102" type="varAsciiStringEncoding"/>
+    </sbe:message>
+    <sbe:message name="LowerCaseValueRef" id="3">
+        <field name="x" id="1" type="lowerCaseEnum" presence="constant" valueRef="lowerCaseEnum.TwO"/>
     </sbe:message>
 </sbe:messageSchema>

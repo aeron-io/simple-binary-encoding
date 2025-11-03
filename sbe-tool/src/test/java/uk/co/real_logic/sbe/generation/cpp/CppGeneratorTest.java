@@ -140,4 +140,35 @@ class CppGeneratorTest
             assertThat(source, containsString("static constexpr const char *STATE_TRANSITIONS_LOOKUP[] ="));
         }
     }
+
+    @Test
+    void shouldHandleLowerCaseEnumValueReference() throws Exception
+    {
+        try (InputStream in = Tests.getLocalResource("code-generation-schema.xml"))
+        {
+            final ParserOptions options = ParserOptions.builder().stopOnError(true).build();
+            final MessageSchema schema = parse(in, options);
+            final IrGenerator irg = new IrGenerator();
+            final Ir ir = irg.generate(schema);
+            final StringWriterOutputManager outputManager = new StringWriterOutputManager();
+            outputManager.setPackageName(ir.applicableNamespace());
+
+            final CppGenerator generator = new CppGenerator(
+                ir,
+                false,
+                PrecedenceChecks.newInstance(new PrecedenceChecks.Context().shouldGeneratePrecedenceChecks(true)),
+                false,
+                outputManager);
+            generator.generate();
+
+            final java.util.Map<String, CharSequence> sources = outputManager.getSources();
+            final String source = sources.get("code.generation.test.LowerCaseValueRef").toString();
+            assertThat(source, containsString("""
+                    SBE_NODISCARD LowerCaseEnum::Value x() const
+                    {
+                        return LowerCaseEnum::Value::TwO;
+                    }
+                """));
+        }
+    }
 }

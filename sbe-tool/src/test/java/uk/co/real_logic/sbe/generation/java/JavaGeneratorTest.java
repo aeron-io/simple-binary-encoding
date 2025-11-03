@@ -740,6 +740,21 @@ class JavaGeneratorTest
             () -> new JavaGenerator(ir, BUFFER_NAME, "java.nio.ByteBuffer", false, false, false, outputManager));
     }
 
+    @Test
+    void shouldHandleLowerCaseEnumValueReference() throws Exception
+    {
+        generator().generate();
+
+        final java.util.Map<String, CharSequence> sources = outputManager.getSources();
+        final String source = sources.get("code.generation.test.LowerCaseValueRefDecoder").toString();
+        assertThat(source, containsString("""
+                public LowerCaseEnum x()
+                {
+                    return LowerCaseEnum.TwO;
+                }
+            """));
+    }
+
     private Class<?> compileCarEncoder() throws Exception
     {
         final String className = "CarEncoder";
