@@ -2069,18 +2069,10 @@ public class CSharpGenerator implements CodeGenerator
         if (fieldToken.isConstantEncoding())
         {
             final String constValue = fieldToken.encoding().constValue().toString();
-            
+            final int lastDotIndex = constValue.lastIndexOf('.');
             // If constValue already contains the type prefix (e.g., "filterType.TrailingDelta"),
             // extract just the enum value name
-            final String enumValue;
-            if (constValue.contains("."))
-            {
-                enumValue = constValue.substring(constValue.lastIndexOf('.') + 1);
-            }
-            else
-            {
-                enumValue = constValue;
-            }
+            final String enumValue = -1 == lastDotIndex ? constValue : constValue.substring(lastDotIndex + 1);
 
             return String.format("\n" +
                 "%1$s" +
