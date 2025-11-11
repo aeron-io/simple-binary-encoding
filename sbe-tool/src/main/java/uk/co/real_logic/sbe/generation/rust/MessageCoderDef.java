@@ -106,6 +106,12 @@ class MessageCoderDef implements RustGenerator.ParentDef
 
         indent(sb, 1, "}\n\n"); // impl end
 
+        if (codecType == Decoder)
+        {
+            RustGenerator.appendImplSbeToStringForDecoder(sb, msgTypeName, msgToken.name(), fields, groups, varData,
+                1);
+        }
+
         // append all subGroup generated code
         for (final SubGroup subGroup : subGroups)
         {
