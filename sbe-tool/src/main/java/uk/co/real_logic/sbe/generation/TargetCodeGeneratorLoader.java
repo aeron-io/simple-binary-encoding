@@ -34,6 +34,8 @@ import uk.co.real_logic.sbe.generation.typescript.TypeScriptGenerator;
 import uk.co.real_logic.sbe.generation.typescript.TypeScriptOutputManager;
 import uk.co.real_logic.sbe.generation.python.PythonGenerator;
 import uk.co.real_logic.sbe.generation.python.PythonOutputManager;
+import uk.co.real_logic.sbe.generation.php.PHPGenerator;
+import uk.co.real_logic.sbe.generation.php.PHPOutputManager;
 import uk.co.real_logic.sbe.ir.Ir;
 
 import static uk.co.real_logic.sbe.SbeTool.*;
@@ -208,6 +210,22 @@ public enum TargetCodeGeneratorLoader implements TargetCodeGenerator
             return new PythonGenerator(
                 ir,
                 new PythonOutputManager(outputDir, ir.applicableNamespace()));
+        }
+    },
+
+    /**
+     * Generates decoder codecs for the PHP programming language.
+     */
+    PHP()
+    {
+        /**
+         * {@inheritDoc}
+         */
+        public CodeGenerator newInstance(final Ir ir, final String outputDir)
+        {
+            return new PHPGenerator(
+                ir,
+                new PHPOutputManager(outputDir, ir.applicableNamespace()));
         }
     };
 

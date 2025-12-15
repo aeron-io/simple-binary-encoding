@@ -598,4 +598,92 @@ public class ValidationUtil
     {
         return Character.isLetterOrDigit(c) || c == '_';
     }
+
+    /* https://www.php.net/manual/en/reserved.keywords.php */
+    private static final Set<String> PHP_KEYWORDS = Set.of(
+        "__halt_compiler", "abstract", "and", "array", "as", "break", "callable", "case",
+        "catch", "class", "clone", "const", "continue", "declare", "default", "die",
+        "do", "echo", "else", "elseif", "empty", "enddeclare", "endfor", "endforeach",
+        "endif", "endswitch", "endwhile", "eval", "exit", "extends", "final", "finally",
+        "fn", "for", "foreach", "function", "global", "goto", "if", "implements",
+        "include", "include_once", "instanceof", "insteadof", "interface", "isset",
+        "list", "match", "namespace", "new", "or", "print", "private", "protected",
+        "public", "readonly", "require", "require_once", "return", "static", "switch",
+        "throw", "trait", "try", "unset", "use", "var", "while", "xor", "yield",
+        "__CLASS__", "__DIR__", "__FILE__", "__FUNCTION__", "__LINE__", "__METHOD__",
+        "__NAMESPACE__", "__TRAIT__", "int", "float", "bool", "string", "true",
+        "false", "null", "void", "iterable", "object", "mixed", "never");
+
+    /**
+     * Check value for validity of usage as a PHP identifier.
+     * <a href="https://www.php.net/manual/en/language.variables.basics.php">PHP identifiers</a>
+     *
+     * @param value to check
+     * @return true for validity as a PHP name. false if not.
+     */
+    public static boolean isSbePhpName(final String value)
+    {
+        if (possiblePhpKeyword(value))
+        {
+            if (isPhpKeyword(value))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Is the token a PHP language keyword?
+     *
+     * @param token to be checked.
+     * @return true if the token a PHP language keyword.
+     */
+    public static boolean isPhpKeyword(final String token)
+    {
+        return PHP_KEYWORDS.contains(token);
+    }
+
+    /**
+     * Is the value a possible PHP language keyword?
+     *
+     * @param value to be checked.
+     * @return true if the value is a possible PHP language keyword.
+     */
+    private static boolean possiblePhpKeyword(final String value)
+    {
+        for (int i = 0, size = value.length(); i < size; i++)
+        {
+            final char c = value.charAt(i);
+
+            if (i == 0 && isSbePhpIdentifierStart(c))
+            {
+                continue;
+            }
+
+            if (isSbePhpIdentifierPart(c))
+            {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private static boolean isSbePhpIdentifierStart(final char c)
+    {
+        return Character.isLetter(c) || c == '_';
+    }
+
+    private static boolean isSbePhpIdentifierPart(final char c)
+    {
+        return Character.isLetterOrDigit(c) || c == '_';
+    }
 }
