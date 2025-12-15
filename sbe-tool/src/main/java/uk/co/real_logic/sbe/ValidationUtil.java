@@ -517,4 +517,85 @@ public class ValidationUtil
                 return false;
         }
     }
+
+    /* https://docs.python.org/3/reference/lexical_analysis.html#keywords */
+    private static final Set<String> PYTHON_KEYWORDS = Set.of(
+        "False", "None", "True", "and", "as", "assert", "async", "await",
+        "break", "class", "continue", "def", "del", "elif", "else", "except",
+        "finally", "for", "from", "global", "if", "import", "in", "is",
+        "lambda", "nonlocal", "not", "or", "pass", "raise", "return",
+        "try", "while", "with", "yield");
+
+    /**
+     * Check value for validity of usage as a Python identifier.
+     * <a href="https://docs.python.org/3/reference/lexical_analysis.html#identifiers">Python identifiers</a>
+     *
+     * @param value to check
+     * @return true for validity as a Python name. false if not.
+     */
+    public static boolean isSbePythonName(final String value)
+    {
+        if (possiblePythonKeyword(value))
+        {
+            if (isPythonKeyword(value))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Is the token a Python language keyword?
+     *
+     * @param token to be checked.
+     * @return true if the token a Python language keyword.
+     */
+    public static boolean isPythonKeyword(final String token)
+    {
+        return PYTHON_KEYWORDS.contains(token);
+    }
+
+    /**
+     * Is the value a possible Python language keyword?
+     *
+     * @param value to be checked.
+     * @return true if the value is a possible Python language keyword.
+     */
+    private static boolean possiblePythonKeyword(final String value)
+    {
+        for (int i = 0, size = value.length(); i < size; i++)
+        {
+            final char c = value.charAt(i);
+
+            if (i == 0 && isSbePythonIdentifierStart(c))
+            {
+                continue;
+            }
+
+            if (isSbePythonIdentifierPart(c))
+            {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private static boolean isSbePythonIdentifierStart(final char c)
+    {
+        return Character.isLetter(c) || c == '_';
+    }
+
+    private static boolean isSbePythonIdentifierPart(final char c)
+    {
+        return Character.isLetterOrDigit(c) || c == '_';
+    }
 }
