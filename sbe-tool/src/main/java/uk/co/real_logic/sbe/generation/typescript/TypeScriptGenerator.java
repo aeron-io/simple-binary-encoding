@@ -440,7 +440,10 @@ public class TypeScriptGenerator implements CodeGenerator
         final String interfaceName = messageName;
         final String decoderName = messageName + "Decoder";
 
-        // Generate interface first
+        // Generate group interfaces FIRST, before any class declarations
+        generateGroupInterfaces(sb, groups);
+
+        // Generate message interface
         generateMessageInterface(sb, interfaceName, fields, groups, varData);
         sb.append("\n");
 
@@ -696,6 +699,51 @@ public class TypeScriptGenerator implements CodeGenerator
     }
 
     /**
+     * Generate group interfaces (must be called before class declarations).
+     *
+     * @param sb     to append to.
+     * @param groups the group tokens.
+     */
+    private void generateGroupInterfaces(final StringBuilder sb, final List<Token> groups)
+    {
+        for (int i = 0; i < groups.size();)
+        {
+            final Token groupToken = groups.get(i);
+            if (groupToken.signal() == Signal.BEGIN_GROUP)
+            {
+                final String groupName = formatTypeName(groupToken.name());
+                final List<Token> groupTokens = new ArrayList<>();
+
+                final int endIndex = i + groupToken.componentTokenCount();
+                for (int j = i; j < endIndex; j++)
+                {
+                    groupTokens.add(groups.get(j));
+                }
+
+                final List<Token> groupBody = groupTokens.subList(1, groupTokens.size() - 1);
+
+                // Generate group interface
+                sb.append("export interface ").append(groupName).append(" {\n");
+
+                Generators.forEachField(groupBody, (fieldToken, typeToken) ->
+                {
+                    final String fieldName = formatFieldName(fieldToken.name());
+                    final String typeName = typeScriptTypeName(typeToken.encoding().primitiveType());
+                    sb.append("  ").append(fieldName).append(": ").append(typeName).append(";\n");
+                });
+
+                sb.append("}\n\n");
+
+                i = endIndex;
+            }
+            else
+            {
+                i++;
+            }
+        }
+    }
+
+    /**
      * Generate group decoder methods.
      *
      * @param sb      to append to.
@@ -721,20 +769,7 @@ public class TypeScriptGenerator implements CodeGenerator
                     groupTokens.add(groups.get(j));
                 }
 
-                // First, generate the interface for the group
                 final List<Token> groupBody = groupTokens.subList(1, groupTokens.size() - 1);
-
-                // Generate group interface
-                sb.append("\nexport interface ").append(groupName).append(" {\n");
-
-                Generators.forEachField(groupBody, (fieldToken, typeToken) ->
-                {
-                    final String fieldName = formatFieldName(fieldToken.name());
-                    final String typeName = typeScriptTypeName(typeToken.encoding().primitiveType());
-                    sb.append("  ").append(fieldName).append(": ").append(typeName).append(";\n");
-                });
-
-                sb.append("}\n\n");
 
                 // Generate group decoder method
                 final String methodName = "decode" + groupName + "Group";
