@@ -1,5 +1,5 @@
 [versions]
-agrona = "2.3.2"
+agrona = "2.4.0"
 checkstyle = "12.3.0"
 commons-codec = "1.15"
 commons-lang3 = "3.8.1"
