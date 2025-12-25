@@ -64,6 +64,7 @@ cppbuild/*.cache
 cppbuild/Debug
 cppbuild/Release
 cppbuild/Win32
+cppbuild/cmake
 
 # golang
 gocode/pkg

@@ -4,15 +4,43 @@ SOURCE_DIR="$(pwd)"
 BUILD_DIR="${SOURCE_DIR}/cppbuild/Release"
 EXTRA_CMAKE_ARGS=""
 
+BUILD_DELETE_CMAKE=false
+BUILD_CMAKE_VERSION=4.2.1
+BUILD_CMAKE_DIR="${SOURCE_DIR}/cppbuild/cmake"
+
 ncpus=1
 case "$(uname)" in
   Darwin* )
     ncpus=$(sysctl -n hw.ncpu)
+    BUILD_CMAKE_OS="macos-universal"
+    BUILD_CMAKE_PATH="${BUILD_CMAKE_DIR}/CMake.app/Contents/bin"
     ;;
   Linux*)
     ncpus=$(lscpu -p | grep -c -E -v '^#')
+    BUILD_CMAKE_OS="linux-$(arch)"
+    BUILD_CMAKE_PATH="${BUILD_CMAKE_DIR}/bin"
     ;;
 esac
+
+function install_cmake()
+{
+  if [[ true = "${BUILD_DELETE_CMAKE}" ]]
+  then
+    echo "Removing old CMake installation"
+    rm -rf "${BUILD_CMAKE_DIR}"
+  fi
+
+  local version_file="${BUILD_CMAKE_DIR}/version.txt"
+  local version_info="${BUILD_CMAKE_VERSION}-${BUILD_CMAKE_OS}"
+  if [[ "${version_info}" != "$(cat "${version_file}")" ]]
+  then
+    echo "Installing CMake ${version_info}"
+    rm -rf "${BUILD_CMAKE_DIR}"
+    mkdir -p "${BUILD_CMAKE_DIR}"
+    (curl -LJ "https://github.com/Kitware/CMake/releases/download/v${BUILD_CMAKE_VERSION}/cmake-${BUILD_CMAKE_VERSION}-${BUILD_CMAKE_OS}.tar.gz" | tar xzf - -C "${BUILD_CMAKE_DIR}" --strip-components 1
+      echo "${version_info}" > "${version_file}")
+  fi
+}
 
 while [[ $# -gt 0 ]]
 do
@@ -39,6 +67,16 @@ do
       echo "Enabling sanitise build"
       shift
       ;;
+    --rebuild-cmake)
+      BUILD_DELETE_CMAKE=true
+      shift
+      ;;
+    --cmake-version)
+      BUILD_CMAKE_VERSION=${2}
+      echo "Setting BUILD_CMAKE_VERSION=${2}"
+      shift
+      shift
+      ;;
     -h|--help)
       echo "${0} [--c-warnings-as-errors] [--cxx-warnings-as-errors] [--debug-build] [--sanitise-build]"
       exit
@@ -59,6 +97,9 @@ if [ -d "${BUILD_DIR}" ] ; then
 fi
 
 mkdir -p "${BUILD_DIR}"
+
+install_cmake
+
 cd "${BUILD_DIR}" || exit
 
-(cmake -G "Unix Makefiles" ${EXTRA_CMAKE_ARGS} "${SOURCE_DIR}" && make clean && make -j ${ncpus} all && ctest -C Release --output-on-failure)
+("${BUILD_CMAKE_PATH}/cmake" -G "Unix Makefiles" ${EXTRA_CMAKE_ARGS} "${SOURCE_DIR}" && make clean && make -j ${ncpus} all && "${BUILD_CMAKE_PATH}/ctest" -C Release --output-on-failure)
