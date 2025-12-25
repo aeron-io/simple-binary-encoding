@@ -1,65 +1,77 @@
 = Changelog
 
+== 1.37.0 (2025-12-25)
+
+* **[C]** Implement `--sanitise-build` support.
+* **[C/C{plus}{plus}]** Add complete list of keywords + add `assert` as keyword so it is escaped correctly.
+* **[C]** Download and install `CMake` during the build.
+* **[Java]** Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.4.0[Agrona 2.4.0].
+* **[Java]** Upgrade to `Checkstyle` 12.3.0.
+* **[Java]** Upgrade to `json` 20251224.
+* **[Java]** Upgrade to `Mockito` 5.21.0.
+* **[Java]** Upgrade to `Shadow` 9.3.0.
+* **[Java]** Upgrade to `Gradle` 9.2.1.
+
 == 1.36.2 (2025-11-08)
 
-* *[Java]* Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.3.2[Agrona 2.3.2].
+* **[Java]** Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.3.2[Agrona 2.3.2].
 
 == 1.36.1 (2025-11-03)
 
-* *[C#]* Handle case when `valueRef` is with enum type prefix. (https://github.com/aeron-io/simple-binary-encoding/pull/1092[#1092])
-* *[Java]* Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.3.1[Agrona 2.3.1].
-* *[Java]* Upgrade to `JUnit` 6.0.1.
-* *[Java]* Upgrade to `Checkstyle` 12.1.1.
+* **[C#]** Handle case when `valueRef` is with enum type prefix. (https://github.com/aeron-io/simple-binary-encoding/pull/1092[#1092])
+* **[Java]** Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.3.1[Agrona 2.3.1].
+* **[Java]** Upgrade to `JUnit` 6.0.1.
+* **[Java]** Upgrade to `Checkstyle` 12.1.1.
 
 == 1.36.0 (2025-09-29)
 
-* *[C{plus}{plus}]* Fix composite encode generation to use formatted property names, i.e. escape keywords.
-* *[C{plus}{plus}]* Fix property name usage in display code generator.
-* *[C{plus}{plus}]* Add getter for schema id on the `IrDecoder` (https://github.com/aeron-io/simple-binary-encoding/pull/1077[#1077])
-* *[Java]* Fix var data and composite code generation to use property name instead of plain name. Also use property name for access order check methods. (https://github.com/aeron-io/simple-binary-encoding/issues/1081[#1081])
-* *[Java]* Handle `null` values when encoding enums, i.e. use `Enum.NULL_VAL` if the value was not assigned.
-* *[Java]* Handle primitive arrays correctly in the generated DTO code.
-* *[Go]* Handle `_` and `String` as keywords and use property name when generating variable data section.
-* *[C#]* Replaced empty array creation by `Array.Empty`, issue (https://github.com/aeron-io/simple-binary-encoding/issues/1079[#1079]). (https://github.com/aeron-io/simple-binary-encoding/pull/1080[#1080])
-* *[C/C{plus}{plus}]* Allow overriding Gradle wrapper location. (https://github.com/aeron-io/simple-binary-encoding/issues/1091[#1091]).
-* *[Java/C{plus}{plus}/Go]* Preserve `packageName` in the IR. (https://github.com/aeron-io/simple-binary-encoding/issues/1089[#1089])
-* *[Java]* Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.3.0[Agrona 2.3.0].
-* *[Java]* Upgrade to `JUnit` 5.13.4.
-* *[Java]* Upgrade to `Mockito` 5.20.0.
-* *[Java]* Upgrade to `Checkstyle` 11.1.0.
-* *[Java]* Upgrade to `Shadow` 9.2.2.
-* *[Java]* Upgrade to `Version` 0.53.0.
-* *[C]* Upgrade to `GoogleTest` to 1.14.0.
-* *[C]* Bump minimium required CMake version to `3.30`.
-* *[CI]* Add `Clang` 21 to the build matrix.
-* *[CI]* Add `Java` 25 to the build matrix.
+* **[C{plus}{plus}]** Fix composite encode generation to use formatted property names, i.e. escape keywords.
+* **[C{plus}{plus}]** Fix property name usage in display code generator.
+* **[C{plus}{plus}]** Add getter for schema id on the `IrDecoder` (https://github.com/aeron-io/simple-binary-encoding/pull/1077[#1077])
+* **[Java]** Fix var data and composite code generation to use property name instead of plain name. Also use property name for access order check methods. (https://github.com/aeron-io/simple-binary-encoding/issues/1081[#1081])
+* **[Java]** Handle `null` values when encoding enums, i.e. use `Enum.NULL_VAL` if the value was not assigned.
+* **[Java]** Handle primitive arrays correctly in the generated DTO code.
+* **[Go]** Handle `_` and `String` as keywords and use property name when generating variable data section.
+* **[C#]** Replaced empty array creation by `Array.Empty`, issue (https://github.com/aeron-io/simple-binary-encoding/issues/1079[#1079]). (https://github.com/aeron-io/simple-binary-encoding/pull/1080[#1080])
+* **[C/C{plus}{plus}]** Allow overriding Gradle wrapper location. (https://github.com/aeron-io/simple-binary-encoding/issues/1091[#1091]).
+* **[Java/C{plus}{plus}/Go]** Preserve `packageName` in the IR. (https://github.com/aeron-io/simple-binary-encoding/issues/1089[#1089])
+* **[Java]** Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.3.0[Agrona 2.3.0].
+* **[Java]** Upgrade to `JUnit` 5.13.4.
+* **[Java]** Upgrade to `Mockito` 5.20.0.
+* **[Java]** Upgrade to `Checkstyle` 11.1.0.
+* **[Java]** Upgrade to `Shadow` 9.2.2.
+* **[Java]** Upgrade to `Version` 0.53.0.
+* **[C]** Upgrade to `GoogleTest` to 1.14.0.
+* **[C]** Bump minimium required CMake version to `3.30`.
+* **[CI]** Add `Clang` 21 to the build matrix.
+* **[CI]** Add `Java` 25 to the build matrix.
 
 == 1.35.6 (2025-06-27)
 
-* *[Java]* Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.2.4[Agrona 2.2.4].
-* *[Java]* Upgrade to `JUnit` 5.13.2.
-* *[Java]* Upgrade to `Checkstyle` 10.26.0.
-* *[Java]* Upgrade to `Shadow` 8.3.7.
+* **[Java]** Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.2.4[Agrona 2.2.4].
+* **[Java]** Upgrade to `JUnit` 5.13.2.
+* **[Java]** Upgrade to `Checkstyle` 10.26.0.
+* **[Java]** Upgrade to `Shadow` 8.3.7.
 
 == 1.35.5 (2025-06-20)
 
-* *[Java/C{plus}{plus}/C#]* Fix a bug in overzealous DTO validation. (https://github.com/aeron-io/simple-binary-encoding/pull/1073[#1073])
-* *[Java]* Improve JsonPrinter's conformance with the JSON specification (e.g., escaping control characters and using correct delimiters).
-* *[Java]* Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.2.3[Agrona 2.2.3].
+* **[Java/C{plus}{plus}/C#]** Fix a bug in overzealous DTO validation. (https://github.com/aeron-io/simple-binary-encoding/pull/1073[#1073])
+* **[Java]** Improve JsonPrinter's conformance with the JSON specification (e.g., escaping control characters and using correct delimiters).
+* **[Java]** Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.2.3[Agrona 2.2.3].
 
 == 1.35.4 (2025-06-12)
 
-* *[Rust]* Return None for optional primite field if its version is less than actingVersion. (https://github.com/aeron-io/simple-binary-encoding/pull/1067[#1067])
-* *[Java]* Adjust Java Dto generateComputeEncodedLength to account for character encoding. (https://github.com/aeron-io/simple-binary-encoding/pull/1072[#1072])
-* *[Java]* Upgrade to `JUnit` 5.13.1.
-* *[Java]* Upgrade to `jqwik` 1.9.3.
+* **[Rust]** Return None for optional primite field if its version is less than actingVersion. (https://github.com/aeron-io/simple-binary-encoding/pull/1067[#1067])
+* **[Java]** Adjust Java Dto generateComputeEncodedLength to account for character encoding. (https://github.com/aeron-io/simple-binary-encoding/pull/1072[#1072])
+* **[Java]** Upgrade to `JUnit` 5.13.1.
+* **[Java]** Upgrade to `jqwik` 1.9.3.
 
 == 1.35.3 (2025-06-06)
 
-* *[Java]* Publish release artifacts to Central Portal using OSSRH Staging API service.
-* *[Java]* Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.2.2[Agrona 2.2.2].
-* *[Java]* Upgrade to `Checkstyle` 10.25.0.
-* *[Java]* Upgrade to `Gradle` 8.14.2.
+* **[Java]** Publish release artifacts to Central Portal using OSSRH Staging API service.
+* **[Java]** Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.2.2[Agrona 2.2.2].
+* **[Java]** Upgrade to `Checkstyle` 10.25.0.
+* **[Java]** Upgrade to `Gradle` 8.14.2.
 
 == 1.35.1 (2025-06-02)
 
@@ -68,18 +80,18 @@
 
 == 1.35.0 (2025-05-26)
 
-* *[Java]* include field 'deprecated' in ir encoding and decoding.
-* *[Java]* Adjust Java DTO Choice Set Access. (https://github.com/aeron-io/simple-binary-encoding/issues/1064[#1064])
-* *[Rust]* get proper version for composite types. (https://github.com/aeron-io/simple-binary-encoding/pull/1058[#1058])
-* *[C#]* Read NuGet package version from version file (https://github.com/aeron-io/simple-binary-encoding/pull/1061[#1061])
-* *[C#]* Enable dual build for netstandard2.0 &amp; netstandard2.1. (https://github.com/aeron-io/simple-binary-encoding/pull/1062[#1062])
+* **[Java]** include field 'deprecated' in ir encoding and decoding.
+* **[Java]** Adjust Java DTO Choice Set Access. (https://github.com/aeron-io/simple-binary-encoding/issues/1064[#1064])
+* **[Rust]** get proper version for composite types. (https://github.com/aeron-io/simple-binary-encoding/pull/1058[#1058])
+* **[C#]** Read NuGet package version from version file (https://github.com/aeron-io/simple-binary-encoding/pull/1061[#1061])
+* **[C#]** Enable dual build for netstandard2.0 &amp; netstandard2.1. (https://github.com/aeron-io/simple-binary-encoding/pull/1062[#1062])
 * Update `Implementation-Vendor`.
-* *[Rust]* Elide explicit ActingVersion lifetime. (https://github.com/aeron-io/simple-binary-encoding/pull/1053[#1053])
-* *[CI]* Use `gradle/actions/setup-gradle` action for caching Gradle dependencies.
-* *[CI]* Enable JDK 24 GA build.
-* *[CI]* Simplify error log upload.
-* *[CI]* Remove Ubuntu 20.04 based builds.
-* *[CI]* Bump Go build to use 1.23.x and 1.24.x.
+* **[Rust]** Elide explicit ActingVersion lifetime. (https://github.com/aeron-io/simple-binary-encoding/pull/1053[#1053])
+* **[CI]** Use `gradle/actions/setup-gradle` action for caching Gradle dependencies.
+* **[CI]** Enable JDK 24 GA build.
+* **[CI]** Simplify error log upload.
+* **[CI]** Remove Ubuntu 20.04 based builds.
+* **[CI]** Bump Go build to use 1.23.x and 1.24.x.
 * Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.2.0[Agrona 2.2.0].
 * Upgrade to `Gradle` 8.14.1.
 * Upgrade to `Checkstyle` 10.24.0.
@@ -92,19 +104,19 @@
 == 1.34.1 (2025-01-13)
 
 * *Doc:* Add `--add-opens java.base/jdk.internal.misc=ALL-UNNAMED` to the example execution.
-* *[Rust]* encoding primitive arrays now supports slice instead of array (issue https://github.com/aeron-io/simple-binary-encoding/issues/[#1021]). (https://github.com/aeron-io/simple-binary-encoding/pull/1040[#1040])
-* *[C{plus}{plus}]* check for not wrapped state in `decodeLength()` when precedence checks are enabled. (https://github.com/aeron-io/simple-binary-encoding/pull/1046[#1046])
-* *[C{plus}{plus}]* use `m_actingBlockLength` in `decodeLength()`. (https://github.com/aeron-io/simple-binary-encoding/pull/1045[#1045])
+* **[Rust]** encoding primitive arrays now supports slice instead of array (issue https://github.com/aeron-io/simple-binary-encoding/issues/[#1021]). (https://github.com/aeron-io/simple-binary-encoding/pull/1040[#1040])
+* **[C{plus}{plus}]** check for not wrapped state in `decodeLength()` when precedence checks are enabled. (https://github.com/aeron-io/simple-binary-encoding/pull/1046[#1046])
+* **[C{plus}{plus}]** use `m_actingBlockLength` in `decodeLength()`. (https://github.com/aeron-io/simple-binary-encoding/pull/1045[#1045])
 * Bump `json` to 20250107.
 * Upgrade to `Mockito` 5.15.2.
 
 == 1.34.0 (2024-12-17)
 
-* *[C{plus}{plus}]* hide the m_codecStatePtr behind ifdefs to avoid overhead when precedence checking is disabled. (https://github.com/aeron-io/simple-binary-encoding/pull/1036[#1036])
-* *[C{plus}{plus}]* use constexpr to define precedence checks lookup tables.
-* *[Rust]* Enhance enum supporting fromstr and display and into. (https://github.com/aeron-io/simple-binary-encoding/pull/1020[#1020])
-* *[Rust]* codegen of primitive enums now implement 'From' instead of 'Into'. (https://github.com/aeron-io/simple-binary-encoding/pull/1029[#1029])
-* *[Java]* Update Checkstyle rules and apply them.
+* **[C{plus}{plus}]** hide the m_codecStatePtr behind ifdefs to avoid overhead when precedence checking is disabled. (https://github.com/aeron-io/simple-binary-encoding/pull/1036[#1036])
+* **[C{plus}{plus}]** use constexpr to define precedence checks lookup tables.
+* **[Rust]** Enhance enum supporting fromstr and display and into. (https://github.com/aeron-io/simple-binary-encoding/pull/1020[#1020])
+* **[Rust]** codegen of primitive enums now implement 'From' instead of 'Into'. (https://github.com/aeron-io/simple-binary-encoding/pull/1029[#1029])
+* **[Java]** Update Checkstyle rules and apply them.
 * *Breaking:* Upgrade to `Agrona` 2.0.0.
 +
 _**Note:** `--add-opens java.base/jdk.internal.misc=ALL-UNNAMED` JVM option must be specified in order to generate codecs or use the generated Java classes. For example:_
@@ -114,15 +126,15 @@ _**Note:** `--add-opens java.base/jdk.internal.misc=ALL-UNNAMED` JVM option must
 $ java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dsbe.generate.ir=true -Dsbe.target.language=Cpp -Dsbe.target.namespace=sbe -Dsbe.output.dir=include/gen -Dsbe.errorLog=yes -jar sbe-all/build/libs/sbe-all-${SBE_TOOL_VERSION}.jar my-sbe-messages.xml
 ----
 
-* *[C{plus}{plus}]* Fix field precedence check issue https://github.com/aeron-io/simple-binary-encoding/issues/1031[#1031]. (https://github.com/aeron-io/simple-binary-encoding/pull/1033[#1033])
-* *[C{plus}{plus}]* respect the package override option for C{plus}{plus} codecs and DTOs. (https://github.com/aeron-io/simple-binary-encoding/pull/1024[#1024])
-* *[C#]* respect the package override option for C# codecs and DTOs. (https://github.com/aeron-io/simple-binary-encoding/pull/1024[#1024])
-* *[Go]* Fix warning about used args in GolangFlyweightGenerator.
-* *[Rust]* Updated code generator to resolve Issue https://github.com/aeron-io/simple-binary-encoding/issues/1028[#1028]. (https://github.com/aeron-io/simple-binary-encoding/pull/1037[#1037])
-* *[Java]* Prevent collision when field name is 'value'.
-* *[Java]* Preserve byte order throughout IR transformations.
-* *[C{plus}{plus}]* Integrate std::span support for flyweight API. (https://github.com/aeron-io/simple-binary-encoding/pull/1038[#1038], https://github.com/aeron-io/simple-binary-encoding/pull/1027[#1027])
-* *[Rust]* generate message schema level info in lib.rs. (https://github.com/aeron-io/simple-binary-encoding/pull/1019[#1019])
+* **[C{plus}{plus}]** Fix field precedence check issue https://github.com/aeron-io/simple-binary-encoding/issues/1031[#1031]. (https://github.com/aeron-io/simple-binary-encoding/pull/1033[#1033])
+* **[C{plus}{plus}]** respect the package override option for C{plus}{plus} codecs and DTOs. (https://github.com/aeron-io/simple-binary-encoding/pull/1024[#1024])
+* **[C#]** respect the package override option for C# codecs and DTOs. (https://github.com/aeron-io/simple-binary-encoding/pull/1024[#1024])
+* **[Go]** Fix warning about used args in GolangFlyweightGenerator.
+* **[Rust]** Updated code generator to resolve Issue https://github.com/aeron-io/simple-binary-encoding/issues/1028[#1028]. (https://github.com/aeron-io/simple-binary-encoding/pull/1037[#1037])
+* **[Java]** Prevent collision when field name is 'value'.
+* **[Java]** Preserve byte order throughout IR transformations.
+* **[C{plus}{plus}]** Integrate std::span support for flyweight API. (https://github.com/aeron-io/simple-binary-encoding/pull/1038[#1038], https://github.com/aeron-io/simple-binary-encoding/pull/1027[#1027])
+* **[Rust]** generate message schema level info in lib.rs. (https://github.com/aeron-io/simple-binary-encoding/pull/1019[#1019])
 * Upgrade to `Gradle` 8.11.1.
 * Upgrade to `Checkstyle` 10.21.0.
 * Upgrade to `ByteBuddy` 1.15.11.
@@ -131,21 +143,21 @@ $ java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dsbe.generate.ir=tru
 
 == 1.33.2 (2024-11-08)
 
-* *[Rust]* Help decoding multiple messages using rust by resolving https://github.com/aeron-io/simple-binary-encoding/issues/987[#987].
-* *[Go]* SBE implementation in Go using flyweights.
-* *[Java]* DTOs respect the optional package field in the schema definition.
-* *[Java]* Fix bug in DTO `decodeFrom` signature.
+* **[Rust]** Help decoding multiple messages using rust by resolving https://github.com/aeron-io/simple-binary-encoding/issues/987[#987].
+* **[Go]** SBE implementation in Go using flyweights.
+* **[Java]** DTOs respect the optional package field in the schema definition.
+* **[Java]** Fix bug in DTO `decodeFrom` signature.
 
 == 1.33.1 (2024-09-23)
 
-* *[Java]* Fix #1012 DTO char array setter visibility.
-* *[Rust]* Indicate the anonymous lifetime in set's Display impl (https://github.com/aeron-io/simple-binary-encoding/pull/1014[#1014]).
-* *[Java]* Style consistency and add JavadocVariable Checkstyle test.
-* *[Java]* Use version catalogs.
-* *[Java]* Upgrade to JUnit 5.13.0.
-* *[Java]* Upgrade to Gradle 8.10.1.
-* *[Java]* Upgrade to Shadow 8.3.2.
-* *[Java]* Upgrade to Checkstyle 10.18.1.
+* **[Java]** Fix #1012 DTO char array setter visibility.
+* **[Rust]** Indicate the anonymous lifetime in set's Display impl (https://github.com/aeron-io/simple-binary-encoding/pull/1014[#1014]).
+* **[Java]** Style consistency and add JavadocVariable Checkstyle test.
+* **[Java]** Use version catalogs.
+* **[Java]** Upgrade to JUnit 5.13.0.
+* **[Java]** Upgrade to Gradle 8.10.1.
+* **[Java]** Upgrade to Shadow 8.3.2.
+* **[Java]** Upgrade to Checkstyle 10.18.1.
 
 == 1.33.0 (2024-08-24)
 
@@ -155,62 +167,62 @@ $ java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dsbe.generate.ir=tru
 
 === Changelog
 
-* *[CI]* Execute tests using `ubuntu-24.04` and `macos-latest`.
-* *[Java]* Upgrade to Agrona 1.23.0.
-* *[Java]* Upgrade to Gradle 8.10.
-* *[Java]* Upgrade to Shadow 8.3.0.
-* *[Java]* Upgrade to Mockito 5.12.0.
+* **[CI]** Execute tests using `ubuntu-24.04` and `macos-latest`.
+* **[Java]** Upgrade to Agrona 1.23.0.
+* **[Java]** Upgrade to Gradle 8.10.
+* **[Java]** Upgrade to Shadow 8.3.0.
+* **[Java]** Upgrade to Mockito 5.12.0.
 
 == 1.32.2 (2024-08-23)
 
-* *[Rust]* Generate imports in alphabetical order. #997
-* *[Rust]* Make Rust crate version configurable. #996
-* *[C]* fix compilation error in C string view functions. #1010
-* *[Java]* Upgrade to JUnit 5.11.0.
+* **[Rust]** Generate imports in alphabetical order. #997
+* **[Rust]** Make Rust crate version configurable. #996
+* **[C]** fix compilation error in C string view functions. #1010
+* **[Java]** Upgrade to JUnit 5.11.0.
 
 == 1.32.1 (2024-08-05)
 
-* *[Java]* Upgrade to Agrona 1.22.0.
-* *[Java]* Upgrade to Hamcrest 3.0.
+* **[Java]** Upgrade to Agrona 1.22.0.
+* **[Java]** Upgrade to Hamcrest 3.0.
 
 == 1.32.0 (2024-08-02)
 
 * [C#,C{plus}{plus},Java] Generate DTOs for non-perf-sensitive usecases. #957
 * [C{plus}{plus}, C#] Only generate range validation code when specifying a range smaller than the associate type.
-* *[C#]* Fix ToString() to avoid state changes on message. #992
-* *[C]* Add a #define for each template id. #1006
+* **[C#]** Fix ToString() to avoid state changes on message. #992
+* **[C]** Add a #define for each template id. #1006
 * [Java, C#, C{plus}{plus}] Check enum value for language specific keywords and apply `sbe.keyword.append.token` when appropriate. #1009 #1008
 
 == 1.31.0 (2024-04-03)
 
-* *[Java]* Remove unused initialOffset member from generated codecs.
-* *[Java]* Check for being in a composite when generating array access methods based on version.
-* *[Java]* Captured types in IR should be for the minimum version used in a schema. https://github.com/aeron-io/simple-binary-encoding/pull/967[#967].
-* *[C{plus}{plus}]* Provide access to acting block length of repeating group via the sbeActingBlockLength() method. Issue #968.
-* *[C{plus}{plus}]* message header members constexpr https://github.com/aeron-io/simple-binary-encoding/pull/971[#971].
-* *[C{plus}{plus}]* Code tidy up and address Issue #970.
-* *[Java]* Cope with optional sets not being present when pretty printing decoders for debugging. https://github.com/aeron-io/simple-binary-encoding/pull/977[#977].
-* *[C{plus}{plus}]* small test fix https://github.com/aeron-io/simple-binary-encoding/pull/980[#980].
-* *[Rust]* Updated RustGenerator.generatePrimitiveOptionalDecoder() https://github.com/aeron-io/simple-binary-encoding/pull/981[#981].
-* *[Rust]* Take slices by reference https://github.com/aeron-io/simple-binary-encoding/pull/979[#979].
-* *[Rust]* updated code generator to prevent rust warning for "ambiguous glob re-exports" https://github.com/aeron-io/simple-binary-encoding/pull/982[#982].
-* *[Go]* Handle mixed case enums and BitSets. Fixes #983.
-* *[Java]* Use `BYTE_ORDER` constant instead of accessing `java.nio.ByteOrder` directly.
+* **[Java]** Remove unused initialOffset member from generated codecs.
+* **[Java]** Check for being in a composite when generating array access methods based on version.
+* **[Java]** Captured types in IR should be for the minimum version used in a schema. https://github.com/aeron-io/simple-binary-encoding/pull/967[#967].
+* **[C{plus}{plus}]** Provide access to acting block length of repeating group via the sbeActingBlockLength() method. Issue #968.
+* **[C{plus}{plus}]** message header members constexpr https://github.com/aeron-io/simple-binary-encoding/pull/971[#971].
+* **[C{plus}{plus}]** Code tidy up and address Issue #970.
+* **[Java]** Cope with optional sets not being present when pretty printing decoders for debugging. https://github.com/aeron-io/simple-binary-encoding/pull/977[#977].
+* **[C{plus}{plus}]** small test fix https://github.com/aeron-io/simple-binary-encoding/pull/980[#980].
+* **[Rust]** Updated RustGenerator.generatePrimitiveOptionalDecoder() https://github.com/aeron-io/simple-binary-encoding/pull/981[#981].
+* **[Rust]** Take slices by reference https://github.com/aeron-io/simple-binary-encoding/pull/979[#979].
+* **[Rust]** updated code generator to prevent rust warning for "ambiguous glob re-exports" https://github.com/aeron-io/simple-binary-encoding/pull/982[#982].
+* **[Go]** Handle mixed case enums and BitSets. Fixes #983.
+* **[Java]** Use `BYTE_ORDER` constant instead of accessing `java.nio.ByteOrder` directly.
 * Upgrade .NET SDK to 8.0.201 (https://github.com/aeron-io/simple-binary-encoding/pull/978[#978]).
-* *[Java]* Upgrade to Agrona 1.21.1.
-* *[Java]* Upgrade to ASM 9.7.
-* *[Java]* Upgrade to JUnit 5.10.2.
-* *[Java]* Upgrade to Versions 0.51.0.
+* **[Java]** Upgrade to Agrona 1.21.1.
+* **[Java]** Upgrade to ASM 9.7.
+* **[Java]** Upgrade to JUnit 5.10.2.
+* **[Java]** Upgrade to Versions 0.51.0.
 
 == 1.30.0 (2023-12-06)
 
 * [Java, C{plus}{plus}, C#] Add support to https://github.com/aeron-io/simple-binary-encoding/wiki/Safe-Flyweight-Usage[check the safe usage of flyweights (w.r.t. field access order)]. https://github.com/aeron-io/simple-binary-encoding/pull/948[#948].
-* *[C#]* Fix invalid code generated when using some length types for var data https://github.com/aeron-io/simple-binary-encoding/issues/955[#955]
-* *[Java]* Support valueRef with camelCase enum type identifiers https://github.com/aeron-io/simple-binary-encoding/pull/963[#963]
-* *[Rust]* update how "use declarations" are generated, now deriving Defaults for enums https://github.com/aeron-io/simple-binary-encoding/pull/952[#952]
-* *[C{plus}{plus}]* Rely on NAN from limits rather than pulling in cmath (https://github.com/aeron-io/simple-binary-encoding/issues/956)
-* *[Java]* Fix javadoc link for JDK 21 GA
-* *[Java]* Expose actingVersion https://github.com/aeron-io/simple-binary-encoding/pull/953[#953]
+* **[C#]** Fix invalid code generated when using some length types for var data https://github.com/aeron-io/simple-binary-encoding/issues/955[#955]
+* **[Java]** Support valueRef with camelCase enum type identifiers https://github.com/aeron-io/simple-binary-encoding/pull/963[#963]
+* **[Rust]** update how "use declarations" are generated, now deriving Defaults for enums https://github.com/aeron-io/simple-binary-encoding/pull/952[#952]
+* **[C{plus}{plus}]** Rely on NAN from limits rather than pulling in cmath (https://github.com/aeron-io/simple-binary-encoding/issues/956)
+* **[Java]** Fix javadoc link for JDK 21 GA
+* **[Java]** Expose actingVersion https://github.com/aeron-io/simple-binary-encoding/pull/953[#953]
 * Upgrade Agrona to 1.20.0
 * Upgrade to ASM 9.6
 * Upgrade to JMH 1.27
@@ -219,10 +231,10 @@ $ java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dsbe.generate.ir=tru
 
 == 1.29.0 (2023-07-21)
 
-* *[Rust]* Add derive Copy Clone traits for decoders (PR #940).
-* *[Rust]* Fix clippy lint (PR #941).
-* *[Rust]* Fix array syntax error (PR #946).
-* *[Rust]* Improve rust performance (PR #944).
+* **[Rust]** Add derive Copy Clone traits for decoders (PR #940).
+* **[Rust]** Fix clippy lint (PR #941).
+* **[Rust]** Fix array syntax error (PR #946).
+* **[Rust]** Improve rust performance (PR #944).
 * JsonPrinter remove trailing garbage after non-printable char (PR #950).
 * Upgrade to Agrona 1.19.0.
 * Upgrade to versions 0.47.0.
@@ -248,17 +260,17 @@ $ java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dsbe.generate.ir=tru
 == 1.28.0 (2023-03-29)
 
 * Added semantic version as a static public member. PR #931.
-* *[Rust]* Nested composite name should not be based on field name. PR #922.
-* *[C/C{plus}{plus}]* Prevent clashing defines in C/C{plus}{plus} codecs when multiple generated schemas are used. Issue #884.
-* *[C#]* Compare `PrimitiveValue` with doubles in the same way as Java by the raw bits, so NaN and Infinity are correctly handled.
+* **[Rust]** Nested composite name should not be based on field name. PR #922.
+* **[C/C{plus}{plus}]** Prevent clashing defines in C/C{plus}{plus} codecs when multiple generated schemas are used. Issue #884.
+* **[C#]** Compare `PrimitiveValue` with doubles in the same way as Java by the raw bits, so NaN and Infinity are correctly handled.
 * Add CodeQL workflow.
-* *[C#]* Add `ToString` for `PrimitiveType`
-* *[C{plus}{plus}]* Pass by reference rather than value when streaming to a string.
-* *[C{plus}{plus}]* Address duplicate guard issues.
-* *[Java]* More efficient attribute parsing in XML with a more precise error message.
-* *[Java]* Validate IR file for decoding is not greater than Integer.MAX_VALUE.
-* *[C/C{plus}{plus}]* Move check for existing `SBE_BOUNDS_CHECK_EXPECT` define to outer condition to capture all platforms.
-* *[Java]* Print warnings for undersize header fields.
+* **[C#]** Add `ToString` for `PrimitiveType`
+* **[C{plus}{plus}]** Pass by reference rather than value when streaming to a string.
+* **[C{plus}{plus}]** Address duplicate guard issues.
+* **[Java]** More efficient attribute parsing in XML with a more precise error message.
+* **[Java]** Validate IR file for decoding is not greater than Integer.MAX_VALUE.
+* **[C/C{plus}{plus}]** Move check for existing `SBE_BOUNDS_CHECK_EXPECT` define to outer condition to capture all platforms.
+* **[Java]** Print warnings for undersize header fields.
 * Upgrade to Agrona 1.18.0.
 * Upgrade to Mockito 4.11.0.
 * Upgrade to Junit 5.9.2.
@@ -268,10 +280,10 @@ $ java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dsbe.generate.ir=tru
 
 == 1.27.0 (2022-10-11)
 
-* *[Java]* Add preview support for package override on types from SBE 2.0. https://github.com/aeron-io/simple-binary-encoding/pull/904[#904], https://github.com/aeron-io/simple-binary-encoding/pull/915[#915].
+* **[Java]** Add preview support for package override on types from SBE 2.0. https://github.com/aeron-io/simple-binary-encoding/pull/904[#904], https://github.com/aeron-io/simple-binary-encoding/pull/915[#915].
 * Add support for transforming a schema to generate code for older versions when checking compatibility.
-* *[Java]* Support binary var data in `JsonPrinter`. https://github.com/aeron-io/simple-binary-encoding/pull/914[#914].
-* *[Java]* Qualify methods with name `yield` to avoid warning in Java 17. https://github.com/aeron-io/simple-binary-encoding/pull/910[#910].
+* **[Java]** Support binary var data in `JsonPrinter`. https://github.com/aeron-io/simple-binary-encoding/pull/914[#914].
+* **[Java]** Qualify methods with name `yield` to avoid warning in Java 17. https://github.com/aeron-io/simple-binary-encoding/pull/910[#910].
 * Carry down the the `sinceVersion` value into composite types to make parsing OTF easier. https://github.com/aeron-io/simple-binary-encoding/issues/908[Issue #908].
 * Set the size for constant encoded data type to be zero in IR.
 * Upgrade to Google Test 1.21.1.
@@ -282,12 +294,12 @@ $ java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dsbe.generate.ir=tru
 
 == 1.26.0 (2022-07-11)
 
-* *[Java]* Provide raw access to type for bitset. https://github.com/aeron-io/simple-binary-encoding/issues/893[Issue #893].
-* *[C{plus}{plus}]* Generate `skip` function with loop rather than lambda to avoid compilation errors on some compilers. https://github.com/aeron-io/simple-binary-encoding/issues/903[Issue #903].
+* **[Java]** Provide raw access to type for bitset. https://github.com/aeron-io/simple-binary-encoding/issues/893[Issue #893].
+* **[C{plus}{plus}]** Generate `skip` function with loop rather than lambda to avoid compilation errors on some compilers. https://github.com/aeron-io/simple-binary-encoding/issues/903[Issue #903].
 * Check `sinceVersion` is valid on elements against schema version. https://github.com/aeron-io/simple-binary-encoding/issues/902[Issue #902].
-* *[Rust]* Fix generated comparator when value is `NaN`. https://github.com/aeron-io/simple-binary-encoding/pull/896[#896].
-* *[Rust]* Fix resource leak in Rust generator running in Java SBE compiler.
-* *[Java]* Generate `@SuppressWarnings` annotation on enums types. https://github.com/aeron-io/simple-binary-encoding/issues/894[Issue #894].
+* **[Rust]** Fix generated comparator when value is `NaN`. https://github.com/aeron-io/simple-binary-encoding/pull/896[#896].
+* **[Rust]** Fix resource leak in Rust generator running in Java SBE compiler.
+* **[Java]** Generate `@SuppressWarnings` annotation on enums types. https://github.com/aeron-io/simple-binary-encoding/issues/894[Issue #894].
 * Upgrade to Mockito 4.6.1.
 * Upgrade to Agrona 1.16.0.
 
@@ -300,10 +312,10 @@ $ java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dsbe.generate.ir=tru
 
 == 1.25.2 (2022-03-18)
 
-* *[Java]* Calling `toString()` on decoder should not disturb repeating group. https://github.com/aeron-io/simple-binary-encoding/pull/892[#892].
-* *[All]* Generate `NULL_VALUE` for enums based on correct type. https://github.com/aeron-io/simple-binary-encoding/issues/889[Issue #889].
-* *[C{plus}{plus}]* Check for version before outputting to stream for composites and bitsets. https://github.com/aeron-io/simple-binary-encoding/pull/888[#888].
-* *[Java]* Charset handling improvements for more efficient string decoding. https://github.com/aeron-io/simple-binary-encoding/pull/887[#887].
+* **[Java]** Calling `toString()` on decoder should not disturb repeating group. https://github.com/aeron-io/simple-binary-encoding/pull/892[#892].
+* **[All]** Generate `NULL_VALUE` for enums based on correct type. https://github.com/aeron-io/simple-binary-encoding/issues/889[Issue #889].
+* **[C{plus}{plus}]** Check for version before outputting to stream for composites and bitsets. https://github.com/aeron-io/simple-binary-encoding/pull/888[#888].
+* **[Java]** Charset handling improvements for more efficient string decoding. https://github.com/aeron-io/simple-binary-encoding/pull/887[#887].
 * Add descriptions to schema for IR.
 * Set warnings as errors in build and clean up existing warnings.
 * Add ability to set the error stream in `ParserOptions`.
@@ -324,11 +336,11 @@ $ java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dsbe.generate.ir=tru
 
 == 1.25.0 (2021-11-17)
 
-* *[C#]* Add support for wrapping `ArraySegment` in `DirectBuffer`. https://github.com/aeron-io/simple-binary-encoding/pull/878[#878].
-* *[Java]* Add `@Deprecated` annotation to message codecs that have been marked as deprecated in SBE schema. https://github.com/aeron-io/simple-binary-encoding/pull/876[#876].
-* *[C{plus}{plus}]* Only generate necessary macros and includes for enum types.
-* *[Rust]* Reinstate improved Rust codec generation.
-* *[Java]* Add `sbeSkip` and `sbeDecodedLength` methods to codecs. https://github.com/aeron-io/simple-binary-encoding/pull/865[#865].
+* **[C#]** Add support for wrapping `ArraySegment` in `DirectBuffer`. https://github.com/aeron-io/simple-binary-encoding/pull/878[#878].
+* **[Java]** Add `@Deprecated` annotation to message codecs that have been marked as deprecated in SBE schema. https://github.com/aeron-io/simple-binary-encoding/pull/876[#876].
+* **[C{plus}{plus}]** Only generate necessary macros and includes for enum types.
+* **[Rust]** Reinstate improved Rust codec generation.
+* **[Java]** Add `sbeSkip` and `sbeDecodedLength` methods to codecs. https://github.com/aeron-io/simple-binary-encoding/pull/865[#865].
 * Upgrade to JUnit 5.8.1.
 * Upgrade to Shadow 7.1.0.
 * Upgrade to Mockito 4.0.0.
@@ -339,9 +351,9 @@ $ java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dsbe.generate.ir=tru
 
 == 1.24.0 (2021-08-06)
 
-* *[Java]* Improve efficiency of encoding `CharSequence` when ASCII character encoding is used.
-* *[Java]* Check that IR codecs are regenerated on codec change.
-* *[Java/C{plus}{plus}/C]* Add `sbeRewind` to decoders so they can rewind to the beginning of a message and begin decoding again.
+* **[Java]** Improve efficiency of encoding `CharSequence` when ASCII character encoding is used.
+* **[Java]** Check that IR codecs are regenerated on codec change.
+* **[Java/C{plus}{plus}/C]** Add `sbeRewind` to decoders so they can rewind to the beginning of a message and begin decoding again.
 * Upgrade to Google Test 1.11.0
 * Upgrade to ByteBuddy 1.11.3
 * Upgrade to Mockito 3.11.2.
@@ -350,10 +362,10 @@ $ java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dsbe.generate.ir=tru
 
 == 1.23.0 (2021-06-13)
 
-* *[C#]* Add `ToString()` method to generated codecs. https://github.com/aeron-io/simple-binary-encoding/pull/853[#853].
-* *[C#]* Add more string read and write methods to codecs. https://github.com/aeron-io/simple-binary-encoding/pull/845[#845].
-* *[Go]* Fix tokens passed when generating composites. https://github.com/aeron-io/simple-binary-encoding/pull/850[#850].
-* *[C/C{plus}{plus}]* Add Clang 12 to the matrix build.
+* **[C#]** Add `ToString()` method to generated codecs. https://github.com/aeron-io/simple-binary-encoding/pull/853[#853].
+* **[C#]** Add more string read and write methods to codecs. https://github.com/aeron-io/simple-binary-encoding/pull/845[#845].
+* **[Go]** Fix tokens passed when generating composites. https://github.com/aeron-io/simple-binary-encoding/pull/850[#850].
+* **[C/C{plus}{plus}]** Add Clang 12 to the matrix build.
 * Upgrade to Versions 0.39.0.
 * Upgrade to JUnit 5.7.2.
 * Upgrade to Mockito 3.11.1.
@@ -365,15 +377,15 @@ $ java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dsbe.generate.ir=tru
 
 == 1.22.0 (2021-04-16)
 
-* *[C#]* Convert benchmarks to use DotNetBenchmark. https://github.com/aeron-io/agrona/pull/841[#841].
-* *[C#]* Help compiler to inline `DirectBuffer.CheckLimit` for better performance. https://github.com/aeron-io/simple-binary-encoding/pull/840[#840].
+* **[C#]** Convert benchmarks to use DotNetBenchmark. https://github.com/aeron-io/agrona/pull/841[#841].
+* **[C#]** Help compiler to inline `DirectBuffer.CheckLimit` for better performance. https://github.com/aeron-io/simple-binary-encoding/pull/840[#840].
 * Add Java 17-ea to the build matrix.
 * Test with CME FixBinary version 9.
-* *[C{plus}{plus}]* Capture `actingBlockLength` and use it for prettying printing output in version aware codecs. https://github.com/aeron-io/simple-binary-encoding/issues/839[Issue #839].
-* *[C{plus}{plus}]* Remove invalid use of `noexcept` on `resetCountToIndex`. https://github.com/aeron-io/simple-binary-encoding/issues/838[Issue #838].
-* *[Java]* Generate a `wrapAndApplyHeader` method for decoders to verify template then apply acting version and offset.
-* *[C{plus}{plus}]* Clean up and improve samples.
-* *[C{plus}{plus}]* Pass elements by reference rather than value in `forEach` for more efficient skip operations.
+* **[C{plus}{plus}]** Capture `actingBlockLength` and use it for prettying printing output in version aware codecs. https://github.com/aeron-io/simple-binary-encoding/issues/839[Issue #839].
+* **[C{plus}{plus}]** Remove invalid use of `noexcept` on `resetCountToIndex`. https://github.com/aeron-io/simple-binary-encoding/issues/838[Issue #838].
+* **[Java]** Generate a `wrapAndApplyHeader` method for decoders to verify template then apply acting version and offset.
+* **[C{plus}{plus}]** Clean up and improve samples.
+* **[C{plus}{plus}]** Pass elements by reference rather than value in `forEach` for more efficient skip operations.
 * Upgrade to Version 0.38.0.
 * Upgrade to JMH 1.29.
 * Upgrade to JUnit 5.7.1.
@@ -383,10 +395,10 @@ $ java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dsbe.generate.ir=tru
 
 == 1.21.0 (2021-01-15)
 
-* *[Java]* Generate metadata methods to groups for min and max count values. https://github.com/aeron-io/simple-binary-encoding/pull/834[#834].
-* *[Java]* Declare generated classes as final to allow for better optimisation and increased performance.
-* *[C{plus}{plus}]* Null terminate constant char arrays to avoid warnings. https://github.com/aeron-io/simple-binary-encoding/issues/832[Issue #832].
-* *[C{plus}{plus}]* Add support for decoding unknown enum values from later versions by enabling `sbe.decode.unknown.enum.values` and provide access to raw values.
+* **[Java]** Generate metadata methods to groups for min and max count values. https://github.com/aeron-io/simple-binary-encoding/pull/834[#834].
+* **[Java]** Declare generated classes as final to allow for better optimisation and increased performance.
+* **[C{plus}{plus}]** Null terminate constant char arrays to avoid warnings. https://github.com/aeron-io/simple-binary-encoding/issues/832[Issue #832].
+* **[C{plus}{plus}]** Add support for decoding unknown enum values from later versions by enabling `sbe.decode.unknown.enum.values` and provide access to raw values.
 * Clean up warnings in bash scripts.
 * Upgrade to Checkstyle 8.39.
 * Upgrade to Mockito 3.7.0.
@@ -394,14 +406,14 @@ $ java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dsbe.generate.ir=tru
 == 1.20.4 (2020-12-22)
 
 * Add parsing of CME iLink order protocol to tests.
-* *[C{plus}{plus}]* Generate literal marked up for correct type when shifting for bitsets using `uint64`. https://github.com/aeron-io/simple-binary-encoding/pull/829[#829].
-* *[Java]* Generate `@return` in javadoc for bitset values. https://github.com/aeron-io/simple-binary-encoding/issues/828[Issue #828].
-* *[Java]* Escape basic HTML characters for javadoc. https://github.com/aeron-io/simple-binary-encoding/issues/826[Issue #826].
-* *[Go]* Fix decoding into struct with pre-allocated slices. https://github.com/aeron-io/simple-binary-encoding/pull/825[#825].
-* *[C{plus}{plus}]* Fix spelling of `_cplusplus` macro. https://github.com/aeron-io/simple-binary-encoding/issues/823[Issue #821].
-* *[C#]* Fix repeating group encode overflow. https://github.com/aeron-io/simple-binary-encoding/pull/823[#823].
-* *[C]* Fix argument order for wrap_and_apply_header methods. https://github.com/aeron-io/simple-binary-encoding/pull/821[#821].
-* *[Java]* Generate bulk methods for fixed length `uint8` arrays. https://github.com/aeron-io/simple-binary-encoding/pull/819[#819].
+* **[C{plus}{plus}]** Generate literal marked up for correct type when shifting for bitsets using `uint64`. https://github.com/aeron-io/simple-binary-encoding/pull/829[#829].
+* **[Java]** Generate `@return` in javadoc for bitset values. https://github.com/aeron-io/simple-binary-encoding/issues/828[Issue #828].
+* **[Java]** Escape basic HTML characters for javadoc. https://github.com/aeron-io/simple-binary-encoding/issues/826[Issue #826].
+* **[Go]** Fix decoding into struct with pre-allocated slices. https://github.com/aeron-io/simple-binary-encoding/pull/825[#825].
+* **[C{plus}{plus}]** Fix spelling of `_cplusplus` macro. https://github.com/aeron-io/simple-binary-encoding/issues/823[Issue #821].
+* **[C#]** Fix repeating group encode overflow. https://github.com/aeron-io/simple-binary-encoding/pull/823[#823].
+* **[C]** Fix argument order for wrap_and_apply_header methods. https://github.com/aeron-io/simple-binary-encoding/pull/821[#821].
+* **[Java]** Generate bulk methods for fixed length `uint8` arrays. https://github.com/aeron-io/simple-binary-encoding/pull/819[#819].
 * Add Java 16 EA to the build matrix.
 * Upgrade to JMH 1.27.
 * Upgrade to Checkstyle 8.38.
@@ -614,10 +626,10 @@ $ java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dsbe.generate.ir=tru
 
 == 1.13.0 (2019-08-02)
 
-* *[C#]* Add system property to allow squashing of namespace generation. https://github.com/aeron-io/simple-binary-encoding/pull/702[#702].
-* *[C{plus}{plus}]* Use `*[nodiscard]*` attribute where applicable. https://github.com/aeron-io/simple-binary-encoding/pull/700[#700].
-* *[C#]* Use ThrowHelper and simplify bounds checks to improve inlining. https://github.com/aeron-io/simple-binary-encoding/pull/695[#695].
-* *[Java]* Javadoc to `MetaAttribute` generation.
+* **[C#]** Add system property to allow squashing of namespace generation. https://github.com/aeron-io/simple-binary-encoding/pull/702[#702].
+* **[C{plus}{plus}]** Use `**[nodiscard]**` attribute where applicable. https://github.com/aeron-io/simple-binary-encoding/pull/700[#700].
+* **[C#]** Use ThrowHelper and simplify bounds checks to improve inlining. https://github.com/aeron-io/simple-binary-encoding/pull/695[#695].
+* **[Java]** Javadoc to `MetaAttribute` generation.
 * Upgrade to Agrona 1.0.6.
 * Upgrade to javadoc-links 3.8.1.
 * Upgrade to Checkstyle 8.23.
