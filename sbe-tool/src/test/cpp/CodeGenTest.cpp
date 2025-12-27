@@ -19,6 +19,7 @@
 #include "gtest/gtest.h"
 #include "code_generation_test/MessageHeader.h"
 #include "code_generation_test/Car.h"
+#include "code_generation_test/GlobalKeywords.h"
 
 using namespace code::generation::test;
 
@@ -1145,3 +1146,30 @@ TEST_F(CodeGenTest, shouldBeAbleToResolveStringLiterals)
     EXPECT_EQ(car.getVehicleCodeAsStringView(), "ABCDE");
 }
 #endif
+
+TEST_F(CodeGenTest, shouldComputeEncodedLengthCorrectlyForVarDataFields)
+{
+    char buffer[BUFFER_LEN] = {};
+
+    std::uint64_t baseOffset = MessageHeader::encodedLength();
+    GlobalKeywords keywords;
+    keywords.wrapForEncode(buffer, baseOffset, sizeof(buffer));
+    keywords.type(7);
+    keywords.assertX(16);
+
+    GlobalKeywords::Data &data = keywords.dataCount(1);
+
+    data.next()
+        .thisX(3);
+
+    GlobalKeywords::Data::Super &super = data.superCount(2);
+
+    super.next()
+        .mph(100);
+
+    super.next()
+        .mph(200)
+        .putImport(std::string("this super long string value right here"));
+
+    EXPECT_EQ(337, keywords.encodedLength());
+}
