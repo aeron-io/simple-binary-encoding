@@ -779,11 +779,29 @@ public class TypeScriptGenerator implements CodeGenerator
 
                 sb.append("    let pos = offset;\n\n");
 
-                // Read group header
-                sb.append("    const blockLength = view.getUint16(pos, this.littleEndian);\n");
-                sb.append("    pos += 2;\n");
-                sb.append("    const numInGroup = view.getUint16(pos, this.littleEndian);\n");
-                sb.append("    pos += 2;\n\n");
+                // Read group header - get dimension encoding from tokens
+                final Token blockLengthToken = Generators.findFirst("blockLength", groupTokens, 0);
+                final Token numInGroupToken = Generators.findFirst("numInGroup", groupTokens, 0);
+                final PrimitiveType blockLengthType = blockLengthToken.encoding().primitiveType();
+                final PrimitiveType numInGroupType = numInGroupToken.encoding().primitiveType();
+
+                sb.append("    const blockLength = view.").append(dataViewMethod(blockLengthType))
+                    .append("(pos");
+                if (needsEndianness(blockLengthType))
+                {
+                    sb.append(", this.littleEndian");
+                }
+                sb.append(");\n");
+                sb.append("    pos += ").append(blockLengthToken.encodedLength()).append(";\n");
+
+                sb.append("    const numInGroup = view.").append(dataViewMethod(numInGroupType))
+                    .append("(pos");
+                if (needsEndianness(numInGroupType))
+                {
+                    sb.append(", this.littleEndian");
+                }
+                sb.append(");\n");
+                sb.append("    pos += ").append(numInGroupToken.encodedLength()).append(";\n\n");
 
                 sb.append("    const items: ").append(groupName).append("[] = [];\n\n");
 
