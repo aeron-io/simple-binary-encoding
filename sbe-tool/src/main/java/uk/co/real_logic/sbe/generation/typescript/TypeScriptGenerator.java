@@ -511,12 +511,17 @@ public class TypeScriptGenerator implements CodeGenerator
     {
         sb.append("export interface ").append(interfaceName).append(" {\n");
 
+        final java.util.Set<String> seenFieldNames = new java.util.HashSet<>();
+
         // Fields
         Generators.forEachField(fields, (fieldToken, typeToken) ->
         {
             final String fieldName = formatFieldName(fieldToken.name());
-            final String typeName = typeScriptTypeName(typeToken.encoding().primitiveType());
-            sb.append("  ").append(fieldName).append(": ").append(typeName).append(";\n");
+            if (seenFieldNames.add(fieldName))
+            {
+                final String typeName = typeScriptTypeName(typeToken.encoding().primitiveType());
+                sb.append("  ").append(fieldName).append(": ").append(typeName).append(";\n");
+            }
         });
 
         // Groups
@@ -527,7 +532,10 @@ public class TypeScriptGenerator implements CodeGenerator
             {
                 final String groupName = formatTypeName(groupToken.name());
                 final String fieldName = formatFieldName(groupToken.name());
-                sb.append("  ").append(fieldName).append(": ").append(groupName).append("[];\n");
+                if (seenFieldNames.add(fieldName))
+                {
+                    sb.append("  ").append(fieldName).append(": ").append(groupName).append("[];\n");
+                }
 
                 i += groupToken.componentTokenCount();
             }
@@ -544,16 +552,19 @@ public class TypeScriptGenerator implements CodeGenerator
             if (varDataToken.signal() == Signal.BEGIN_VAR_DATA)
             {
                 final String fieldName = formatFieldName(varDataToken.name());
-                final Encoding encoding = varDataToken.encoding();
-                final String characterEncoding = encoding.characterEncoding();
+                if (seenFieldNames.add(fieldName))
+                {
+                    final Encoding encoding = varDataToken.encoding();
+                    final String characterEncoding = encoding.characterEncoding();
 
-                if (null == characterEncoding)
-                {
-                    sb.append("  ").append(fieldName).append(": Uint8Array;\n");
-                }
-                else
-                {
-                    sb.append("  ").append(fieldName).append(": string;\n");
+                    if (null == characterEncoding)
+                    {
+                        sb.append("  ").append(fieldName).append(": Uint8Array;\n");
+                    }
+                    else
+                    {
+                        sb.append("  ").append(fieldName).append(": string;\n");
+                    }
                 }
 
                 i += varDataToken.componentTokenCount();
@@ -592,27 +603,37 @@ public class TypeScriptGenerator implements CodeGenerator
         // Decode fields
         final List<String> fieldNames = new ArrayList<>();
         final List<String> fieldValues = new ArrayList<>();
+        final java.util.Set<String> seenFieldNames = new java.util.HashSet<>();
 
         Generators.forEachField(fields, (fieldToken, typeToken) ->
         {
             final String fieldName = formatFieldName(fieldToken.name());
-            fieldNames.add(fieldName);
 
-            final PrimitiveType primitiveType = typeToken.encoding().primitiveType();
-            final String dataViewMethod = dataViewMethod(primitiveType);
-
-            sb.append("    const ").append(fieldName).append(" = view.")
-                .append(dataViewMethod).append("(pos");
-
-            if (needsEndianness(primitiveType))
+            if (seenFieldNames.add(fieldName))
             {
-                sb.append(", this.littleEndian");
+                fieldNames.add(fieldName);
+
+                final PrimitiveType primitiveType = typeToken.encoding().primitiveType();
+                final String dataViewMethod = dataViewMethod(primitiveType);
+
+                sb.append("    const ").append(fieldName).append(" = view.")
+                    .append(dataViewMethod).append("(pos");
+
+                if (needsEndianness(primitiveType))
+                {
+                    sb.append(", this.littleEndian");
+                }
+
+                sb.append(");\n");
+                sb.append("    pos += ").append(typeToken.encodedLength()).append(";\n\n");
+
+                fieldValues.add(fieldName);
             }
-
-            sb.append(");\n");
-            sb.append("    pos += ").append(typeToken.encodedLength()).append(";\n\n");
-
-            fieldValues.add(fieldName);
+            else
+            {
+                // Skip duplicate field - just advance position
+                sb.append("    pos += ").append(typeToken.encodedLength()).append(";\n\n");
+            }
         });
 
         // Skip to block end for forward compatibility
@@ -627,14 +648,26 @@ public class TypeScriptGenerator implements CodeGenerator
             {
                 final String groupName = formatTypeName(groupToken.name());
                 final String fieldName = formatFieldName(groupToken.name());
-                final String methodName = "decode" + groupName + "Group";
 
-                sb.append("    const ").append(fieldName).append(" = this.")
-                    .append(methodName).append("(view, pos);\n");
-                sb.append("    pos = ").append(fieldName).append(".nextOffset;\n\n");
+                if (seenFieldNames.add(fieldName))
+                {
+                    final String methodName = "decode" + groupName + "Group";
 
-                fieldNames.add(fieldName);
-                fieldValues.add(fieldName + ".items");
+                    sb.append("    const ").append(fieldName).append(" = this.")
+                        .append(methodName).append("(view, pos);\n");
+                    sb.append("    pos = ").append(fieldName).append(".nextOffset;\n\n");
+
+                    fieldNames.add(fieldName);
+                    fieldValues.add(fieldName + ".items");
+                }
+                else
+                {
+                    // Duplicate group - skip decoding
+                    final String methodName = "decode" + groupName + "Group";
+                    sb.append("    const ").append(fieldName).append("_dup = this.")
+                        .append(methodName).append("(view, pos);\n");
+                    sb.append("    pos = ").append(fieldName).append("_dup.nextOffset;\n\n");
+                }
 
                 i += groupToken.componentTokenCount();
             }
@@ -651,26 +684,53 @@ public class TypeScriptGenerator implements CodeGenerator
             if (varDataToken.signal() == Signal.BEGIN_VAR_DATA)
             {
                 final String fieldName = formatFieldName(varDataToken.name());
-                final Encoding encoding = varDataToken.encoding();
-                final String characterEncoding = encoding.characterEncoding();
 
-                if (null == characterEncoding)
+                if (seenFieldNames.add(fieldName))
                 {
-                    sb.append("    const ").append(fieldName).append(" = this.decodeVarData(view, pos);\n");
-                }
-                else if ("UTF-8".equals(characterEncoding))
-                {
-                    sb.append("    const ").append(fieldName).append(" = this.decodeVarStringUtf8(view, pos);\n");
+                    final Encoding encoding = varDataToken.encoding();
+                    final String characterEncoding = encoding.characterEncoding();
+
+                    if (null == characterEncoding)
+                    {
+                        sb.append("    const ").append(fieldName).append(" = this.decodeVarData(view, pos);\n");
+                    }
+                    else if ("UTF-8".equals(characterEncoding))
+                    {
+                        sb.append("    const ").append(fieldName).append(" = this.decodeVarStringUtf8(view, pos);\n");
+                    }
+                    else
+                    {
+                        sb.append("    const ").append(fieldName).append(" = this.decodeVarStringAscii(view, pos);\n");
+                    }
+
+                    sb.append("    pos = ").append(fieldName).append(".nextOffset;\n\n");
+
+                    fieldNames.add(fieldName);
+                    fieldValues.add(fieldName + ".value");
                 }
                 else
                 {
-                    sb.append("    const ").append(fieldName).append(" = this.decodeVarStringAscii(view, pos);\n");
+                    // Duplicate vardata - skip decoding
+                    final Encoding encoding = varDataToken.encoding();
+                    final String characterEncoding = encoding.characterEncoding();
+
+                    if (null == characterEncoding)
+                    {
+                        sb.append("    const ").append(fieldName).append("_dup = this.decodeVarData(view, pos);\n");
+                    }
+                    else if ("UTF-8".equals(characterEncoding))
+                    {
+                        sb.append("    const ").append(fieldName)
+                            .append("_dup = this.decodeVarStringUtf8(view, pos);\n");
+                    }
+                    else
+                    {
+                        sb.append("    const ").append(fieldName)
+                            .append("_dup = this.decodeVarStringAscii(view, pos);\n");
+                    }
+
+                    sb.append("    pos = ").append(fieldName).append("_dup.nextOffset;\n\n");
                 }
-
-                sb.append("    pos = ").append(fieldName).append(".nextOffset;\n\n");
-
-                fieldNames.add(fieldName);
-                fieldValues.add(fieldName + ".value");
 
                 i += varDataToken.componentTokenCount();
             }
@@ -725,11 +785,15 @@ public class TypeScriptGenerator implements CodeGenerator
                 // Generate group interface
                 sb.append("export interface ").append(groupName).append(" {\n");
 
+                final java.util.Set<String> seenFieldNames = new java.util.HashSet<>();
                 Generators.forEachField(groupBody, (fieldToken, typeToken) ->
                 {
                     final String fieldName = formatFieldName(fieldToken.name());
-                    final String typeName = typeScriptTypeName(typeToken.encoding().primitiveType());
-                    sb.append("  ").append(fieldName).append(": ").append(typeName).append(";\n");
+                    if (seenFieldNames.add(fieldName))
+                    {
+                        final String typeName = typeScriptTypeName(typeToken.encoding().primitiveType());
+                        sb.append("  ").append(fieldName).append(": ").append(typeName).append(";\n");
+                    }
                 });
 
                 sb.append("}\n\n");
@@ -811,27 +875,37 @@ public class TypeScriptGenerator implements CodeGenerator
                 // Decode group fields
                 final List<String> groupFieldNames = new ArrayList<>();
                 final List<String> groupFieldValues = new ArrayList<>();
+                final java.util.Set<String> seenFieldNames = new java.util.HashSet<>();
 
                 Generators.forEachField(groupBody, (fieldToken, typeToken) ->
                 {
                     final String fieldName = formatFieldName(fieldToken.name());
-                    groupFieldNames.add(fieldName);
 
-                    final PrimitiveType primitiveType = typeToken.encoding().primitiveType();
-                    final String dataViewMethod = dataViewMethod(primitiveType);
-
-                    sb.append("      const ").append(fieldName).append(" = view.")
-                        .append(dataViewMethod).append("(pos");
-
-                    if (needsEndianness(primitiveType))
+                    if (seenFieldNames.add(fieldName))
                     {
-                        sb.append(", this.littleEndian");
+                        groupFieldNames.add(fieldName);
+
+                        final PrimitiveType primitiveType = typeToken.encoding().primitiveType();
+                        final String dataViewMethod = dataViewMethod(primitiveType);
+
+                        sb.append("      const ").append(fieldName).append(" = view.")
+                            .append(dataViewMethod).append("(pos");
+
+                        if (needsEndianness(primitiveType))
+                        {
+                            sb.append(", this.littleEndian");
+                        }
+
+                        sb.append(");\n");
+                        sb.append("      pos += ").append(typeToken.encodedLength()).append(";\n\n");
+
+                        groupFieldValues.add(fieldName);
                     }
-
-                    sb.append(");\n");
-                    sb.append("      pos += ").append(typeToken.encodedLength()).append(";\n\n");
-
-                    groupFieldValues.add(fieldName);
+                    else
+                    {
+                        // Skip duplicate field - just advance position
+                        sb.append("      pos += ").append(typeToken.encodedLength()).append(";\n\n");
+                    }
                 });
 
                 // Skip to next block for forward compatibility
