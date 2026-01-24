@@ -299,6 +299,57 @@ public class PHPGenerator implements CodeGenerator
         sb.append("}\n");
     }
 
+    private void generateGroupClasses(
+        final StringBuilder sb,
+        final List<Token> groups)
+    {
+        for (int i = 0; i < groups.size();)
+        {
+            final Token groupToken = groups.get(i);
+            if (groupToken.signal() == Signal.BEGIN_GROUP)
+            {
+                final String groupName = formatClassName(groupToken.name());
+                final List<Token> groupTokens = new ArrayList<>();
+
+                final int endIndex = i + groupToken.componentTokenCount();
+                for (int j = i; j < endIndex; j++)
+                {
+                    groupTokens.add(groups.get(j));
+                }
+
+                final List<Token> groupBody = groupTokens.subList(1, groupTokens.size() - 1);
+
+                sb.append(String.format("class %s\n{\n", groupName));
+
+                final java.util.Set<String> seenFields = new java.util.HashSet<>();
+                for (int j = 0; j < groupBody.size(); j++)
+                {
+                    final Token token = groupBody.get(j);
+                    if (token.signal() == Signal.BEGIN_FIELD && j + 1 < groupBody.size())
+                    {
+                        final Token encodingToken = groupBody.get(j + 1);
+                        if (encodingToken.signal() == Signal.ENCODING)
+                        {
+                            final String propName = formatPropertyName(token.name());
+                            if (seenFields.add(propName))
+                            {
+                                sb.append(String.format("    public int|float|null $%s = null;\n", propName));
+                            }
+                        }
+                    }
+                }
+
+                sb.append("}\n\n");
+
+                i = endIndex;
+            }
+            else
+            {
+                i++;
+            }
+        }
+    }
+
     private void generateMessageClass(
         final StringBuilder sb,
         final String className,
@@ -306,15 +357,24 @@ public class PHPGenerator implements CodeGenerator
     {
         final Token msgToken = tokens.get(0);
 
+        final List<Token> messageBody = tokens.subList(1, tokens.size() - 1);
+        final List<Token> fields = new ArrayList<>();
+        int i = collectFields(messageBody, 0, fields);
+
+        final List<Token> groups = new ArrayList<>();
+        i = collectGroups(messageBody, i, groups);
+
+        final List<Token> varData = new ArrayList<>();
+        collectVarData(messageBody, i, varData);
+
+        // Generate group classes first
+        generateGroupClasses(sb, groups);
+
         sb.append(String.format("class %s\n{\n", className));
         sb.append(String.format("    public const TEMPLATE_ID = %d;\n", msgToken.id()));
         sb.append(String.format("    public const SCHEMA_ID = %d;\n", ir.id()));
         sb.append(String.format("    public const SCHEMA_VERSION = %d;\n", ir.version()));
         sb.append(String.format("    public const BLOCK_LENGTH = %d;\n\n", msgToken.encodedLength()));
-
-        final List<Token> messageBody = tokens.subList(1, tokens.size() - 1);
-        final List<Token> fields = new ArrayList<>();
-        int i = collectFields(messageBody, 0, fields);
 
         // Declare properties
         for (final Token fieldToken : fields)
@@ -325,9 +385,6 @@ public class PHPGenerator implements CodeGenerator
                 sb.append(String.format("    public int|float|array|null $%s = null;\n", propertyName));
             }
         }
-
-        final List<Token> groups = new ArrayList<>();
-        i = collectGroups(messageBody, i, groups);
 
         for (int j = 0; j < groups.size();)
         {
@@ -343,9 +400,6 @@ public class PHPGenerator implements CodeGenerator
                 j++;
             }
         }
-
-        final List<Token> varData = new ArrayList<>();
-        collectVarData(messageBody, i, varData);
 
         for (int j = 0; j < varData.size();)
         {
@@ -367,6 +421,173 @@ public class PHPGenerator implements CodeGenerator
         generateMessageEncodeDecode(sb, className, tokens, fields, groups, varData);
     }
 
+    private void generateGroupDecoderMethods(
+        final StringBuilder sb,
+        final List<Token> groups)
+    {
+        for (int i = 0; i < groups.size();)
+        {
+            final Token groupToken = groups.get(i);
+            if (groupToken.signal() == Signal.BEGIN_GROUP)
+            {
+                final String groupName = formatClassName(groupToken.name());
+                final List<Token> groupTokens = new ArrayList<>();
+
+                final int endIndex = i + groupToken.componentTokenCount();
+                for (int j = i; j < endIndex; j++)
+                {
+                    groupTokens.add(groups.get(j));
+                }
+
+                final List<Token> groupBody = groupTokens.subList(1, groupTokens.size() - 1);
+
+                final Token blockLengthToken = uk.co.real_logic.sbe.generation.Generators.findFirst(
+                    "blockLength", groupTokens, 0);
+                final Token numInGroupToken = uk.co.real_logic.sbe.generation.Generators.findFirst(
+                    "numInGroup", groupTokens, 0);
+
+                final String blockLengthFormat = phpPackFormat(blockLengthToken.encoding().primitiveType());
+                final String numInGroupFormat = phpPackFormat(numInGroupToken.encoding().primitiveType());
+                final int blockLengthSize = primitiveTypeSize(blockLengthToken.encoding().primitiveType());
+                final int numInGroupSize = primitiveTypeSize(numInGroupToken.encoding().primitiveType());
+
+                sb.append(String.format(
+                    "    private function decode%sGroup(string $data, int &$offset): array\n",
+                    groupName));
+                sb.append("    {\n");
+
+                sb.append(String.format(
+                    "        $blockLength = unpack('%s', substr($data, $offset, %d))[1];\n",
+                    blockLengthFormat, blockLengthSize));
+                sb.append(String.format("        $offset += %d;\n", blockLengthSize));
+                sb.append(String.format(
+                    "        $numInGroup = unpack('%s', substr($data, $offset, %d))[1];\n",
+                    numInGroupFormat, numInGroupSize));
+                sb.append(String.format("        $offset += %d;\n\n", numInGroupSize));
+
+                sb.append("        $items = [];\n");
+                sb.append("        for ($i = 0; $i < $numInGroup; $i++) {\n");
+                sb.append("            $itemStart = $offset;\n");
+                sb.append(String.format("            $item = new %s();\n\n", groupName));
+
+                final java.util.Set<String> seenFields = new java.util.HashSet<>();
+                for (int j = 0; j < groupBody.size(); j++)
+                {
+                    final Token fieldToken = groupBody.get(j);
+                    if (fieldToken.signal() == Signal.BEGIN_FIELD && j + 1 < groupBody.size())
+                    {
+                        final Token encodingToken = groupBody.get(j + 1);
+                        if (encodingToken.signal() == Signal.ENCODING)
+                        {
+                            final String propName = formatPropertyName(fieldToken.name());
+                            final String packFormat = phpPackFormat(encodingToken.encoding().primitiveType());
+                            final int size = primitiveTypeSize(encodingToken.encoding().primitiveType());
+
+                            if (seenFields.add(propName))
+                            {
+                                sb.append(String.format(
+                                    "            $item->%s = unpack('%s', substr($data, $offset, %d))[1];\n",
+                                    propName, packFormat, size));
+                                sb.append(String.format("            $offset += %d;\n", size));
+                            }
+                            else
+                            {
+                                sb.append(String.format("            $offset += %d;  // Skip duplicate field\n", size));
+                            }
+                        }
+                        j++;
+                    }
+                }
+
+                sb.append("\n            // Skip to next block for forward compatibility\n");
+                sb.append("            $offset = $itemStart + $blockLength;\n");
+                sb.append("            $items[] = $item;\n");
+                sb.append("        }\n\n");
+
+                sb.append("        return $items;\n");
+                sb.append("    }\n\n");
+
+                i = endIndex;
+            }
+            else
+            {
+                i++;
+            }
+        }
+    }
+
+    private void generateVarDataDecoderMethods(final StringBuilder sb, final List<Token> varData)
+    {
+        boolean needsVarData = false;
+        boolean needsUtf8 = false;
+        boolean needsAscii = false;
+
+        for (int i = 0; i < varData.size();)
+        {
+            final Token varDataToken = varData.get(i);
+            if (varDataToken.signal() == Signal.BEGIN_VAR_DATA)
+            {
+                final Encoding encoding = varDataToken.encoding();
+                final String characterEncoding = encoding.characterEncoding();
+
+                if (null == characterEncoding)
+                {
+                    needsVarData = true;
+                }
+                else if ("UTF-8".equals(characterEncoding))
+                {
+                    needsUtf8 = true;
+                }
+                else
+                {
+                    needsAscii = true;
+                }
+
+                i += varDataToken.componentTokenCount();
+            }
+            else
+            {
+                i++;
+            }
+        }
+
+        if (needsVarData)
+        {
+            sb.append("    private function decodeVarData(string $data, int &$offset): string\n");
+            sb.append("    {\n");
+            sb.append("        $length = unpack('V', substr($data, $offset, 4))[1];\n");
+            sb.append("        $offset += 4;\n");
+            sb.append("        $value = substr($data, $offset, $length);\n");
+            sb.append("        $offset += $length;\n");
+            sb.append("        return $value;\n");
+            sb.append("    }\n\n");
+        }
+
+        if (needsUtf8)
+        {
+            sb.append("    private function decodeVarStringUtf8(string $data, int &$offset): string\n");
+            sb.append("    {\n");
+            sb.append("        $length = unpack('V', substr($data, $offset, 4))[1];\n");
+            sb.append("        $offset += 4;\n");
+            sb.append("        $value = substr($data, $offset, $length);\n");
+            sb.append("        $offset += $length;\n");
+            sb.append("        return $value;\n");
+            sb.append("    }\n\n");
+        }
+
+        if (needsAscii)
+        {
+            sb.append("    private function decodeVarStringAscii(string $data, int &$offset): string\n");
+            sb.append("    {\n");
+            sb.append("        $length = unpack('V', substr($data, $offset, 4))[1];\n");
+            sb.append("        $offset += 4;\n");
+            sb.append("        $value = substr($data, $offset, $length);\n");
+            sb.append("        $offset += $length;\n");
+            sb.append("        return $value;\n");
+            sb.append("    }\n\n");
+        }
+    }
+
     private void generateMessageEncodeDecode(
         final StringBuilder sb,
         final String className,
@@ -375,7 +596,13 @@ public class PHPGenerator implements CodeGenerator
         final List<Token> groups,
         final List<Token> varData)
     {
-        final String byteOrder = ir.byteOrder() == ByteOrder.LITTLE_ENDIAN ? "<" : ">";
+        final Token msgToken = tokens.get(0);
+
+        // Generate group decoder methods
+        generateGroupDecoderMethods(sb, groups);
+
+        // Generate variable data decoder methods
+        generateVarDataDecoderMethods(sb, varData);
 
         // Encode method
         sb.append("    public function encode(): string\n");
@@ -425,7 +652,8 @@ public class PHPGenerator implements CodeGenerator
         sb.append("    {\n");
         sb.append("        $offset = 0;\n\n");
 
-        // Decode fields
+        // Decode fields with duplicate detection
+        final java.util.Set<String> seenFieldNames = new java.util.HashSet<>();
         for (int i = 0; i < fields.size(); i++)
         {
             final Token fieldToken = fields.get(i);
@@ -438,25 +666,133 @@ public class PHPGenerator implements CodeGenerator
                     final String packFormat = phpPackFormat(encodingToken.encoding().primitiveType());
                     final int size = primitiveTypeSize(encodingToken.encoding().primitiveType());
 
-                    if (encodingToken.arrayLength() > 1)
+                    if (seenFieldNames.add(propertyName))
                     {
-                        sb.append(String.format(
-                            "        $this->%s = [];\n" +
-                            "        for ($i = 0; $i < %d; $i++) {\n" +
-                            "            $this->%s[] = unpack('%s', substr($data, $offset, %d))[1];\n" +
-                            "            $offset += %d;\n" +
-                            "        }\n",
-                            propertyName, encodingToken.arrayLength(), propertyName, packFormat, size, size));
+                        if (encodingToken.arrayLength() > 1)
+                        {
+                            sb.append(String.format(
+                                "        $this->%s = [];\n" +
+                                "        for ($i = 0; $i < %d; $i++) {\n" +
+                                "            $this->%s[] = unpack('%s', substr($data, $offset, %d))[1];\n" +
+                                "            $offset += %d;\n" +
+                                "        }\n",
+                                propertyName, encodingToken.arrayLength(), propertyName, packFormat, size, size));
+                        }
+                        else
+                        {
+                            sb.append(String.format(
+                                "        $this->%s = unpack('%s', substr($data, $offset, %d))[1];\n",
+                                propertyName, packFormat, size));
+                            sb.append(String.format("        $offset += %d;\n", size));
+                        }
                     }
                     else
                     {
-                        sb.append(String.format(
-                            "        $this->%s = unpack('%s', substr($data, $offset, %d))[1];\n" +
-                            "        $offset += %d;\n",
-                            propertyName, packFormat, size, size));
+                        if (encodingToken.arrayLength() > 1)
+                        {
+                            sb.append(String.format(
+                                "        $offset += %d;  // Skip duplicate field array\n",
+                                size * encodingToken.arrayLength()));
+                        }
+                        else
+                        {
+                            sb.append(String.format("        $offset += %d;  // Skip duplicate field\n", size));
+                        }
                     }
                 }
                 i++;  // Skip encoding token
+            }
+        }
+
+        // Skip to block end for forward compatibility
+        sb.append("\n        // Skip to end of block for forward compatibility\n");
+        sb.append(String.format("        $offset = %d;\n\n", msgToken.encodedLength()));
+
+        // Decode groups
+        for (int j = 0; j < groups.size();)
+        {
+            final Token groupToken = groups.get(j);
+            if (groupToken.signal() == Signal.BEGIN_GROUP)
+            {
+                final String groupName = formatClassName(groupToken.name());
+                final String propertyName = formatPropertyName(groupToken.name());
+
+                if (seenFieldNames.add(propertyName))
+                {
+                    sb.append(String.format("        $this->%s = $this->decode%sGroup($data, $offset);\n",
+                        propertyName, groupName));
+                }
+                else
+                {
+                    sb.append(String.format("        $this->decode%sGroup($data, $offset);  " +
+                        "// Skip duplicate group\n", groupName));
+                }
+
+                j += groupToken.componentTokenCount();
+            }
+            else
+            {
+                j++;
+            }
+        }
+
+        // Decode variable-length data
+        if (!varData.isEmpty())
+        {
+            sb.append("\n");
+        }
+
+        for (int j = 0; j < varData.size();)
+        {
+            final Token varDataToken = varData.get(j);
+            if (varDataToken.signal() == Signal.BEGIN_VAR_DATA)
+            {
+                final String propertyName = formatPropertyName(varDataToken.name());
+                final Encoding encoding = varDataToken.encoding();
+                final String characterEncoding = encoding.characterEncoding();
+
+                if (seenFieldNames.add(propertyName))
+                {
+                    if (null == characterEncoding)
+                    {
+                        sb.append(String.format("        $this->%s = $this->decodeVarData($data, $offset);\n",
+                            propertyName));
+                    }
+                    else if ("UTF-8".equals(characterEncoding))
+                    {
+                        sb.append(String.format("        $this->%s = $this->decodeVarStringUtf8($data, $offset);\n",
+                            propertyName));
+                    }
+                    else
+                    {
+                        sb.append(String.format("        $this->%s = $this->decodeVarStringAscii($data, $offset);\n",
+                            propertyName));
+                    }
+                }
+                else
+                {
+                    if (null == characterEncoding)
+                    {
+                        sb.append(String.format("        $this->decodeVarData($data, $offset);  " +
+                            "// Skip duplicate vardata\n"));
+                    }
+                    else if ("UTF-8".equals(characterEncoding))
+                    {
+                        sb.append(String.format("        $this->decodeVarStringUtf8($data, $offset);  " +
+                            "// Skip duplicate vardata\n"));
+                    }
+                    else
+                    {
+                        sb.append(String.format("        $this->decodeVarStringAscii($data, $offset);  " +
+                            "// Skip duplicate vardata\n"));
+                    }
+                }
+
+                j += varDataToken.componentTokenCount();
+            }
+            else
+            {
+                j++;
             }
         }
 
