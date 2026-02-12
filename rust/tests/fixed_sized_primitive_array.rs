@@ -4,7 +4,7 @@ use fixed_sized_primitive_array::{
     ReadBuf, WriteBuf,
 };
 
-fn create_encoder(buffer: &mut [u8]) -> DemoEncoder {
+fn create_encoder(buffer: &mut [u8]) -> DemoEncoder<'_> {
     let encoder = DemoEncoder::default().wrap(WriteBuf::new(buffer), ENCODED_LENGTH);
     let mut header = encoder.header(0);
     header.parent().unwrap()
