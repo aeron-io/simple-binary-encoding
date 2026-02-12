@@ -222,11 +222,13 @@ public class RustGenerator implements CodeGenerator
         return "offset";
     }
 
-    static void generateEncoderFields(
+    static List<String> generateEncoderFields(
         final StringBuilder sb,
         final List<Token> tokens,
         final int level)
     {
+        final List<String> optionalPrimitiveFields = new ArrayList<>();
+
         Generators.forEachField(
             tokens,
             (fieldToken, typeToken) ->
@@ -238,6 +240,11 @@ public class RustGenerator implements CodeGenerator
                     {
                         case ENCODING:
                             generatePrimitiveEncoder(sb, level, typeToken, name);
+                            if (isOptionalPrimitiveScalar(typeToken))
+                            {
+                                generateOptionalPrimitiveEncoder(sb, level, typeToken, name, typeToken.encoding());
+                                optionalPrimitiveFields.add(formatFunctionName(name));
+                            }
                             break;
                         case BEGIN_ENUM:
                             generateEnumEncoder(sb, level, fieldToken, typeToken, name);
@@ -257,6 +264,35 @@ public class RustGenerator implements CodeGenerator
                     throw new UncheckedIOException(ex);
                 }
             });
+
+        return optionalPrimitiveFields;
+    }
+
+    static void generateNullifyOptionalFieldsMethod(
+        final Appendable out,
+        final int level,
+        final List<String> optionalPrimitiveFields) throws IOException
+    {
+        indent(out, level, "/// Set all optional primitive scalar fields to their null values.\n");
+        indent(out, level, "#[inline]\n");
+        indent(out, level, "pub fn nullify_optional_fields(&mut self) {\n");
+        if (optionalPrimitiveFields.isEmpty())
+        {
+            indent(out, level + 1, "// No optional primitive scalar fields exist; nothing to do.\n");
+        }
+        else
+        {
+            for (final String field : optionalPrimitiveFields)
+            {
+                indent(out, level + 1, "self.%s_opt(None);\n", field);
+            }
+        }
+        indent(out, level, "}\n\n");
+    }
+
+    private static boolean isOptionalPrimitiveScalar(final Token typeToken)
+    {
+        return typeToken.arrayLength() == 1 && typeToken.encoding().presence() == Encoding.Presence.OPTIONAL;
     }
 
     static void generateEncoderGroups(
@@ -547,6 +583,16 @@ public class RustGenerator implements CodeGenerator
             return;
         }
 
+        generatePrimitiveSetterEncoder(sb, level, typeToken, name, encoding);
+    }
+
+    private static void generatePrimitiveSetterEncoder(
+        final StringBuilder sb,
+        final int level,
+        final Token typeToken,
+        final String name,
+        final Encoding encoding) throws IOException
+    {
         final PrimitiveType primitiveType = encoding.primitiveType();
         final String rustPrimitiveType = rustTypeName(primitiveType);
 
@@ -560,6 +606,30 @@ public class RustGenerator implements CodeGenerator
         indent(sb, level + 1, "let offset = self.%s;\n", getBufOffset(typeToken));
         indent(sb, level + 1, "self.get_buf_mut().put_%s_at(offset, value);\n", rustPrimitiveType);
         indent(sb, level + 1, "self\n");
+        indent(sb, level, "}\n\n");
+    }
+
+    private static void generateOptionalPrimitiveEncoder(
+        final StringBuilder sb,
+        final int level,
+        final Token typeToken,
+        final String name,
+        final Encoding encoding) throws IOException
+    {
+        final PrimitiveType primitiveType = encoding.primitiveType();
+        final String rustPrimitiveType = rustTypeName(primitiveType);
+        final String functionName = formatFunctionName(name);
+        final String nullLiteral = rustNullLiteral(encoding);
+
+        indent(sb, level, "/// optional primitive field '%s'\n", name);
+        generateRustDoc(sb, level, typeToken, encoding);
+        indent(sb, level, "/// Set to `None` to encode the field null value.\n");
+        indent(sb, level, "#[inline]\n");
+        indent(sb, level, "pub fn %s_opt(&mut self, value: Option<%s>) {\n", functionName, rustPrimitiveType);
+        indent(sb, level + 1, "match value {\n");
+        indent(sb, level + 2, "Some(value) => self.%s(value),\n", functionName);
+        indent(sb, level + 2, "None => self.%s(%s),\n", functionName, nullLiteral);
+        indent(sb, level + 1, "}\n");
         indent(sb, level, "}\n\n");
     }
 
@@ -1656,6 +1726,7 @@ public class RustGenerator implements CodeGenerator
         indent(out, 3, "self.parent.take().ok_or(SbeErr::ParentNotSet)\n");
         indent(out, 2, "}\n\n");
 
+        final List<String> optionalPrimitiveFields = new ArrayList<>();
         for (int i = 1, end = tokens.size() - 1; i < end; )
         {
             final Token encodingToken = tokens.get(i);
@@ -1665,6 +1736,12 @@ public class RustGenerator implements CodeGenerator
             {
                 case ENCODING:
                     generatePrimitiveEncoder(sb, 2, encodingToken, encodingToken.name());
+                    if (isOptionalPrimitiveScalar(encodingToken))
+                    {
+                        generateOptionalPrimitiveEncoder(sb, 2, encodingToken, encodingToken.name(),
+                            encodingToken.encoding());
+                        optionalPrimitiveFields.add(formatFunctionName(encodingToken.name()));
+                    }
                     break;
                 case BEGIN_ENUM:
                     generateEnumEncoder(sb, 2, encodingToken, encodingToken, encodingToken.name());
@@ -1683,6 +1760,7 @@ public class RustGenerator implements CodeGenerator
             i += encodingToken.componentTokenCount();
         }
 
+        generateNullifyOptionalFieldsMethod(out, 2, optionalPrimitiveFields);
         indent(out, 1, "}\n"); // end impl
         indent(out, 0, "} // end encoder mod \n");
     }

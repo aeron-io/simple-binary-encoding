@@ -99,7 +99,8 @@ class MessageCoderDef implements RustGenerator.ParentDef
         {
             appendMessageHeaderEncoderFn(sb);
 
-            RustGenerator.generateEncoderFields(sb, fields, 2);
+            final List<String> optionalPrimitiveFields = RustGenerator.generateEncoderFields(sb, fields, 2);
+            RustGenerator.generateNullifyOptionalFieldsMethod(sb, 2, optionalPrimitiveFields);
             RustGenerator.generateEncoderGroups(sb, groups, 2, this);
             RustGenerator.generateEncoderVarData(sb, varData, 2);
         }
