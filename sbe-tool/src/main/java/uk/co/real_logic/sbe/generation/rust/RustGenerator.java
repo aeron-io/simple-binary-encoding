@@ -33,9 +33,11 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import static java.lang.String.format;
+import static java.lang.System.out;
 import static uk.co.real_logic.sbe.generation.rust.RustUtil.*;
 import static uk.co.real_logic.sbe.ir.GenerationUtil.collectFields;
 import static uk.co.real_logic.sbe.ir.GenerationUtil.collectGroups;
@@ -222,13 +224,30 @@ public class RustGenerator implements CodeGenerator
         return "offset";
     }
 
-    static List<String> generateEncoderFields(
+    static List<String> getOptionalPrimitiveFields(final List<Token> tokens)
+    {
+        final List<String> optionalPrimitiveFields = new ArrayList<>();
+        Generators.forEachField(
+            tokens,
+            (fieldToken, typeToken) ->
+            {
+                final String name = fieldToken.name();
+                if (Objects.requireNonNull(typeToken.signal()) == Signal.ENCODING)
+                {
+                    if (isOptionalPrimitiveScalar(typeToken))
+                    {
+                        optionalPrimitiveFields.add(formatFunctionName(name));
+                    }
+                }
+            });
+        return optionalPrimitiveFields;
+    }
+
+    static void generateEncoderFields(
         final StringBuilder sb,
         final List<Token> tokens,
         final int level)
     {
-        final List<String> optionalPrimitiveFields = new ArrayList<>();
-
         Generators.forEachField(
             tokens,
             (fieldToken, typeToken) ->
@@ -243,7 +262,6 @@ public class RustGenerator implements CodeGenerator
                             if (isOptionalPrimitiveScalar(typeToken))
                             {
                                 generateOptionalPrimitiveEncoder(sb, level, typeToken, name, typeToken.encoding());
-                                optionalPrimitiveFields.add(formatFunctionName(name));
                             }
                             break;
                         case BEGIN_ENUM:
@@ -264,8 +282,6 @@ public class RustGenerator implements CodeGenerator
                     throw new UncheckedIOException(ex);
                 }
             });
-
-        return optionalPrimitiveFields;
     }
 
     static void generateNullifyOptionalFieldsMethod(
@@ -275,18 +291,12 @@ public class RustGenerator implements CodeGenerator
     {
         indent(out, level, "/// Set all optional primitive scalar fields to their null values.\n");
         indent(out, level, "#[inline]\n");
-        indent(out, level, "pub fn nullify_optional_fields(&mut self) {\n");
-        if (optionalPrimitiveFields.isEmpty())
+        indent(out, level, "pub fn nullify_optional_fields(&mut self) -> &mut Self {\n");
+        for (final String field : optionalPrimitiveFields)
         {
-            indent(out, level + 1, "// No optional primitive scalar fields exist; nothing to do.\n");
+            indent(out, level + 1, "self.%s_opt(None);\n", field);
         }
-        else
-        {
-            for (final String field : optionalPrimitiveFields)
-            {
-                indent(out, level + 1, "self.%s_opt(None);\n", field);
-            }
-        }
+        indent(out, level + 1, "self\n");
         indent(out, level, "}\n\n");
     }
 
@@ -1339,7 +1349,8 @@ public class RustGenerator implements CodeGenerator
 
     static void appendImplEncoderTrait(
         final Appendable out,
-        final String typeName) throws IOException
+        final String typeName,
+        final List<String> optionalPrimitiveFields) throws IOException
     {
         indent(out, 1, "impl<%s> %s for %s {\n", BUF_LIFETIME, withBufLifetime("Writer"), withBufLifetime(typeName));
         indent(out, 2, "#[inline]\n");
@@ -1358,6 +1369,21 @@ public class RustGenerator implements CodeGenerator
         indent(out, 2, "fn set_limit(&mut self, limit: usize) {\n");
         indent(out, 3, "self.limit = limit;\n");
         indent(out, 2, "}\n");
+
+        if (!optionalPrimitiveFields.isEmpty())
+        {
+            indent(out, 0, "\n");
+            indent(out, 2, "/// xxx Set all optional primitive scalar fields to their 'null' values.\n");
+            indent(out, 2, "#[inline]\n");
+            indent(out, 2, "fn nullify_optional_fields(&mut self) -> &mut Self {\n");
+            for (final String field : optionalPrimitiveFields)
+            {
+                indent(out, 3, "self.%s_opt(None);\n", field);
+            }
+            indent(out, 3, "self\n");
+            indent(out, 2, "}\n");
+        }
+
         indent(out, 1, "}\n\n");
     }
 
@@ -1628,7 +1654,8 @@ public class RustGenerator implements CodeGenerator
     static void appendImplEncoderForComposite(
         final Appendable out,
         final int level,
-        final String name) throws IOException
+        final String name,
+        final List<String> optionalPrimitiveFields) throws IOException
     {
         appendImplWriterForComposite(out, level, name);
 
@@ -1643,6 +1670,21 @@ public class RustGenerator implements CodeGenerator
         indent(out, level + 1, "fn set_limit(&mut self, limit: usize) {\n");
         indent(out, level + 2, "self.parent.as_mut().expect(\"parent missing\").set_limit(limit);\n");
         indent(out, level + 1, "}\n");
+
+        if (!optionalPrimitiveFields.isEmpty())
+        {
+            indent(out, 0, "\n");
+            indent(out, 2, "/// Set all optional primitive scalar fields to their 'null' values.\n");
+            indent(out, 2, "#[inline]\n");
+            indent(out, 2, "fn nullify_optional_fields(&mut self) -> &mut Self {\n");
+            for (final String field : optionalPrimitiveFields)
+            {
+                indent(out, 3, "self.%s_opt(None);\n", field);
+            }
+            indent(out, 3, "self\n");
+            indent(out, 2, "}\n");
+        }
+
         indent(out, level, "}\n\n");
     }
 
@@ -1721,6 +1763,7 @@ public class RustGenerator implements CodeGenerator
         indent(out, 2, "}\n\n");
 
         // parent fn...
+        indent(out, 2, "/// parent fns\n");
         indent(out, 2, "#[inline]\n");
         indent(out, 2, "pub fn parent(&mut self) -> SbeResult<P> {\n");
         indent(out, 3, "self.parent.take().ok_or(SbeErr::ParentNotSet)\n");

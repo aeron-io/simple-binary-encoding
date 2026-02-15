@@ -2,7 +2,6 @@ use examples_extension as ext;
 use examples_uk_co_real_logic_sbe_benchmarks_fix as mqfix;
 use issue_895 as i895;
 use issue_972 as i972;
-
 use ext::{
     boolean_type::BooleanType as ExtBooleanType,
     boost_type::BoostType as ExtBoostType,
@@ -92,6 +91,7 @@ fn encode_extension_car_for_optional_field_test(
     cup_holder_count: Option<u8>,
     nullify: bool,
 ) -> ExtSbeResult<Vec<u8>> {
+    use examples_extension::Encoder;
     let mut buffer = vec![0u8; 256];
     let mut car = ExtCarEncoder::default();
     let mut extras = ExtOptionalExtras::default();
@@ -177,6 +177,7 @@ fn extension_encoder_nullify_optional_fields_sets_cup_holder_count_to_none() -> 
 
 #[test]
 fn nullify_on_composite_and_group_without_optional_fields_has_no_effect() -> TestResult {
+    use examples_extension::Encoder;
     let mut buffer = vec![0u8; 256];
     let mut car = ExtCarEncoder::default();
     let mut fuel_figures = ExtFuelFiguresEncoder::default();
@@ -262,6 +263,7 @@ fn opt_setters_work_as_expected() -> TestResult {
 
 #[test]
 fn nullify_optional_fields_sets_all_to_none() -> TestResult {
+    use issue_895::Encoder;
     let mut buf = vec![0u8; 256];
     let mut encoder = create_issue_895_encoder(&mut buf);
     encoder.optional_float_opt(Some(2.07));
@@ -303,6 +305,7 @@ fn composite_nullify_optional_fields_sets_fields_to_none() -> TestResult {
 
 #[test]
 fn message_nullify_without_optional_primitive_fields_has_no_effect() -> TestResult {
+    use issue_972::Encoder;
     let mut buffer = vec![0u8; 256];
     let mut encoder = create_issue_972_encoder(&mut buffer);
     encoder.old_field(42);
@@ -317,6 +320,7 @@ fn message_nullify_without_optional_primitive_fields_has_no_effect() -> TestResu
 
 #[test]
 fn group_nullify_optional_fields_sets_optional_fields_to_none() -> TestResult {
+    use examples_uk_co_real_logic_sbe_benchmarks_fix::Encoder;
     let mut buffer = vec![0u8; 1024];
     let mass_quote = create_mass_quote_encoder(&mut buffer);
     let mut quote_sets = QuoteSetsEncoder::default();

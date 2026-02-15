@@ -72,7 +72,8 @@ class MessageCoderDef implements RustGenerator.ParentDef
 
         if (codecType == Encoder)
         {
-            RustGenerator.appendImplEncoderTrait(sb, msgTypeName);
+            final List<String> optionalPrimitiveFields = RustGenerator.getOptionalPrimitiveFields(fields);
+            RustGenerator.appendImplEncoderTrait(sb, msgTypeName, optionalPrimitiveFields);
         }
         else
         {
@@ -99,8 +100,7 @@ class MessageCoderDef implements RustGenerator.ParentDef
         {
             appendMessageHeaderEncoderFn(sb);
 
-            final List<String> optionalPrimitiveFields = RustGenerator.generateEncoderFields(sb, fields, 2);
-            RustGenerator.generateNullifyOptionalFieldsMethod(sb, 2, optionalPrimitiveFields);
+            RustGenerator.generateEncoderFields(sb, fields, 2);
             RustGenerator.generateEncoderGroups(sb, groups, 2, this);
             RustGenerator.generateEncoderVarData(sb, varData, 2);
         }
