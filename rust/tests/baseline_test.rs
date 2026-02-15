@@ -181,24 +181,26 @@ fn encode_car_from_scratch() -> SbeResult<(usize, Vec<u8>)> {
     );
     car = car.header(0).parent()?;
 
-    car.serial_number(1234);
-    car.model_year(2013);
-    car.available(BooleanType::T);
-    car.code(Model::A);
-    car.some_numbers(&[1, 2, 3, 4]);
-    car.vehicle_code(&[97, 98, 99, 100, 101, 102]); // abcdef
+    car.serial_number(1234)
+        .model_year(2013)
+        .available(BooleanType::T)
+        .code(Model::A)
+        .some_numbers(&[1, 2, 3, 4])
+        .vehicle_code(&[97, 98, 99, 100, 101, 102]); // abcdef
 
-    extras.set_cruise_control(true);
-    extras.set_sports_pack(true);
-    extras.set_sun_roof(false);
+    extras
+        .set_cruise_control(true)
+        .set_sports_pack(true)
+        .set_sun_roof(false);
     car.extras(extras);
 
     let mut engine = car.engine_encoder();
-    engine.capacity(2000);
-    engine.num_cylinders(4);
-    engine.manufacturer_code(&[49, 50, 51]); // 123
-    engine.efficiency(35);
-    engine.booster_enabled(BooleanType::T);
+    engine
+        .capacity(2000)
+        .num_cylinders(4)
+        .manufacturer_code(&[49, 50, 51]) // 123
+        .efficiency(35)
+        .booster_enabled(BooleanType::T);
     let mut booster = engine.booster_encoder();
     booster.boost_type(BoostType::NITROUS);
     booster.horse_power(200);
@@ -207,19 +209,22 @@ fn encode_car_from_scratch() -> SbeResult<(usize, Vec<u8>)> {
     car = engine.parent()?;
     fuel_figures = car.fuel_figures_encoder(3, fuel_figures);
     assert_eq!(Some(0), fuel_figures.advance()?);
-    fuel_figures.speed(30);
-    fuel_figures.mpg(35.9);
-    fuel_figures.usage_description(b"Urban Cycle");
+    fuel_figures
+        .speed(30)
+        .mpg(35.9)
+        .usage_description(b"Urban Cycle");
 
     assert_eq!(Some(1), fuel_figures.advance()?);
-    fuel_figures.speed(55);
-    fuel_figures.mpg(49.0);
-    fuel_figures.usage_description(b"Combined Cycle");
+    fuel_figures
+        .speed(55)
+        .mpg(49.0)
+        .usage_description(b"Combined Cycle");
 
     assert_eq!(Some(2), fuel_figures.advance()?);
-    fuel_figures.speed(75);
-    fuel_figures.mpg(40.0);
-    fuel_figures.usage_description(b"Highway Cycle");
+    fuel_figures
+        .speed(75)
+        .mpg(40.0)
+        .usage_description(b"Highway Cycle");
 
     car = fuel_figures.parent()?;
     performance_figures = car.performance_figures_encoder(2, performance_figures);
@@ -228,16 +233,13 @@ fn encode_car_from_scratch() -> SbeResult<(usize, Vec<u8>)> {
 
     acceleration = performance_figures.acceleration_encoder(3, acceleration);
     assert_eq!(Some(0), acceleration.advance()?);
-    acceleration.mph(30);
-    acceleration.seconds(4.0);
+    acceleration.mph(30).seconds(4.0);
 
     assert_eq!(Some(1), acceleration.advance()?);
-    acceleration.mph(60);
-    acceleration.seconds(7.5);
+    acceleration.mph(60).seconds(7.5);
 
     assert_eq!(Some(2), acceleration.advance()?);
-    acceleration.mph(100);
-    acceleration.seconds(12.2);
+    acceleration.mph(100).seconds(12.2);
 
     performance_figures = acceleration.parent()?;
     assert_eq!(Some(1), performance_figures.advance()?);
@@ -245,23 +247,20 @@ fn encode_car_from_scratch() -> SbeResult<(usize, Vec<u8>)> {
 
     acceleration = performance_figures.acceleration_encoder(3, acceleration);
     assert_eq!(Some(0), acceleration.advance()?);
-    acceleration.mph(30);
-    acceleration.seconds(3.8);
+    acceleration.mph(30).seconds(3.8);
 
     assert_eq!(Some(1), acceleration.advance()?);
-    acceleration.mph(60);
-    acceleration.seconds(7.1);
+    acceleration.mph(60).seconds(7.1);
 
     assert_eq!(Some(2), acceleration.advance()?);
-    acceleration.mph(100);
-    acceleration.seconds(11.8);
+    acceleration.mph(100).seconds(11.8);
 
     performance_figures = acceleration.parent()?;
     car = performance_figures.parent()?;
 
-    car.manufacturer("Honda");
-    car.model("Civic VTi");
-    car.activation_code(b"abcdef");
+    car.manufacturer("Honda")
+        .model("Civic VTi")
+        .activation_code(b"abcdef");
 
     let limit = car.get_limit();
     Ok((limit, buffer))
@@ -269,7 +268,7 @@ fn encode_car_from_scratch() -> SbeResult<(usize, Vec<u8>)> {
 
 #[test]
 fn test_issue_1018() {
-    assert_eq!(1, examples_baseline::SBE_SCHEMA_ID);
-    assert_eq!(0, examples_baseline::SBE_SCHEMA_VERSION);
-    assert_eq!("5.2", examples_baseline::SBE_SEMANTIC_VERSION);
+    assert_eq!(1, SBE_SCHEMA_ID);
+    assert_eq!(0, SBE_SCHEMA_VERSION);
+    assert_eq!("5.2", SBE_SEMANTIC_VERSION);
 }
