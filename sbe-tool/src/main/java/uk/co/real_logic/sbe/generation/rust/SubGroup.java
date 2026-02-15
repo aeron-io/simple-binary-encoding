@@ -134,7 +134,6 @@ class SubGroup implements RustGenerator.ParentDef
         indent(sb, level, "}\n\n");
 
         RustGenerator.generateEncoderFields(sb, fields, level);
-//        RustGenerator.generateNullifyOptionalFieldsMethod(sb, level, optionalPrimitiveFields);
         RustGenerator.generateEncoderGroups(sb, groups, level, this);
         RustGenerator.generateEncoderVarData(sb, varData, level);
 
