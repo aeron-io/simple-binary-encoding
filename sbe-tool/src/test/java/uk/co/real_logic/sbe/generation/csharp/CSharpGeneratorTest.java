@@ -72,4 +72,37 @@ class CSharpGeneratorTest
             assertThat(source, containsString("using Test.Message.Schema.Common;"));
         }
     }
+
+    @Test
+    void shouldGenerateValidCode() throws Exception
+    {
+        try (InputStream in = Tests.getLocalResource("code-generation-schema.xml"))
+        {
+            final ParserOptions options = ParserOptions.builder().stopOnError(true).build();
+            final MessageSchema schema = parse(in, options);
+            final IrGenerator irg = new IrGenerator();
+            final Ir ir = irg.generate(schema);
+            final StringWriterOutputManager outputManager = new StringWriterOutputManager();
+            outputManager.setPackageName(ir.applicableNamespace());
+
+            final CSharpGenerator generator = new CSharpGenerator(
+                ir,
+                PrecedenceChecks.newInstance(new PrecedenceChecks.Context()),
+                true,
+                outputManager);
+            generator.generate();
+
+            final java.util.Map<String, CharSequence> sources = outputManager.getSources();
+            final String source = sources.get("code.generation.test.LowerCaseValueRef").toString();
+            assertThat(source, containsString("""
+                        public LowerCaseEnum X
+                        {
+                            get
+                            {
+                                return LowerCaseEnum.TwO;
+                            }
+                        }
+                """));
+        }
+    }
 }

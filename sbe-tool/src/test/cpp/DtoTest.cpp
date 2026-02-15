@@ -48,6 +48,7 @@ static const char *MANUFACTURER = "Honda";
 static const char *MODEL = "Civic VTi";
 static const char *ACTIVATION_CODE = "deadbeef";
 static const char *ADDED5 = "feedface";
+static const char *VARCHARDATA = "this is variable length data with `char` data type";
 
 static const std::uint8_t PERFORMANCE_FIGURES_COUNT = 2;
 static const std::uint8_t FUEL_FIGURES_COUNT = 3;
@@ -161,7 +162,8 @@ public:
         car.putManufacturer(MANUFACTURER, static_cast<int>(strlen(MANUFACTURER)))
             .putModel(MODEL, static_cast<int>(strlen(MODEL)))
             .putActivationCode(ACTIVATION_CODE, static_cast<int>(strlen(ACTIVATION_CODE)))
-            .putAdded5(ADDED5, static_cast<int>(strlen(ADDED5)));
+            .putAdded5(ADDED5, static_cast<int>(strlen(ADDED5)))
+            .putVarCharData(VARCHARDATA, static_cast<int>(strlen(VARCHARDATA)));
 
         return car.encodedLength();
     }

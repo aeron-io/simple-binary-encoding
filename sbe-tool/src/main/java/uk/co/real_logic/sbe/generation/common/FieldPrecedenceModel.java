@@ -45,12 +45,12 @@ public final class FieldPrecedenceModel
     private final CodecInteraction.CodecInteractionFactory interactionFactory =
         new CodecInteraction.CodecInteractionFactory(groupPathsByField, topLevelBlockFields);
     private final Map<CodecInteraction, List<TransitionGroup>> transitionsByInteraction = new LinkedHashMap<>();
-    private final Map<State, List<TransitionGroup>> transitionsByState = new HashMap<>();
+    private final Map<State, List<TransitionGroup>> transitionsByState = new TreeMap<>();
     private final TreeMap<Integer, State> versionWrappedStates = new TreeMap<>();
     private final State notWrappedState = allocateState("NOT_WRAPPED");
     private final String generatedRepresentationClassName;
     private State encoderWrappedState;
-    private Set<State> terminalEncoderStates;
+    private SortedSet<State> terminalEncoderStates;
 
     private FieldPrecedenceModel(final String generatedRepresentationClassName)
     {
@@ -135,9 +135,7 @@ public final class FieldPrecedenceModel
      */
     public void forEachStateOrderedByStateNumber(final Consumer<State> consumer)
     {
-        transitionsByState.keySet().stream()
-            .sorted(Comparator.comparingInt((s) -> s.number))
-            .forEach(consumer);
+        transitionsByState.keySet().forEach(consumer);
     }
 
     /**
@@ -273,7 +271,7 @@ public final class FieldPrecedenceModel
 
                 // Last writer (highest version) wins when there are multiple versions
                 encoderWrappedState = versionWrappedState;
-                terminalEncoderStates = transitionCollector.exitStates();
+                terminalEncoderStates = new TreeSet<>(transitionCollector.exitStates());
             });
     }
 
@@ -459,7 +457,7 @@ public final class FieldPrecedenceModel
     private final class TransitionCollector implements SchemaConsumer
     {
         private final String statePrefix;
-        private final HashSet<State> currentStates;
+        private final Set<State> currentStates;
         private final State blockState;
         private final Predicate<Token> filter;
 
@@ -470,7 +468,7 @@ public final class FieldPrecedenceModel
             final Predicate<Token> filter)
         {
             this.statePrefix = statePrefix;
-            this.currentStates = new HashSet<>(fromStates);
+            this.currentStates = new TreeSet<>(fromStates);
             this.blockState = blockState;
             this.filter = filter;
 
@@ -585,7 +583,7 @@ public final class FieldPrecedenceModel
     /**
      * A state in which a codec may reside.
      */
-    public static final class State
+    public static final class State implements Comparable<State>
     {
         private final int number;
         private final String name;
@@ -616,6 +614,19 @@ public final class FieldPrecedenceModel
         }
 
         /**
+         * {@inheritDoc}.
+         */
+        public int compareTo(final State other)
+        {
+            final int result = Integer.compare(number, other.number);
+            if (0 != result)
+            {
+                return result;
+            }
+            return name.compareTo(other.name);
+        }
+
+        /**
          * {@inheritDoc}
          */
         public String toString()
@@ -642,7 +653,7 @@ public final class FieldPrecedenceModel
             final State to)
         {
             this.interaction = interaction;
-            this.from = new HashSet<>(from);
+            this.from = new TreeSet<>(from);
             this.to = to;
         }
 

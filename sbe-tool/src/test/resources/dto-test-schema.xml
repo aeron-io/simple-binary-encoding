@@ -28,6 +28,10 @@
             <type name="length" primitiveType="uint32" maxValue="1073741824"/>
             <type name="varData" primitiveType="uint8" length="0"/>
         </composite>
+        <composite name="varCharDataEncoding">
+            <type name="length" primitiveType="uint16"/>
+            <type name="varData" primitiveType="char" length="0" characterEncoding="ASCII"/>
+        </composite>
     </types>
     <types>
         <type name="ModelYear" primitiveType="uint16"/>
@@ -122,6 +126,7 @@
         <data name="model" id="19" type="varStringEncoding"/>
         <data name="activationCode" id="20" type="varDataEncoding"/>
         <data name="added5" id="25" type="varStringEncoding" sinceVersion="5"/>
+        <data name="varCharData" id="30" type="varCharDataEncoding" sinceVersion="6"/>
     </sbe:message>
 
     <sbe:message name="Keywords" id="3">

@@ -26,10 +26,12 @@ import uk.co.real_logic.sbe.xml.ParserOptions;
 
 import java.io.InputStream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.co.real_logic.sbe.xml.XmlSchemaParser.parse;
 
-class GolangStructGeneratorTest
+class GolangGeneratorTest
 {
     @Test
     @SuppressWarnings("MethodLength")
@@ -483,6 +485,33 @@ class GolangStructGeneratorTest
                 "\t}\n" +
                 "\treturn \"\"\n" +
                 "}\n", messageSource);
+        }
+    }
+
+    @Test
+    @SuppressWarnings("MethodLength")
+    void shouldHandleLowerCaseEnumValueReference() throws Exception
+    {
+        try (InputStream in = Tests.getLocalResource("code-generation-schema.xml"))
+        {
+            final ParserOptions options = ParserOptions.builder().stopOnError(true).build();
+            final MessageSchema schema = parse(in, options);
+            final IrGenerator irg = new IrGenerator();
+            final Ir ir = irg.generate(schema);
+            final StringWriterOutputManager outputManager = new StringWriterOutputManager();
+            outputManager.setPackageName(ir.applicableNamespace());
+
+            final GolangGenerator generator = new GolangGenerator(ir, outputManager);
+            generator.generate();
+
+            final java.util.Map<String, CharSequence> sources = outputManager.getSources();
+            final String source = sources.get("code.generation.test.LowerCaseValueRef").toString();
+            assertThat(source, containsString("""
+                func LowerCaseValueRefInit(l *LowerCaseValueRef) {
+                \tl.X = LowerCaseEnum.TwO
+                \treturn
+                }
+                """));
         }
     }
 }
