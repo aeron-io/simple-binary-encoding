@@ -1373,7 +1373,7 @@ public class RustGenerator implements CodeGenerator
         if (!optionalPrimitiveFields.isEmpty())
         {
             indent(out, 0, "\n");
-            indent(out, 2, "/// xxx Set all optional primitive scalar fields to their 'null' values.\n");
+            indent(out, 2, "/// Set all optional primitive scalar fields to their 'null' values.\n");
             indent(out, 2, "#[inline]\n");
             indent(out, 2, "fn nullify_optional_fields(&mut self) -> &mut Self {\n");
             for (final String field : optionalPrimitiveFields)
