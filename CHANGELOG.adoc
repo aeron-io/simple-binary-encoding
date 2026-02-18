@@ -1,5 +1,11 @@
 = Changelog
 
+== 1.38.0 (unreleased)
+
+* **[Rust]** Generated encoders now produce fluent interface. (https://github.com/aeron-io/simple-binary-encoding/pull/1097[#1097])
+* **[Rust]** Updated some function to `const`. (https://github.com/aeron-io/simple-binary-encoding/pull/1098[#1098])
+* **[Rust]** Updated generator to correctly limit length of var data written. (https://github.com/aeron-io/simple-binary-encoding/pull/1096[#1096])
+
 == 1.37.1 (2026-01-13)
 * **[Java]** Ensure Java code generation for precedence checks always produces the same code without re-orderings.
 * **[Java]** Upgrade to `Shadow` 9.3.1.
