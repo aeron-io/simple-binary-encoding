@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   package="optional.accessors.test"
+                   id="201"
+                   version="0"
+                   semanticVersion="1.0"
+                   description="Optional accessor generation test schema"
+                   byteOrder="littleEndian">
+    <types>
+        <composite name="messageHeader" description="Message identifiers and length of message root">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+        </composite>
+        <composite name="groupSizeEncoding" description="Repeating group dimensions">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="numInGroup" primitiveType="uint16"/>
+        </composite>
+        <enum name="OptionalEnum" encodingType="uint8" presence="optional">
+            <validValue name="A">1</validValue>
+            <validValue name="B">2</validValue>
+        </enum>
+        <composite name="OptionalComposite">
+            <type name="compositePrimitive" primitiveType="int32" presence="optional"/>
+            <type name="compositeFloat" primitiveType="float" presence="optional"/>
+            <enum name="compositeEnum" encodingType="uint8" presence="optional">
+                <validValue name="X">10</validValue>
+                <validValue name="Y">20</validValue>
+            </enum>
+        </composite>
+    </types>
+    <sbe:message name="OptionalAccessorsMessage" id="1">
+        <field name="rootPrimitive" id="1" type="int32" presence="optional"/>
+        <field name="rootFloat" id="2" type="float" presence="optional"/>
+        <field name="rootEnum" id="3" type="OptionalEnum"/>
+        <field name="rootComposite" id="4" type="OptionalComposite"/>
+        <group name="Entries" id="5" dimensionType="groupSizeEncoding">
+            <field name="groupPrimitive" id="6" type="uint16" presence="optional"/>
+            <field name="groupEnum" id="7" type="OptionalEnum"/>
+        </group>
+    </sbe:message>
+</sbe:messageSchema>
