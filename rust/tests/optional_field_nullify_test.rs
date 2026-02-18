@@ -1,7 +1,5 @@
 use examples_extension as ext;
 use examples_uk_co_real_logic_sbe_benchmarks_fix as mqfix;
-use issue_895 as i895;
-use issue_972 as i972;
 use ext::{
     boolean_type::BooleanType as ExtBooleanType,
     boost_type::BoostType as ExtBoostType,
@@ -12,9 +10,7 @@ use ext::{
     message_header_codec::{self as ext_header, MessageHeaderDecoder as ExtHeaderDecoder},
     model::Model as ExtModel,
     optional_extras::OptionalExtras as ExtOptionalExtras,
-    ReadBuf as ExtReadBuf,
-    SbeResult as ExtSbeResult,
-    WriteBuf as ExtWriteBuf,
+    ReadBuf as ExtReadBuf, SbeResult as ExtSbeResult, WriteBuf as ExtWriteBuf,
 };
 use i895::{
     issue_895_codec::{Issue895Decoder, Issue895Encoder},
@@ -26,6 +22,8 @@ use i972::{
     message_header_codec::{self as i972_header, MessageHeaderDecoder as I972HeaderDecoder},
     Either as I972Either, ReadBuf as I972ReadBuf, WriteBuf as I972WriteBuf,
 };
+use issue_895 as i895;
+use issue_972 as i972;
 use mqfix::{
     mass_quote_codec::{
         encoder::{QuoteEntriesEncoder, QuoteSetsEncoder},
@@ -34,15 +32,23 @@ use mqfix::{
     message_header_codec::{self as mqfix_header, MessageHeaderDecoder as MassQuoteHeaderDecoder},
     ReadBuf as MassQuoteReadBuf, WriteBuf as MassQuoteWriteBuf,
 };
+use oen::{
+    enum_type::EnumType as OenEnumType,
+    message_header_codec::{
+        self as oen_header, MessageHeaderDecoder as OptionalEnumNullifyHeaderDecoder,
+    },
+    optional_encoding_enum_type::OptionalEncodingEnumType as OenOptionalEncodingEnumType,
+    optional_enum_nullify_codec::{OptionalEnumNullifyDecoder, OptionalEnumNullifyEncoder},
+    ReadBuf as OenReadBuf, WriteBuf as OenWriteBuf,
+};
+use optional_enum_nullify as oen;
 
 type TestResult = Result<(), Box<dyn std::error::Error>>;
 
 macro_rules! create_encoder_with_header_parent {
     ($buffer:expr, $encoder_ty:ty, $write_buf_ty:ty, $encoded_len:expr) => {{
-        let encoder = <$encoder_ty>::default().wrap(
-            <$write_buf_ty>::new($buffer.as_mut_slice()),
-            $encoded_len,
-        );
+        let encoder = <$encoder_ty>::default()
+            .wrap(<$write_buf_ty>::new($buffer.as_mut_slice()), $encoded_len);
         let mut header = encoder.header(0);
         header.parent().unwrap()
     }};
@@ -66,6 +72,15 @@ fn create_issue_972_encoder(buffer: &mut Vec<u8>) -> Issue972Encoder<'_> {
     )
 }
 
+fn create_optional_enum_nullify_encoder(buffer: &mut Vec<u8>) -> OptionalEnumNullifyEncoder<'_> {
+    create_encoder_with_header_parent!(
+        buffer,
+        OptionalEnumNullifyEncoder<'_>,
+        OenWriteBuf<'_>,
+        oen_header::ENCODED_LENGTH
+    )
+}
+
 fn create_mass_quote_encoder(buffer: &mut Vec<u8>) -> MassQuoteEncoder<'_> {
     create_encoder_with_header_parent!(
         buffer,
@@ -85,6 +100,12 @@ fn decode_issue_972(buffer: &[u8]) -> Issue972Decoder<'_> {
     let buf = I972ReadBuf::new(buffer);
     let header = I972HeaderDecoder::default().wrap(buf, 0);
     Issue972Decoder::default().header(header, 0)
+}
+
+fn decode_optional_enum_nullify(buffer: &[u8]) -> OptionalEnumNullifyDecoder<'_> {
+    let buf = OenReadBuf::new(buffer);
+    let header = OptionalEnumNullifyHeaderDecoder::default().wrap(buf, 0);
+    OptionalEnumNullifyDecoder::default().header(header, 0)
 }
 
 fn encode_extension_car_for_optional_field_test(
@@ -353,6 +374,54 @@ fn group_nullify_optional_fields_sets_optional_fields_to_none() -> TestResult {
     assert_eq!(None, quote_entries.security_id());
     assert_eq!(None, quote_entries.bid_size());
     assert_eq!(None, quote_entries.offer_size());
+
+    Ok(())
+}
+
+#[test]
+fn nullify_optional_fields_sets_optional_enum_field_to_null_value() -> TestResult {
+    use oen::Encoder;
+    let mut control_buffer = vec![0u8; 256];
+    let mut control_encoder = create_optional_enum_nullify_encoder(&mut control_buffer);
+    // Optionality is declared on the field, matching IR optional enum semantics.
+    control_encoder.optional_enum_opt(Some(OenEnumType::One));
+    // This field is required, even if its enum type encoding is optional.
+    control_encoder.required_enum_from_optional_type(OenOptionalEncodingEnumType::Alpha);
+
+    let control_decoder = decode_optional_enum_nullify(control_buffer.as_slice());
+    assert_eq!(OenEnumType::One, control_decoder.optional_enum());
+    assert_eq!(
+        OenOptionalEncodingEnumType::Alpha,
+        control_decoder.required_enum_from_optional_type()
+    );
+
+    let mut none_buffer = vec![0u8; 256];
+    let mut none_encoder = create_optional_enum_nullify_encoder(&mut none_buffer);
+    none_encoder.optional_enum_opt(None);
+    none_encoder.required_enum_from_optional_type(OenOptionalEncodingEnumType::Beta);
+
+    let none_decoder = decode_optional_enum_nullify(none_buffer.as_slice());
+    assert_eq!(OenEnumType::NullVal, none_decoder.optional_enum());
+    assert_eq!(
+        OenOptionalEncodingEnumType::Beta,
+        none_decoder.required_enum_from_optional_type()
+    );
+
+    let mut nullified_buffer = vec![0u8; 256];
+    let mut nullified_encoder = create_optional_enum_nullify_encoder(&mut nullified_buffer);
+    nullified_encoder.optional_enum_opt(Some(OenEnumType::Two));
+    nullified_encoder.required_enum_from_optional_type(OenOptionalEncodingEnumType::Beta);
+    // This is the behavior under test: nullify should route through *_opt(None)
+    // only for field-optional members, so `optional_enum` becomes NullVal while
+    // the required field remains unchanged even if its enum type encoding is optional.
+    nullified_encoder.nullify_optional_fields();
+
+    let nullified_decoder = decode_optional_enum_nullify(nullified_buffer.as_slice());
+    assert_eq!(OenEnumType::NullVal, nullified_decoder.optional_enum());
+    assert_eq!(
+        OenOptionalEncodingEnumType::Beta,
+        nullified_decoder.required_enum_from_optional_type()
+    );
 
     Ok(())
 }

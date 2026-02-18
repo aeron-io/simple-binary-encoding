@@ -224,23 +224,29 @@ public class RustGenerator implements CodeGenerator
         return "offset";
     }
 
-    static List<String> getOptionalPrimitiveFields(final List<Token> tokens)
+    static List<String> getNullifyOptionalFields(final List<Token> tokens)
     {
-        final List<String> optionalPrimitiveFields = new ArrayList<>();
+        final List<String> optionalFields = new ArrayList<>();
         Generators.forEachField(
             tokens,
             (fieldToken, typeToken) ->
             {
-                final String name = fieldToken.name();
-                if (Objects.requireNonNull(typeToken.signal()) == Signal.ENCODING)
+                final String fieldName = formatFunctionName(fieldToken.name());
+                final Signal signal = Objects.requireNonNull(typeToken.signal());
+                if (signal == Signal.ENCODING)
                 {
                     if (isOptionalPrimitiveScalar(typeToken))
                     {
-                        optionalPrimitiveFields.add(formatFunctionName(name));
+                        optionalFields.add(fieldName);
                     }
                 }
+                else if (signal == BEGIN_ENUM &&
+                    isOptionalEnum(typeToken, fieldToken))
+                {
+                    optionalFields.add(fieldName);
+                }
             });
-        return optionalPrimitiveFields;
+        return optionalFields;
     }
 
     static void generateEncoderFields(
@@ -266,6 +272,10 @@ public class RustGenerator implements CodeGenerator
                             break;
                         case BEGIN_ENUM:
                             generateEnumEncoder(sb, level, fieldToken, typeToken, name);
+                            if (isOptionalEnum(typeToken, fieldToken))
+                            {
+                                generateOptionalEnumEncoder(sb, level, typeToken, name);
+                            }
                             break;
                         case BEGIN_SET:
                             generateBitSetEncoder(sb, level, typeToken, name);
@@ -287,12 +297,12 @@ public class RustGenerator implements CodeGenerator
     static void generateNullifyOptionalFieldsMethod(
         final Appendable out,
         final int level,
-        final List<String> optionalPrimitiveFields) throws IOException
+        final List<String> optionalFields) throws IOException
     {
-        indent(out, level, "/// Set all optional primitive scalar fields to their null values.\n");
+        indent(out, level, "/// Set all optional fields to their null values.\n");
         indent(out, level, "#[inline]\n");
         indent(out, level, "pub fn nullify_optional_fields(&mut self) -> &mut Self {\n");
-        for (final String field : optionalPrimitiveFields)
+        for (final String field : optionalFields)
         {
             indent(out, level + 1, "self.%s_opt(None);\n", field);
         }
@@ -303,6 +313,18 @@ public class RustGenerator implements CodeGenerator
     private static boolean isOptionalPrimitiveScalar(final Token typeToken)
     {
         return typeToken.arrayLength() == 1 && typeToken.encoding().presence() == Encoding.Presence.OPTIONAL;
+    }
+
+    private static boolean isOptionalEnum(final Token typeToken, final Token fieldToken)
+    {
+        return typeToken.signal() == BEGIN_ENUM && fieldToken.isOptionalEncoding();
+    }
+
+    private static String rustEnumType(final Token typeToken)
+    {
+        final String referencedName = typeToken.referencedName();
+        final String enumTypeName = referencedName == null ? typeToken.name() : referencedName;
+        return format("%s::%s", toLowerSnakeCase(enumTypeName), formatStructName(enumTypeName));
     }
 
     static void generateEncoderGroups(
@@ -650,10 +672,7 @@ public class RustGenerator implements CodeGenerator
         final Token typeToken,
         final String name) throws IOException
     {
-        final String referencedName = typeToken.referencedName();
-        final String enumType = format("%s::%s",
-            toLowerSnakeCase(referencedName == null ? typeToken.name() : referencedName),
-            formatStructName(referencedName == null ? typeToken.name() : referencedName));
+        final String enumType = rustEnumType(typeToken);
 
         if (fieldToken.isConstantEncoding())
         {
@@ -674,6 +693,27 @@ public class RustGenerator implements CodeGenerator
             indent(sb, level + 1, "self\n");
             indent(sb, level, "}\n\n");
         }
+    }
+
+    private static void generateOptionalEnumEncoder(
+        final StringBuilder sb,
+        final int level,
+        final Token typeToken,
+        final String name) throws IOException
+    {
+        final String functionName = formatFunctionName(name);
+        final String enumType = rustEnumType(typeToken);
+
+        indent(sb, level, "/// optional enum field '%s'\n", name);
+        generateRustDoc(sb, level, typeToken, typeToken.encoding());
+        indent(sb, level, "/// Set to `None` to encode the field null value.\n");
+        indent(sb, level, "#[inline]\n");
+        indent(sb, level, "pub fn %s_opt(&mut self, value: Option<%s>) {\n", functionName, enumType);
+        indent(sb, level + 1, "match value {\n");
+        indent(sb, level + 2, "Some(value) => self.%s(value),\n", functionName);
+        indent(sb, level + 2, "None => self.%s(%s::NullVal),\n", functionName, enumType);
+        indent(sb, level + 1, "}\n");
+        indent(sb, level, "}\n\n");
     }
 
     private static void generateBitSetEncoder(
@@ -1350,7 +1390,7 @@ public class RustGenerator implements CodeGenerator
     static void appendImplEncoderTrait(
         final Appendable out,
         final String typeName,
-        final List<String> optionalPrimitiveFields) throws IOException
+        final List<String> optionalFields) throws IOException
     {
         indent(out, 1, "impl<%s> %s for %s {\n", BUF_LIFETIME, withBufLifetime("Writer"), withBufLifetime(typeName));
         indent(out, 2, "#[inline]\n");
@@ -1370,13 +1410,13 @@ public class RustGenerator implements CodeGenerator
         indent(out, 3, "self.limit = limit;\n");
         indent(out, 2, "}\n");
 
-        if (!optionalPrimitiveFields.isEmpty())
+        if (!optionalFields.isEmpty())
         {
             indent(out, 0, "\n");
-            indent(out, 2, "/// Set all optional primitive scalar fields to their 'null' values.\n");
+            indent(out, 2, "/// Set all optional fields to their 'null' values.\n");
             indent(out, 2, "#[inline]\n");
             indent(out, 2, "fn nullify_optional_fields(&mut self) -> &mut Self {\n");
-            for (final String field : optionalPrimitiveFields)
+            for (final String field : optionalFields)
             {
                 indent(out, 3, "self.%s_opt(None);\n", field);
             }
@@ -1655,7 +1695,7 @@ public class RustGenerator implements CodeGenerator
         final Appendable out,
         final int level,
         final String name,
-        final List<String> optionalPrimitiveFields) throws IOException
+        final List<String> optionalFields) throws IOException
     {
         appendImplWriterForComposite(out, level, name);
 
@@ -1671,13 +1711,13 @@ public class RustGenerator implements CodeGenerator
         indent(out, level + 2, "self.parent.as_mut().expect(\"parent missing\").set_limit(limit);\n");
         indent(out, level + 1, "}\n");
 
-        if (!optionalPrimitiveFields.isEmpty())
+        if (!optionalFields.isEmpty())
         {
             indent(out, 0, "\n");
-            indent(out, 2, "/// Set all optional primitive scalar fields to their 'null' values.\n");
+            indent(out, 2, "/// Set all optional fields to their 'null' values.\n");
             indent(out, 2, "#[inline]\n");
             indent(out, 2, "fn nullify_optional_fields(&mut self) -> &mut Self {\n");
-            for (final String field : optionalPrimitiveFields)
+            for (final String field : optionalFields)
             {
                 indent(out, 3, "self.%s_opt(None);\n", field);
             }
@@ -1769,7 +1809,7 @@ public class RustGenerator implements CodeGenerator
         indent(out, 3, "self.parent.take().ok_or(SbeErr::ParentNotSet)\n");
         indent(out, 2, "}\n\n");
 
-        final List<String> optionalPrimitiveFields = new ArrayList<>();
+        final List<String> optionalFields = new ArrayList<>();
         for (int i = 1, end = tokens.size() - 1; i < end; )
         {
             final Token encodingToken = tokens.get(i);
@@ -1783,11 +1823,16 @@ public class RustGenerator implements CodeGenerator
                     {
                         generateOptionalPrimitiveEncoder(sb, 2, encodingToken, encodingToken.name(),
                             encodingToken.encoding());
-                        optionalPrimitiveFields.add(formatFunctionName(encodingToken.name()));
+                        optionalFields.add(formatFunctionName(encodingToken.name()));
                     }
                     break;
                 case BEGIN_ENUM:
                     generateEnumEncoder(sb, 2, encodingToken, encodingToken, encodingToken.name());
+                    if (isOptionalEnum(encodingToken, encodingToken))
+                    {
+                        generateOptionalEnumEncoder(sb, 2, encodingToken, encodingToken.name());
+                        optionalFields.add(formatFunctionName(encodingToken.name()));
+                    }
                     break;
                 case BEGIN_SET:
                     generateBitSetEncoder(sb, 2, encodingToken, encodingToken.name());
@@ -1803,7 +1848,7 @@ public class RustGenerator implements CodeGenerator
             i += encodingToken.componentTokenCount();
         }
 
-        generateNullifyOptionalFieldsMethod(out, 2, optionalPrimitiveFields);
+        generateNullifyOptionalFieldsMethod(out, 2, optionalFields);
         indent(out, 1, "}\n"); // end impl
         indent(out, 0, "} // end encoder mod \n");
     }

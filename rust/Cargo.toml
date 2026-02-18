@@ -22,6 +22,7 @@ issue_1066 = { path = "../generated/rust/issue1066" }
 baseline_bigendian = { path = "../generated/rust/baseline_bigendian" }
 nested_composite_name = { path = "../generated/rust/nested_composite_name" }
 sbe_tests = { path = "../generated/rust/sbe_tests" }
+optional_enum_nullify = { path = "../generated/rust/optional_enum_nullify" }
 fixed_sized_primitive_array = { path = "../generated/rust/fixed_sized_primitive_array" }
 
 [dev-dependencies]
