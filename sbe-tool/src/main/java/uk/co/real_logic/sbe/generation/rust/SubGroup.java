@@ -103,7 +103,7 @@ class SubGroup implements RustGenerator.ParentDef
 
         // block_length function
         indent(sb, level, "#[inline]\n");
-        indent(sb, level, "pub fn block_length() -> %s {\n", rustTypeName(blockLengthPrimitiveType));
+        indent(sb, level, "pub const fn block_length() -> %s {\n", rustTypeName(blockLengthPrimitiveType));
         indent(sb, level + 1, "%d\n", this.groupToken.encodedLength());
         indent(sb, level, "}\n\n");
 

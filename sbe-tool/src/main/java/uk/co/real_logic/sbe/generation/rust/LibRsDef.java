@@ -189,7 +189,7 @@ class LibRsDef
         indent(writer, 0, "#[allow(dead_code)]\n");
         indent(writer, 0, "impl<%s> %s<%s> {\n", BUF_LIFETIME, READ_BUF_TYPE, BUF_LIFETIME);
         indent(writer, 1, "#[inline]\n");
-        indent(writer, 1, "pub fn new(data: &%s [u8]) -> Self {\n", BUF_LIFETIME);
+        indent(writer, 1, "pub const fn new(data: &%s [u8]) -> Self {\n", BUF_LIFETIME);
         indent(writer, 2, "Self { data }\n");
         indent(writer, 1, "}\n\n");
 
@@ -205,7 +205,7 @@ class LibRsDef
         uniquePrimitiveTypes.remove("u8");
         indent(writer, 0, "\n");
         indent(writer, 1, "#[inline]\n");
-        indent(writer, 1, "pub fn get_u8_at(&self, index: usize) -> u8 {\n");
+        indent(writer, 1, "pub const fn get_u8_at(&self, index: usize) -> u8 {\n");
         indent(writer, 2, "self.data[index]\n");
         indent(writer, 1, "}\n");
 
@@ -238,7 +238,7 @@ class LibRsDef
         indent(writer, 0, "}\n");
 
         indent(writer, 0, "impl<%s> %s<%s> {\n", BUF_LIFETIME, WRITE_BUF_TYPE, BUF_LIFETIME);
-        indent(writer, 1, "pub fn new(data: &%s mut [u8]) -> Self {\n", BUF_LIFETIME);
+        indent(writer, 1, "pub const fn new(data: &%s mut [u8]) -> Self {\n", BUF_LIFETIME);
         indent(writer, 2, "Self { data }\n");
         indent(writer, 1, "}\n\n");
 
@@ -255,7 +255,7 @@ class LibRsDef
 
         uniquePrimitiveTypes.remove("u8");
         indent(writer, 1, "#[inline]\n");
-        indent(writer, 1, "pub fn put_u8_at(&mut self, index: usize, value: u8) {\n");
+        indent(writer, 1, "pub const fn put_u8_at(&mut self, index: usize, value: u8) {\n");
         indent(writer, 2, "self.data[index] = value;\n");
         indent(writer, 1, "}\n\n");
 
