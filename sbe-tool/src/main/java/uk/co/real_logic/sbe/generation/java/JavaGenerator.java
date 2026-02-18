@@ -4557,8 +4557,23 @@ public class JavaGenerator implements CodeGenerator
                 }
                 else
                 {
-                    // have to duplicate because of checkstyle :/
-                    append(sb, indent, "builder.append(this." + fieldName + "());");
+                    if (typeToken.encoding().primitiveType() == PrimitiveType.CHAR)
+                    {
+                        append(sb, indent, "char _" + fieldName + " = (char) this." + fieldName + "();");
+                        append(sb, indent, "if (_" + fieldName + " >= 32 && _" + fieldName + " <= 127)");
+                        append(sb, indent, "{");
+                        append(sb, indent, "    builder.append('\\'').append(_" + fieldName + ").append('\\'');");
+                        append(sb, indent, "}");
+                        append(sb, indent, "else");
+                        append(sb, indent, "{");
+                        append(sb, indent, "    builder.append('\\\\').append((int) _" + fieldName + ");");
+                        append(sb, indent, "}");
+                    }
+                    else
+                    {
+                        // have to duplicate because of checkstyle :/
+                        append(sb, indent, "builder.append(this." + fieldName + "());");
+                    }
                 }
                 break;
 
