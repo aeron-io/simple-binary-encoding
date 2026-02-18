@@ -111,7 +111,7 @@ public class RustGenerator implements CodeGenerator
         // create Cargo.toml
         try (Writer writer = outputManager.createCargoToml())
         {
-            final String packageName = toLowerSnakeCase(ir.packageName()).replaceAll("[.-]", "_");
+            final String packageName = toLowerSnakeCase(ir.packageName().replaceAll("[\\s.-]", "_"));
             final String namespace;
             if (ir.namespaceName() == null || ir.namespaceName().equalsIgnoreCase(packageName))
             {
@@ -356,14 +356,15 @@ public class RustGenerator implements CodeGenerator
             indent(sb, level, "pub fn %s(&mut self, value: %s) {\n", propertyName, varDataType);
 
             indent(sb, level + 1, "let limit = self.get_limit();\n");
-            indent(sb, level + 1, "let data_length = value.len();\n");
+            indent(sb, level + 1, "let data_length = value.len().min((%s::MAX - 1) as usize);\n",
+                rustTypeName(lengthType));
             indent(sb, level + 1, "self.set_limit(limit + %d + data_length);\n", lengthType.size());
 
             indent(sb, level + 1,
                 "self.get_buf_mut().put_%s_at(limit, data_length as %1$s);\n",
                 rustTypeName(lengthType));
 
-            indent(sb, level + 1, "self.get_buf_mut().put_slice_at(limit + %d, value%s);\n",
+            indent(sb, level + 1, "self.get_buf_mut().put_slice_at(limit + %d, &value[0..data_length]%s);\n",
                 lengthType.size(),
                 toBytesFn);
 

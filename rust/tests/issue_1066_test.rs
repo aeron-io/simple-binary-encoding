@@ -1,7 +1,7 @@
 use issue_1066::{
     issue_1066_codec,
     issue_1066_codec::{Issue1066Decoder, Issue1066Encoder},
-    *,
+    message_header_codec, ReadBuf, WriteBuf,
 };
 
 #[test]

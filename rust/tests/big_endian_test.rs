@@ -1,10 +1,8 @@
+use baseline_bigendian::car_codec::{CarDecoder, CarEncoder, SBE_TEMPLATE_ID};
 use baseline_bigendian::{
     boolean_type::BooleanType,
     boost_type::BoostType,
-    car_codec::{
-        encoder::{AccelerationEncoder, FuelFiguresEncoder, PerformanceFiguresEncoder},
-        *,
-    },
+    car_codec::encoder::{AccelerationEncoder, FuelFiguresEncoder, PerformanceFiguresEncoder},
     message_header_codec,
     message_header_codec::MessageHeaderDecoder,
     model::Model,
