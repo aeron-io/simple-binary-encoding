@@ -37,7 +37,6 @@ import java.util.Objects;
 import java.util.Set;
 
 import static java.lang.String.format;
-import static java.lang.System.out;
 import static uk.co.real_logic.sbe.generation.rust.RustUtil.*;
 import static uk.co.real_logic.sbe.ir.GenerationUtil.collectFields;
 import static uk.co.real_logic.sbe.ir.GenerationUtil.collectGroups;
@@ -713,11 +712,13 @@ public class RustGenerator implements CodeGenerator
         generateRustDoc(sb, level, typeToken, encoding);
         indent(sb, level, "/// Set to `None` to encode the field null value.\n");
         indent(sb, level, "#[inline]\n");
-        indent(sb, level, "pub fn %s_opt(&mut self, value: Option<%s>) {\n", functionName, rustPrimitiveType);
+        indent(sb, level, "pub fn %s_opt(&mut self, value: Option<%s>) -> &mut Self {\n",
+            functionName, rustPrimitiveType);
         indent(sb, level + 1, "match value {\n");
         indent(sb, level + 2, "Some(value) => self.%s(value),\n", functionName);
         indent(sb, level + 2, "None => self.%s(%s),\n", functionName, nullLiteral);
-        indent(sb, level + 1, "}\n");
+        indent(sb, level + 1, "};\n");
+        indent(sb, level + 1, "self\n");
         indent(sb, level, "}\n\n");
     }
 
@@ -764,11 +765,12 @@ public class RustGenerator implements CodeGenerator
         generateRustDoc(sb, level, typeToken, typeToken.encoding());
         indent(sb, level, "/// Set to `None` to encode the field null value.\n");
         indent(sb, level, "#[inline]\n");
-        indent(sb, level, "pub fn %s_opt(&mut self, value: Option<%s>) {\n", functionName, enumType);
+        indent(sb, level, "pub fn %s_opt(&mut self, value: Option<%s>) -> &mut Self {\n", functionName, enumType);
         indent(sb, level + 1, "match value {\n");
         indent(sb, level + 2, "Some(value) => self.%s(value),\n", functionName);
         indent(sb, level + 2, "None => self.%s(%s::NullVal),\n", functionName, enumType);
-        indent(sb, level + 1, "}\n");
+        indent(sb, level + 1, "};\n");
+        indent(sb, level + 1, "self\n");
         indent(sb, level, "}\n\n");
     }
 
