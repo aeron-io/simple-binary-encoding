@@ -7,9 +7,9 @@ Simple Binary Encoding (SBE)
 [![Actions Status](https://github.com/aeron-io/simple-binary-encoding/workflows/Continuous%20Integration/badge.svg)](https://github.com/aeron-io/simple-binary-encoding/actions)
 [![CodeQL Status](https://github.com/aeron-io/simple-binary-encoding/workflows/CodeQL/badge.svg)](https://github.com/aeron-io/simple-binary-encoding/actions)
 
-[SBE](https://github.com/FIXTradingCommunity/fix-simple-binary-encoding) is an OSI layer 6 presentation for 
-encoding and decoding binary application messages for low-latency financial applications. This repository contains 
-the reference implementations in Java, C++, Golang, C#, and Rust.
+[SBE](https://github.com/FIXTradingCommunity/fix-simple-binary-encoding) is an OSI layer 6 presentation for
+encoding and decoding binary application messages for low-latency financial applications. This repository contains
+the reference implementations in Java, C++, Golang, C#, Rust, Python, TypeScript, and PHP.
 
 More details on the design and usage of SBE can be found on the [Wiki](https://github.com/aeron-io/simple-binary-encoding/wiki).
 
@@ -114,7 +114,7 @@ Developers wishing to enhance the CSharp generator should see the [developer doc
 Rust Build
 ------------
 The SBE Rust generator will produce 100% safe rust crates (no `unsafe` code will be generated).  Generated crates do
-not have any dependencies on any libraries (including no SBE libraries). If you don't yet have Rust installed 
+not have any dependencies on any libraries (including no SBE libraries). If you don't yet have Rust installed
 see [Rust: Getting Started](https://www.rust-lang.org/learn/get-started)
 
 Generate the Rust codecs
@@ -129,6 +129,36 @@ Or run test directly with `Cargo`
 
     $ cd rust
     $ cargo test
+
+Python Generator
+----------------
+The SBE Python generator creates Python classes with encode/decode methods using the `struct` module for binary
+serialization. Generated code uses modern Python 3.8+ features including type hints.
+
+Generate Python codecs:
+
+    $ java -Dsbe.output.dir=output/python -Dsbe.target.language=PYTHON -jar sbe-all/build/libs/sbe-all-${SBE_TOOL_VERSION}.jar schema.xml
+
+If your schema contains Python keywords (like `break`, `return`, etc.), use the keyword append token:
+
+    $ java -Dsbe.output.dir=output/python -Dsbe.target.language=PYTHON -Dsbe.keyword.append.token=_ -jar sbe-all/build/libs/sbe-all-${SBE_TOOL_VERSION}.jar schema.xml
+
+PHP Generator
+-------------
+The SBE PHP generator creates PHP classes with encode/decode methods using the `pack()` and `unpack()` functions.
+Generated code uses modern PHP 8.0+ features including union types and typed properties.
+
+Generate PHP codecs:
+
+    $ java -Dsbe.output.dir=output/php -Dsbe.target.language=PHP -jar sbe-all/build/libs/sbe-all-${SBE_TOOL_VERSION}.jar schema.xml
+
+TypeScript Generator
+--------------------
+The SBE TypeScript generator creates TypeScript interfaces and classes for encoding/decoding SBE messages.
+
+Generate TypeScript codecs:
+
+    $ java -Dsbe.output.dir=output/typescript -Dsbe.target.language=TYPESCRIPT -jar sbe-all/build/libs/sbe-all-${SBE_TOOL_VERSION}.jar schema.xml
 
 License (See LICENSE file for full license)
 -------------------------------------------
