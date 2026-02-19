@@ -123,32 +123,37 @@ fn encode_extension_car_for_optional_field_test(
     );
     car = car.header(0).parent()?;
 
-    car.cup_holder_count_opt(cup_holder_count);
     if nullify {
         // When enabled, tests expect optional message fields to be encoded as "absent".
-        car.nullify_optional_fields();
+        car.cup_holder_count_opt(cup_holder_count)
+            .nullify_optional_fields();
     }
-    car.serial_number(1234);
-    car.model_year(2013);
-    car.available(ExtBooleanType::T);
-    car.code(ExtModel::A);
-    car.some_numbers(&[0, 1, 2, 3]);
-    car.vehicle_code(b"abcdef");
+    else
+    {
+        car.cup_holder_count_opt(cup_holder_count);
+    }
+    car.serial_number(1234)
+        .model_year(2013)
+        .available(ExtBooleanType::T)
+        .code(ExtModel::A)
+        .some_numbers(&[0, 1, 2, 3])
+        .vehicle_code(b"abcdef");
 
-    extras.set_cruise_control(true);
-    extras.set_sports_pack(true);
-    extras.set_sun_roof(false);
+    extras
+        .set_cruise_control(true)
+        .set_sports_pack(true)
+        .set_sun_roof(false);
     car.extras(extras);
 
     let mut engine = car.engine_encoder();
-    engine.capacity(2000);
-    engine.num_cylinders(4);
-    engine.manufacturer_code(b"123");
-    engine.efficiency(35);
-    engine.booster_enabled(ExtBooleanType::T);
+    engine
+        .capacity(2000)
+        .num_cylinders(4)
+        .manufacturer_code(b"123")
+        .efficiency(35)
+        .booster_enabled(ExtBooleanType::T);
     let mut booster = engine.booster_encoder();
-    booster.boost_type(ExtBoostType::NITROUS);
-    booster.horse_power(200);
+    booster.boost_type(ExtBoostType::NITROUS).horse_power(200);
     engine = booster.parent()?;
     let _car = engine.parent()?;
 
@@ -210,36 +215,36 @@ fn nullify_on_composite_and_group_without_optional_fields_has_no_effect() -> Tes
     );
     car = car.header(0).parent()?;
 
-    car.serial_number(1234);
-    car.model_year(2013);
-    car.available(ExtBooleanType::T);
-    car.code(ExtModel::A);
-    car.some_numbers(&[0, 1, 2, 3]);
-    car.vehicle_code(b"abcdef");
+    car.serial_number(1234)
+        .model_year(2013)
+        .available(ExtBooleanType::T)
+        .code(ExtModel::A)
+        .some_numbers(&[0, 1, 2, 3])
+        .vehicle_code(b"abcdef");
 
-    extras.set_cruise_control(true);
-    extras.set_sports_pack(true);
-    extras.set_sun_roof(false);
+    extras
+        .set_cruise_control(true)
+        .set_sports_pack(true)
+        .set_sun_roof(false);
     car.extras(extras);
 
     let mut engine = car.engine_encoder();
-    engine.capacity(2000);
-    engine.num_cylinders(4);
-    engine.manufacturer_code(b"123");
-    engine.efficiency(35);
-    engine.booster_enabled(ExtBooleanType::T);
+    engine
+        .capacity(2000)
+        .num_cylinders(4)
+        .manufacturer_code(b"123")
+        .efficiency(35)
+        .booster_enabled(ExtBooleanType::T);
     // Engine has no optional primitive scalar fields, so nullify must be a no-op.
     engine.nullify_optional_fields();
     let mut booster = engine.booster_encoder();
-    booster.boost_type(ExtBoostType::NITROUS);
-    booster.horse_power(200);
+    booster.boost_type(ExtBoostType::NITROUS).horse_power(200);
     engine = booster.parent()?;
     car = engine.parent()?;
 
     fuel_figures = car.fuel_figures_encoder(1, fuel_figures);
     assert_eq!(Some(0), fuel_figures.advance()?);
-    fuel_figures.speed(77);
-    fuel_figures.mpg(12.5);
+    fuel_figures.speed(77).mpg(12.5);
     // FuelFigures group also has no optional primitive scalar fields; expect no change.
     fuel_figures.nullify_optional_fields();
     let _car = fuel_figures.parent()?;
@@ -263,8 +268,9 @@ fn nullify_on_composite_and_group_without_optional_fields_has_no_effect() -> Tes
 fn opt_setters_work_as_expected() -> TestResult {
     let mut some_buf = vec![0u8; 256];
     let mut encoder = create_issue_895_encoder(&mut some_buf);
-    encoder.optional_float_opt(Some(2.07));
-    encoder.optional_double_opt(Some(4.12));
+    encoder
+        .optional_float_opt(Some(2.07))
+        .optional_double_opt(Some(4.12));
 
     let decoder = decode_issue_895(some_buf.as_slice());
     assert_eq!(Some(2.07), decoder.optional_float());
@@ -272,8 +278,7 @@ fn opt_setters_work_as_expected() -> TestResult {
 
     let mut none_buf = vec![0u8; 256];
     let mut encoder = create_issue_895_encoder(&mut none_buf);
-    encoder.optional_float_opt(None);
-    encoder.optional_double_opt(None);
+    encoder.optional_float_opt(None).optional_double_opt(None);
 
     let decoder = decode_issue_895(none_buf.as_slice());
     assert_eq!(None, decoder.optional_float());
@@ -287,8 +292,9 @@ fn nullify_optional_fields_sets_all_to_none() -> TestResult {
     use issue_895::Encoder;
     let mut buf = vec![0u8; 256];
     let mut encoder = create_issue_895_encoder(&mut buf);
-    encoder.optional_float_opt(Some(2.07));
-    encoder.optional_double_opt(Some(4.12));
+    encoder
+        .optional_float_opt(Some(2.07))
+        .optional_double_opt(Some(4.12));
     // Message-level nullify should clear every optional primitive scalar field.
     encoder.nullify_optional_fields();
 
@@ -306,8 +312,7 @@ fn composite_nullify_optional_fields_sets_fields_to_none() -> TestResult {
     let mut encoder = create_issue_972_encoder(&mut buffer);
     encoder.old_field(777);
     let mut new_composite_encoder = encoder.new_field_encoder();
-    new_composite_encoder.f1(2007);
-    new_composite_encoder.f2(2012);
+    new_composite_encoder.f1(2007).f2(2012);
     // Composite-level nullify should clear composite optional primitive fields.
     new_composite_encoder.nullify_optional_fields();
     let _encoder = new_composite_encoder.parent()?;
@@ -353,9 +358,10 @@ fn group_nullify_optional_fields_sets_optional_fields_to_none() -> TestResult {
 
     quote_entries = quote_sets.quote_entries_encoder(1, quote_entries);
     assert_eq!(Some(0), quote_entries.advance()?);
-    quote_entries.security_id_opt(Some(111));
-    quote_entries.bid_size_opt(Some(222));
-    quote_entries.offer_size_opt(Some(333));
+    quote_entries
+        .security_id_opt(Some(111))
+        .bid_size_opt(Some(222))
+        .offer_size_opt(Some(333));
     // Group-level nullify should clear all optional primitive scalar fields in the entry.
     quote_entries.nullify_optional_fields();
 
@@ -384,9 +390,10 @@ fn nullify_optional_fields_sets_optional_enum_field_to_null_value() -> TestResul
     let mut control_buffer = vec![0u8; 256];
     let mut control_encoder = create_optional_enum_nullify_encoder(&mut control_buffer);
     // Optionality is declared on the field, matching IR optional enum semantics.
-    control_encoder.optional_enum_opt(Some(OenEnumType::One));
     // This field is required, even if its enum type encoding is optional.
-    control_encoder.required_enum_from_optional_type(OenOptionalEncodingEnumType::Alpha);
+    control_encoder
+        .optional_enum_opt(Some(OenEnumType::One))
+        .required_enum_from_optional_type(OenOptionalEncodingEnumType::Alpha);
     let mut control_composite = control_encoder.optional_composite_encoder();
     control_composite.optional_counter_opt(Some(77));
     let _control_encoder = control_composite.parent()?;
@@ -402,8 +409,9 @@ fn nullify_optional_fields_sets_optional_enum_field_to_null_value() -> TestResul
 
     let mut none_buffer = vec![0u8; 256];
     let mut none_encoder = create_optional_enum_nullify_encoder(&mut none_buffer);
-    none_encoder.optional_enum_opt(None);
-    none_encoder.required_enum_from_optional_type(OenOptionalEncodingEnumType::Beta);
+    none_encoder
+        .optional_enum_opt(None)
+        .required_enum_from_optional_type(OenOptionalEncodingEnumType::Beta);
     let mut none_composite = none_encoder.optional_composite_encoder();
     none_composite.optional_counter_opt(None);
     let _none_encoder = none_composite.parent()?;
@@ -419,8 +427,9 @@ fn nullify_optional_fields_sets_optional_enum_field_to_null_value() -> TestResul
 
     let mut nullified_buffer = vec![0u8; 256];
     let mut nullified_encoder = create_optional_enum_nullify_encoder(&mut nullified_buffer);
-    nullified_encoder.optional_enum_opt(Some(OenEnumType::Two));
-    nullified_encoder.required_enum_from_optional_type(OenOptionalEncodingEnumType::Beta);
+    nullified_encoder
+        .optional_enum_opt(Some(OenEnumType::Two))
+        .required_enum_from_optional_type(OenOptionalEncodingEnumType::Beta);
     let mut nullified_composite = nullified_encoder.optional_composite_encoder();
     nullified_composite.optional_counter_opt(Some(88));
     nullified_encoder = nullified_composite.parent()?;
