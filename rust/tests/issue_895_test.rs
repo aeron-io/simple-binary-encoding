@@ -1,6 +1,6 @@
 use issue_895::{issue_895_codec::*, message_header_codec::*, *};
 
-fn create_encoder(buffer: &mut Vec<u8>) -> Issue895Encoder {
+fn create_encoder(buffer: &mut Vec<u8>) -> Issue895Encoder<'_> {
     let issue_895 =
         Issue895Encoder::default().wrap(WriteBuf::new(buffer.as_mut_slice()), ENCODED_LENGTH);
     let mut header = issue_895.header(0);

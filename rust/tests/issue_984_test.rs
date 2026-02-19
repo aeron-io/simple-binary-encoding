@@ -4,7 +4,7 @@ use issue_984::{
     *,
 };
 
-fn create_encoder(buffer: &mut Vec<u8>) -> SimpleMessageEncoder {
+fn create_encoder(buffer: &mut Vec<u8>) -> SimpleMessageEncoder<'_> {
     let simple_msg = SimpleMessageEncoder::default().wrap(
         WriteBuf::new(buffer.as_mut_slice()),
         message_header_codec::ENCODED_LENGTH,

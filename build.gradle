@@ -679,6 +679,7 @@ tasks.register('generateRustTestCodecs', JavaExec) {
             'sbe-tool/src/test/resources/issue1028.xml',
             'sbe-tool/src/test/resources/issue1057.xml',
             'sbe-tool/src/test/resources/issue1066.xml',
+            'sbe-tool/src/test/resources/optional_enum_nullify.xml',
             'sbe-tool/src/test/resources/basic-variable-length-schema.xml',
             'sbe-tool/src/test/resources/example-bigendian-test-schema.xml',
             'sbe-tool/src/test/resources/fixed-sized-primitive-array-types.xml',

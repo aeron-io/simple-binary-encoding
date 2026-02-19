@@ -7,7 +7,7 @@ use issue_987::{
     *,
 };
 
-fn create_encoder(buffer: &mut Vec<u8>, off: usize) -> Issue987Encoder {
+fn create_encoder(buffer: &mut Vec<u8>, off: usize) -> Issue987Encoder<'_> {
     let encoder = Issue987Encoder::default().wrap(
         WriteBuf::new(buffer.as_mut_slice()),
         off + message_header_codec::ENCODED_LENGTH,

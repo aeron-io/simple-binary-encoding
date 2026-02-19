@@ -3,7 +3,7 @@ use issue_435::{
     set_ref::SetRef, *,
 };
 
-fn create_encoder(buffer: &mut Vec<u8>) -> Issue435Encoder {
+fn create_encoder(buffer: &mut Vec<u8>) -> Issue435Encoder<'_> {
     let issue_435 = Issue435Encoder::default().wrap(
         WriteBuf::new(buffer.as_mut_slice()),
         message_header_codec::ENCODED_LENGTH,
