@@ -82,6 +82,17 @@ public class RustGenerator implements CodeGenerator
         SubGroup addSubGroup(String name, int level, Token groupToken);
     }
 
+    static final class NullifyTargets
+    {
+        final List<String> optionalFields = new ArrayList<>();
+        final List<String> compositeFieldEncoders = new ArrayList<>();
+
+        boolean isEmpty()
+        {
+            return optionalFields.isEmpty() && compositeFieldEncoders.isEmpty();
+        }
+    }
+
     private final Ir ir;
     private final RustOutputManager outputManager;
     private final String crateVersion;
@@ -224,9 +235,9 @@ public class RustGenerator implements CodeGenerator
         return "offset";
     }
 
-    static List<String> getNullifyOptionalFields(final List<Token> tokens)
+    static NullifyTargets getNullifyTargets(final List<Token> tokens)
     {
-        final List<String> optionalFields = new ArrayList<>();
+        final NullifyTargets targets = new NullifyTargets();
         Generators.forEachField(
             tokens,
             (fieldToken, typeToken) ->
@@ -237,16 +248,20 @@ public class RustGenerator implements CodeGenerator
                 {
                     if (isOptionalPrimitiveScalar(typeToken))
                     {
-                        optionalFields.add(fieldName);
+                        targets.optionalFields.add(fieldName);
                     }
                 }
                 else if (signal == BEGIN_ENUM &&
                     isOptionalEnum(typeToken, fieldToken))
                 {
-                    optionalFields.add(fieldName);
+                    targets.optionalFields.add(fieldName);
+                }
+                else if (signal == Signal.BEGIN_COMPOSITE)
+                {
+                    targets.compositeFieldEncoders.add(compositeEncoderAccessorName(fieldToken.name()));
                 }
             });
-        return optionalFields;
+        return targets;
     }
 
     static void generateEncoderFields(
@@ -297,17 +312,53 @@ public class RustGenerator implements CodeGenerator
     static void generateNullifyOptionalFieldsMethod(
         final Appendable out,
         final int level,
-        final List<String> optionalFields) throws IOException
+        final NullifyTargets targets) throws IOException
     {
         indent(out, level, "/// Set all optional fields to their null values.\n");
         indent(out, level, "#[inline]\n");
         indent(out, level, "pub fn nullify_optional_fields(&mut self) -> &mut Self {\n");
-        for (final String field : optionalFields)
-        {
-            indent(out, level + 1, "self.%s_opt(None);\n", field);
-        }
+        appendNullifyOptionalFieldsBody(out, level + 1, targets);
         indent(out, level + 1, "self\n");
         indent(out, level, "}\n\n");
+    }
+
+    private static void appendNullifyOptionalFieldsBody(
+        final Appendable out,
+        final int level,
+        final NullifyTargets targets) throws IOException
+    {
+        for (final String field : targets.optionalFields)
+        {
+            indent(out, level, "self.%s_opt(None);\n", field);
+        }
+
+        for (final String compositeFieldEncoder : targets.compositeFieldEncoders)
+        {
+            indent(out, level, "{\n");
+            indent(out, level + 1, "let mut composite_encoder = core::mem::take(self).%s();\n", compositeFieldEncoder);
+            indent(out, level + 1, "composite_encoder.nullify_optional_fields();\n");
+            indent(out, level + 1, "*self = composite_encoder.parent().expect(\"parent missing\");\n");
+            indent(out, level, "}\n");
+        }
+    }
+
+    private static void appendTraitNullifyOptionalFieldsMethod(
+        final Appendable out,
+        final int level,
+        final NullifyTargets targets) throws IOException
+    {
+        if (targets.isEmpty())
+        {
+            return;
+        }
+
+        indent(out, 0, "\n");
+        indent(out, level, "/// Set all optional fields to their 'null' values.\n");
+        indent(out, level, "#[inline]\n");
+        indent(out, level, "fn nullify_optional_fields(&mut self) -> &mut Self {\n");
+        appendNullifyOptionalFieldsBody(out, level + 1, targets);
+        indent(out, level + 1, "self\n");
+        indent(out, level, "}\n");
     }
 
     private static boolean isOptionalPrimitiveScalar(final Token typeToken)
@@ -325,6 +376,11 @@ public class RustGenerator implements CodeGenerator
         final String referencedName = typeToken.referencedName();
         final String enumTypeName = referencedName == null ? typeToken.name() : referencedName;
         return format("%s::%s", toLowerSnakeCase(enumTypeName), formatStructName(enumTypeName));
+    }
+
+    private static String compositeEncoderAccessorName(final String name)
+    {
+        return toLowerSnakeCase(encoderName(name));
     }
 
     static void generateEncoderGroups(
@@ -743,7 +799,7 @@ public class RustGenerator implements CodeGenerator
         final Token typeToken,
         final String name) throws IOException
     {
-        final String encoderName = toLowerSnakeCase(encoderName(name));
+        final String encoderName = compositeEncoderAccessorName(name);
         final String encoderTypeName = format("%s::%s",
             codecModName(typeToken.referencedName() == null ? typeToken.name() : typeToken.referencedName()),
             encoderName(formatStructName(typeToken.applicableTypeName())));
@@ -1390,7 +1446,7 @@ public class RustGenerator implements CodeGenerator
     static void appendImplEncoderTrait(
         final Appendable out,
         final String typeName,
-        final List<String> optionalFields) throws IOException
+        final NullifyTargets targets) throws IOException
     {
         indent(out, 1, "impl<%s> %s for %s {\n", BUF_LIFETIME, withBufLifetime("Writer"), withBufLifetime(typeName));
         indent(out, 2, "#[inline]\n");
@@ -1410,19 +1466,7 @@ public class RustGenerator implements CodeGenerator
         indent(out, 3, "self.limit = limit;\n");
         indent(out, 2, "}\n");
 
-        if (!optionalFields.isEmpty())
-        {
-            indent(out, 0, "\n");
-            indent(out, 2, "/// Set all optional fields to their 'null' values.\n");
-            indent(out, 2, "#[inline]\n");
-            indent(out, 2, "fn nullify_optional_fields(&mut self) -> &mut Self {\n");
-            for (final String field : optionalFields)
-            {
-                indent(out, 3, "self.%s_opt(None);\n", field);
-            }
-            indent(out, 3, "self\n");
-            indent(out, 2, "}\n");
-        }
+        appendTraitNullifyOptionalFieldsMethod(out, 2, targets);
 
         indent(out, 1, "}\n\n");
     }
@@ -1695,7 +1739,7 @@ public class RustGenerator implements CodeGenerator
         final Appendable out,
         final int level,
         final String name,
-        final List<String> optionalFields) throws IOException
+        final NullifyTargets targets) throws IOException
     {
         appendImplWriterForComposite(out, level, name);
 
@@ -1711,19 +1755,7 @@ public class RustGenerator implements CodeGenerator
         indent(out, level + 2, "self.parent.as_mut().expect(\"parent missing\").set_limit(limit);\n");
         indent(out, level + 1, "}\n");
 
-        if (!optionalFields.isEmpty())
-        {
-            indent(out, 0, "\n");
-            indent(out, 2, "/// Set all optional fields to their 'null' values.\n");
-            indent(out, 2, "#[inline]\n");
-            indent(out, 2, "fn nullify_optional_fields(&mut self) -> &mut Self {\n");
-            for (final String field : optionalFields)
-            {
-                indent(out, 3, "self.%s_opt(None);\n", field);
-            }
-            indent(out, 3, "self\n");
-            indent(out, 2, "}\n");
-        }
+        appendTraitNullifyOptionalFieldsMethod(out, 2, targets);
 
         indent(out, level, "}\n\n");
     }
@@ -1809,7 +1841,7 @@ public class RustGenerator implements CodeGenerator
         indent(out, 3, "self.parent.take().ok_or(SbeErr::ParentNotSet)\n");
         indent(out, 2, "}\n\n");
 
-        final List<String> optionalFields = new ArrayList<>();
+        final NullifyTargets nullifyTargets = new NullifyTargets();
         for (int i = 1, end = tokens.size() - 1; i < end; )
         {
             final Token encodingToken = tokens.get(i);
@@ -1823,7 +1855,7 @@ public class RustGenerator implements CodeGenerator
                     {
                         generateOptionalPrimitiveEncoder(sb, 2, encodingToken, encodingToken.name(),
                             encodingToken.encoding());
-                        optionalFields.add(formatFunctionName(encodingToken.name()));
+                        nullifyTargets.optionalFields.add(formatFunctionName(encodingToken.name()));
                     }
                     break;
                 case BEGIN_ENUM:
@@ -1831,7 +1863,7 @@ public class RustGenerator implements CodeGenerator
                     if (isOptionalEnum(encodingToken, encodingToken))
                     {
                         generateOptionalEnumEncoder(sb, 2, encodingToken, encodingToken.name());
-                        optionalFields.add(formatFunctionName(encodingToken.name()));
+                        nullifyTargets.optionalFields.add(formatFunctionName(encodingToken.name()));
                     }
                     break;
                 case BEGIN_SET:
@@ -1839,6 +1871,7 @@ public class RustGenerator implements CodeGenerator
                     break;
                 case BEGIN_COMPOSITE:
                     generateCompositeEncoder(sb, 2, encodingToken, encodingToken.name());
+                    nullifyTargets.compositeFieldEncoders.add(compositeEncoderAccessorName(encodingToken.name()));
                     break;
                 default:
                     break;
@@ -1848,7 +1881,7 @@ public class RustGenerator implements CodeGenerator
             i += encodingToken.componentTokenCount();
         }
 
-        generateNullifyOptionalFieldsMethod(out, 2, optionalFields);
+        generateNullifyOptionalFieldsMethod(out, 2, nullifyTargets);
         indent(out, 1, "}\n"); // end impl
         indent(out, 0, "} // end encoder mod \n");
     }

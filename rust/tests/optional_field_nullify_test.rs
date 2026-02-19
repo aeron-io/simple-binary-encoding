@@ -387,6 +387,9 @@ fn nullify_optional_fields_sets_optional_enum_field_to_null_value() -> TestResul
     control_encoder.optional_enum_opt(Some(OenEnumType::One));
     // This field is required, even if its enum type encoding is optional.
     control_encoder.required_enum_from_optional_type(OenOptionalEncodingEnumType::Alpha);
+    let mut control_composite = control_encoder.optional_composite_encoder();
+    control_composite.optional_counter_opt(Some(77));
+    let _control_encoder = control_composite.parent()?;
 
     let control_decoder = decode_optional_enum_nullify(control_buffer.as_slice());
     assert_eq!(OenEnumType::One, control_decoder.optional_enum());
@@ -394,11 +397,16 @@ fn nullify_optional_fields_sets_optional_enum_field_to_null_value() -> TestResul
         OenOptionalEncodingEnumType::Alpha,
         control_decoder.required_enum_from_optional_type()
     );
+    let control_composite = control_decoder.optional_composite_decoder();
+    assert_eq!(Some(77), control_composite.optional_counter());
 
     let mut none_buffer = vec![0u8; 256];
     let mut none_encoder = create_optional_enum_nullify_encoder(&mut none_buffer);
     none_encoder.optional_enum_opt(None);
     none_encoder.required_enum_from_optional_type(OenOptionalEncodingEnumType::Beta);
+    let mut none_composite = none_encoder.optional_composite_encoder();
+    none_composite.optional_counter_opt(None);
+    let _none_encoder = none_composite.parent()?;
 
     let none_decoder = decode_optional_enum_nullify(none_buffer.as_slice());
     assert_eq!(OenEnumType::NullVal, none_decoder.optional_enum());
@@ -406,14 +414,19 @@ fn nullify_optional_fields_sets_optional_enum_field_to_null_value() -> TestResul
         OenOptionalEncodingEnumType::Beta,
         none_decoder.required_enum_from_optional_type()
     );
+    let none_composite = none_decoder.optional_composite_decoder();
+    assert_eq!(None, none_composite.optional_counter());
 
     let mut nullified_buffer = vec![0u8; 256];
     let mut nullified_encoder = create_optional_enum_nullify_encoder(&mut nullified_buffer);
     nullified_encoder.optional_enum_opt(Some(OenEnumType::Two));
     nullified_encoder.required_enum_from_optional_type(OenOptionalEncodingEnumType::Beta);
+    let mut nullified_composite = nullified_encoder.optional_composite_encoder();
+    nullified_composite.optional_counter_opt(Some(88));
+    nullified_encoder = nullified_composite.parent()?;
     // This is the behavior under test: nullify should route through *_opt(None)
-    // only for field-optional members, so `optional_enum` becomes NullVal while
-    // the required field remains unchanged even if its enum type encoding is optional.
+    // and recurse into composite fields, so `optional_enum` and composite optional
+    // members become null while required fields remain unchanged.
     nullified_encoder.nullify_optional_fields();
 
     let nullified_decoder = decode_optional_enum_nullify(nullified_buffer.as_slice());
@@ -422,6 +435,8 @@ fn nullify_optional_fields_sets_optional_enum_field_to_null_value() -> TestResul
         OenOptionalEncodingEnumType::Beta,
         nullified_decoder.required_enum_from_optional_type()
     );
+    let nullified_composite = nullified_decoder.optional_composite_decoder();
+    assert_eq!(None, nullified_composite.optional_counter());
 
     Ok(())
 }

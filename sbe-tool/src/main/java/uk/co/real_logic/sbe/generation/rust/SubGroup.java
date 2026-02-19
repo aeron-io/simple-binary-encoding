@@ -72,8 +72,8 @@ class SubGroup implements RustGenerator.ParentDef
         indent(sb, level, "initial_limit: usize,\n");
         indent(sb, level - 1, "}\n\n");
 
-        final List<String> optionalFields = RustGenerator.getNullifyOptionalFields(fields);
-        RustGenerator.appendImplEncoderForComposite(sb, level - 1, name, optionalFields);
+        final RustGenerator.NullifyTargets nullifyTargets = RustGenerator.getNullifyTargets(fields);
+        RustGenerator.appendImplEncoderForComposite(sb, level - 1, name, nullifyTargets);
 
         // define impl...
         indent(sb, level - 1, "impl<'a, P> %s<P> where P: Encoder<'a> + Default {\n", name);

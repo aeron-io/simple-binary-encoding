@@ -23,9 +23,13 @@
             <validValue name="Alpha">3</validValue>
             <validValue name="Beta">4</validValue>
         </enum>
+        <composite name="OptionalComposite">
+            <type name="optionalCounter" primitiveType="uint16" presence="optional" nullValue="0"/>
+        </composite>
     </types>
     <sbe:message name="optionalEnumNullify" id="1" description="optional enum nullify test">
         <field name="optionalEnum" type="EnumType" id="1" presence="optional"/>
         <field name="requiredEnumFromOptionalType" type="OptionalEncodingEnumType" id="2"/>
+        <field name="optionalComposite" type="OptionalComposite" id="3"/>
     </sbe:message>
 </sbe:messageSchema>
