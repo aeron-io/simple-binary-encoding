@@ -43,6 +43,7 @@ set(ISSUE889_SCHEMA ${CODEC_SCHEMA_DIR}/issue889.xml)
 set(ACCESS_ORDER_SCHEMA ${CODEC_SCHEMA_DIR}/field-order-check-schema.xml)
 set(VERSIONED_MESSAGE_V1_SCHEMA ${CODEC_SCHEMA_DIR}/versioned-message-v1.xml)
 set(VERSIONED_MESSAGE_V2_SCHEMA ${CODEC_SCHEMA_DIR}/versioned-message-v2.xml)
+set(OPTIONAL_ACCESSORS_SCHEMA ${CODEC_SCHEMA_DIR}/optional-accessors-schema.xml)
 
 set(GENERATED_CODECS
     ${CXX_CODEC_TARGET_DIR}
@@ -61,6 +62,7 @@ add_custom_command(
         ${ACCESS_ORDER_SCHEMA}
         ${VERSIONED_MESSAGE_V1_SCHEMA}
         ${VERSIONED_MESSAGE_V2_SCHEMA}
+        ${OPTIONAL_ACCESSORS_SCHEMA}
     sbe-jar ${SBE_JAR}
     COMMAND
         ${Java_JAVA_EXECUTABLE} --add-opens java.base/jdk.internal.misc=ALL-UNNAMED
@@ -84,6 +86,7 @@ add_custom_command(
             ${ACCESS_ORDER_SCHEMA}
             ${VERSIONED_MESSAGE_V1_SCHEMA}
             ${VERSIONED_MESSAGE_V2_SCHEMA}
+            ${OPTIONAL_ACCESSORS_SCHEMA}
 )
 
 add_custom_target(codecs DEPENDS ${GENERATED_CODECS})
@@ -108,6 +111,8 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "7.0")
         sbe_test(DtoTest codecs)
         target_compile_features(DtoTest PRIVATE cxx_std_17)
+        sbe_test(OptionalAccessorsCodeGenTest codecs)
+        target_compile_features(OptionalAccessorsCodeGenTest PRIVATE cxx_std_17)
     endif()
 
     # Check if the GCC version supports C++20
@@ -121,6 +126,8 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "CLang")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "4.0")
         sbe_test(DtoTest codecs)
         target_compile_features(DtoTest PRIVATE cxx_std_17)
+        sbe_test(OptionalAccessorsCodeGenTest codecs)
+        target_compile_features(OptionalAccessorsCodeGenTest PRIVATE cxx_std_17)
     endif()
 
     # Check if CLang version supports C++20
@@ -133,7 +140,9 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # Check if MSVC version supports C++17 / C++20
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.14")
         sbe_test(DtoTest codecs)
+        sbe_test(OptionalAccessorsCodeGenTest codecs)
         target_compile_options(DtoTest PRIVATE /std:c++17)
+        target_compile_options(OptionalAccessorsCodeGenTest PRIVATE /std:c++17)
         target_compile_options(CodeGenTest PRIVATE /std:c++20)
     endif()
 endif()

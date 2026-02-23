@@ -1733,6 +1733,7 @@ public class CppGenerator implements CodeGenerator
 
             "#if __cplusplus >= 201703L\n" +
             "#  include <string_view>\n" +
+            "#  include <optional>\n" +
             "#  define SBE_NODISCARD [[nodiscard]]\n" +
             "#  if !defined(SBE_USE_STRING_VIEW)\n" +
             "#    define SBE_USE_STRING_VIEW 1\n" +
@@ -1753,6 +1754,7 @@ public class CppGenerator implements CodeGenerator
             "#endif\n\n" +
 
             "#include <cstdint>\n" +
+            "#include <cmath>\n" +
             "#include <limits>\n" +
             "#include <cstring>\n" +
             "#include <iomanip>\n" +
@@ -2124,6 +2126,16 @@ public class CppGenerator implements CodeGenerator
         return fieldPrecedenceModel == null ? " SBE_NOEXCEPT" : "";
     }
 
+    private static String optionalPrimitiveNullCheckExpression(final PrimitiveType primitiveType)
+    {
+        if (primitiveType == PrimitiveType.FLOAT || primitiveType == PrimitiveType.DOUBLE)
+        {
+            return "std::isnan(value) || value == nullValue";
+        }
+
+        return "value == nullValue";
+    }
+
     private void generateSingleValueProperty(
         final StringBuilder sb,
         final String containingClassName,
@@ -2155,6 +2167,27 @@ public class CppGenerator implements CodeGenerator
             accessOrderListenerCall,
             generateLoadValue(primitiveType, Integer.toString(offset), encodingToken.encoding().byteOrder(), indent),
             noexceptDeclaration);
+
+        if (propertyToken.isOptionalEncoding())
+        {
+            new Formatter(sb).format("\n" +
+                indent + "    #if __cplusplus >= 201703L\n" +
+                indent + "    SBE_NODISCARD std::optional<%1$s> %2$sOpt() const%4$s\n" +
+                indent + "    {\n" +
+                indent + "        const %1$s value = %2$s();\n" +
+                indent + "        const %1$s nullValue = %2$sNullValue();\n" +
+                indent + "        if (%3$s)\n" +
+                indent + "        {\n" +
+                indent + "            return std::nullopt;\n" +
+                indent + "        }\n\n" +
+                indent + "        return value;\n" +
+                indent + "    }\n" +
+                indent + "    #endif\n",
+                cppTypeName,
+                propertyName,
+                optionalPrimitiveNullCheckExpression(primitiveType),
+                noexceptDeclaration);
+        }
 
         final CharSequence storeValue = generateStoreValue(
             primitiveType, "", Integer.toString(offset), encodingToken.encoding().byteOrder(), indent);
@@ -3612,6 +3645,24 @@ public class CppGenerator implements CodeGenerator
                 typeName,
                 offset,
                 accessOrderListenerCall);
+
+            if (fieldToken.isOptionalEncoding())
+            {
+                new Formatter(sb).format("\n" +
+                    indent + "    #if __cplusplus >= 201703L\n" +
+                    indent + "    SBE_NODISCARD std::optional<%1$s::Value> %2$sOpt() const\n" +
+                    indent + "    {\n" +
+                    indent + "        const %1$s::Value value = %2$s();\n" +
+                    indent + "        if (%1$s::NULL_VALUE == value)\n" +
+                    indent + "        {\n" +
+                    indent + "            return std::nullopt;\n" +
+                    indent + "        }\n\n" +
+                    indent + "        return value;\n" +
+                    indent + "    }\n" +
+                    indent + "    #endif\n",
+                    enumName,
+                    propertyName);
+            }
 
             new Formatter(sb).format("\n" +
                 indent + "    %1$s &%2$s(const %3$s::Value value)%8$s\n" +
