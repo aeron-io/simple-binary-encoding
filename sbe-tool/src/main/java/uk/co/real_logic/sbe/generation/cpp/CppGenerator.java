@@ -2630,9 +2630,9 @@ public class CppGenerator implements CodeGenerator
             values);
 
         sb.append(String.format("\n" +
-            indent + "    SBE_NODISCARD %1$s %2$s(const std::uint64_t index) const\n" +
+            indent + "    SBE_NODISCARD static SBE_CONSTEXPR %1$s %2$s(const std::uint64_t index)\n" +
             indent + "    {\n" +
-            indent + "        static const std::uint8_t %2$sValues[] = { %3$s, 0 };\n\n" +
+            indent + "        const std::uint8_t %2$sValues[] = { %3$s, 0 };\n\n" +
 
             indent + "        return (char)%2$sValues[index];\n" +
             indent + "    }\n",
