@@ -187,7 +187,7 @@ fn encode_car_from_scratch() -> SbeResult<(usize, Vec<u8>)> {
         .available(BooleanType::T)
         .code(Model::A)
         .some_numbers(&[0, 1, 2, 3])
-        .vehicle_code_from_iter(b"abcdef_extra_is_ignored".into_iter().copied()); // abcdef
+        .vehicle_code_from_iter(b"abcdef_extra_is_ignored".iter().copied()); // abcdef
 
     extras
         .set_cruise_control(true)

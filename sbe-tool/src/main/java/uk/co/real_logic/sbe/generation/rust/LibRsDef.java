@@ -113,6 +113,9 @@ class LibRsDef
         indent(writer, 0, "pub trait Encoder<'a>: Writer<'a> {\n");
         indent(writer, 1, "fn get_limit(&self) -> usize;\n");
         indent(writer, 1, "fn set_limit(&mut self, limit: usize);\n");
+        indent(writer, 1, "fn nullify_optional_fields(&mut self) -> &mut Self {\n");
+        indent(writer, 2, "self\n");
+        indent(writer, 1, "}\n");
         indent(writer, 0, "}\n\n");
     }
 
