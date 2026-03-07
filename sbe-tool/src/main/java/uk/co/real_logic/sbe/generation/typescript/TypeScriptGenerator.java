@@ -479,9 +479,6 @@ public class TypeScriptGenerator implements CodeGenerator
         // Generate group decoder methods
         generateGroupDecoderMethods(sb, groups, messageName);
 
-        // Generate variable data decoder methods
-        generateVarDataDecoderMethods(sb, varData);
-
         // Generate static methods
         sb.append("\n  static getBlockLength(): number {\n");
         sb.append("    return ").append(decoderName).append(".BLOCK_LENGTH;\n");
@@ -563,8 +560,8 @@ public class TypeScriptGenerator implements CodeGenerator
                 final String fieldName = formatFieldName(varDataToken.name());
                 if (seenFieldNames.add(fieldName))
                 {
-                    final Encoding encoding = varDataToken.encoding();
-                    final String characterEncoding = encoding.characterEncoding();
+                    final Token dataToken = Generators.findFirst("varData", varData, i);
+                    final String characterEncoding = dataToken.encoding().characterEncoding();
 
                     if (null == characterEncoding)
                     {
@@ -696,49 +693,14 @@ public class TypeScriptGenerator implements CodeGenerator
 
                 if (seenFieldNames.add(fieldName))
                 {
-                    final Encoding encoding = varDataToken.encoding();
-                    final String characterEncoding = encoding.characterEncoding();
-
-                    if (null == characterEncoding)
-                    {
-                        sb.append("    const ").append(fieldName).append(" = this.decodeVarData(view, pos);\n");
-                    }
-                    else if ("UTF-8".equals(characterEncoding))
-                    {
-                        sb.append("    const ").append(fieldName).append(" = this.decodeVarStringUtf8(view, pos);\n");
-                    }
-                    else
-                    {
-                        sb.append("    const ").append(fieldName).append(" = this.decodeVarStringAscii(view, pos);\n");
-                    }
-
-                    sb.append("    pos = ").append(fieldName).append(".nextOffset;\n\n");
-
+                    generateInlineVarDataDecode(sb, "    ", varData, i, fieldName, "this.littleEndian");
                     fieldNames.add(fieldName);
-                    fieldValues.add(fieldName + ".value");
+                    fieldValues.add(fieldName);
                 }
                 else
                 {
-                    // Duplicate vardata - skip decoding
-                    final Encoding encoding = varDataToken.encoding();
-                    final String characterEncoding = encoding.characterEncoding();
-
-                    if (null == characterEncoding)
-                    {
-                        sb.append("    const ").append(fieldName).append("_dup = this.decodeVarData(view, pos);\n");
-                    }
-                    else if ("UTF-8".equals(characterEncoding))
-                    {
-                        sb.append("    const ").append(fieldName)
-                            .append("_dup = this.decodeVarStringUtf8(view, pos);\n");
-                    }
-                    else
-                    {
-                        sb.append("    const ").append(fieldName)
-                            .append("_dup = this.decodeVarStringAscii(view, pos);\n");
-                    }
-
-                    sb.append("    pos = ").append(fieldName).append("_dup.nextOffset;\n\n");
+                    generateInlineVarDataDecode(
+                        sb, "    ", varData, i, fieldName + "_dup", "this.littleEndian");
                 }
 
                 i += varDataToken.componentTokenCount();
@@ -781,21 +743,31 @@ public class TypeScriptGenerator implements CodeGenerator
             if (groupToken.signal() == Signal.BEGIN_GROUP)
             {
                 final String groupName = formatTypeName(groupToken.name());
-                final List<Token> groupTokens = new ArrayList<>();
-
                 final int endIndex = i + groupToken.componentTokenCount();
-                for (int j = i; j < endIndex; j++)
-                {
-                    groupTokens.add(groups.get(j));
-                }
 
-                final List<Token> groupBody = groupTokens.subList(1, groupTokens.size() - 1);
+                // Parse group body: skip BEGIN_GROUP and END_GROUP, then skip dimension encoding
+                final List<Token> groupBody = groups.subList(i + 1, endIndex - 1);
+                final int dimHeaderLen = groupBody.get(0).componentTokenCount();
 
-                // Generate group interface
+                final List<Token> fields = new ArrayList<>();
+                int idx = collectFields(groupBody, dimHeaderLen, fields);
+
+                final List<Token> nestedGroups = new ArrayList<>();
+                idx = collectGroups(groupBody, idx, nestedGroups);
+
+                final List<Token> varData = new ArrayList<>();
+                collectVarData(groupBody, idx, varData);
+
+                // Recursively generate interfaces for nested groups first
+                generateGroupInterfaces(sb, nestedGroups);
+
+                // Generate this group's interface
                 sb.append("export interface ").append(groupName).append(" {\n");
 
                 final java.util.Set<String> seenFieldNames = new java.util.HashSet<>();
-                Generators.forEachField(groupBody, (fieldToken, typeToken) ->
+
+                // Fields
+                Generators.forEachField(fields, (fieldToken, typeToken) ->
                 {
                     final String fieldName = formatFieldName(fieldToken.name());
                     if (seenFieldNames.add(fieldName))
@@ -804,6 +776,55 @@ public class TypeScriptGenerator implements CodeGenerator
                         sb.append("  ").append(fieldName).append(": ").append(typeName).append(";\n");
                     }
                 });
+
+                // Nested groups as arrays
+                for (int g = 0; g < nestedGroups.size();)
+                {
+                    final Token nestedGroupToken = nestedGroups.get(g);
+                    if (nestedGroupToken.signal() == Signal.BEGIN_GROUP)
+                    {
+                        final String nestedName = formatTypeName(nestedGroupToken.name());
+                        final String nestedField = formatFieldName(nestedGroupToken.name());
+                        if (seenFieldNames.add(nestedField))
+                        {
+                            sb.append("  ").append(nestedField).append(": ")
+                                .append(nestedName).append("[];\n");
+                        }
+                        g += nestedGroupToken.componentTokenCount();
+                    }
+                    else
+                    {
+                        g++;
+                    }
+                }
+
+                // Variable-length data
+                for (int v = 0; v < varData.size();)
+                {
+                    final Token varDataToken = varData.get(v);
+                    if (varDataToken.signal() == Signal.BEGIN_VAR_DATA)
+                    {
+                        final String fieldName = formatFieldName(varDataToken.name());
+                        if (seenFieldNames.add(fieldName))
+                        {
+                            final Token dataToken = Generators.findFirst("varData", varData, v);
+                            final String charEnc = dataToken.encoding().characterEncoding();
+                            if (null == charEnc)
+                            {
+                                sb.append("  ").append(fieldName).append(": Uint8Array;\n");
+                            }
+                            else
+                            {
+                                sb.append("  ").append(fieldName).append(": string;\n");
+                            }
+                        }
+                        v += varDataToken.componentTokenCount();
+                    }
+                    else
+                    {
+                        v++;
+                    }
+                }
 
                 sb.append("}\n\n");
 
@@ -834,15 +855,21 @@ public class TypeScriptGenerator implements CodeGenerator
             if (groupToken.signal() == Signal.BEGIN_GROUP)
             {
                 final String groupName = formatTypeName(groupToken.name());
-                final List<Token> groupTokens = new ArrayList<>();
-
                 final int endIndex = i + groupToken.componentTokenCount();
-                for (int j = i; j < endIndex; j++)
-                {
-                    groupTokens.add(groups.get(j));
-                }
 
-                final List<Token> groupBody = groupTokens.subList(1, groupTokens.size() - 1);
+                // Parse group body: skip BEGIN_GROUP and END_GROUP, then skip dimension encoding
+                final List<Token> groupAllTokens = groups.subList(i, endIndex);
+                final List<Token> groupBody = groups.subList(i + 1, endIndex - 1);
+                final int dimHeaderLen = groupBody.get(0).componentTokenCount();
+
+                final List<Token> fields = new ArrayList<>();
+                int idx = collectFields(groupBody, dimHeaderLen, fields);
+
+                final List<Token> nestedGroups = new ArrayList<>();
+                idx = collectGroups(groupBody, idx, nestedGroups);
+
+                final List<Token> varData = new ArrayList<>();
+                collectVarData(groupBody, idx, varData);
 
                 // Generate group decoder method
                 final String methodName = "decode" + groupName + "Group";
@@ -853,8 +880,8 @@ public class TypeScriptGenerator implements CodeGenerator
                 sb.append("    let pos = offset;\n\n");
 
                 // Read group header - get dimension encoding from tokens
-                final Token blockLengthToken = Generators.findFirst("blockLength", groupTokens, 0);
-                final Token numInGroupToken = Generators.findFirst("numInGroup", groupTokens, 0);
+                final Token blockLengthToken = Generators.findFirst("blockLength", groupAllTokens, 0);
+                final Token numInGroupToken = Generators.findFirst("numInGroup", groupAllTokens, 0);
                 final PrimitiveType blockLengthType = blockLengthToken.encoding().primitiveType();
                 final PrimitiveType numInGroupType = numInGroupToken.encoding().primitiveType();
 
@@ -881,12 +908,12 @@ public class TypeScriptGenerator implements CodeGenerator
                 sb.append("    for (let i = 0; i < numInGroup; i++) {\n");
                 sb.append("      const itemStart = pos;\n\n");
 
-                // Decode group fields
+                // Decode group fixed fields
                 final List<String> groupFieldNames = new ArrayList<>();
                 final List<String> groupFieldValues = new ArrayList<>();
                 final java.util.Set<String> seenFieldNames = new java.util.HashSet<>();
 
-                Generators.forEachField(groupBody, (fieldToken, typeToken) ->
+                Generators.forEachField(fields, (fieldToken, typeToken) ->
                 {
                     final String fieldName = formatFieldName(fieldToken.name());
 
@@ -895,10 +922,10 @@ public class TypeScriptGenerator implements CodeGenerator
                         groupFieldNames.add(fieldName);
 
                         final PrimitiveType primitiveType = typeToken.encoding().primitiveType();
-                        final String dataViewMethod = dataViewMethod(primitiveType);
+                        final String dvMethod = dataViewMethod(primitiveType);
 
                         sb.append("      const ").append(fieldName).append(" = view.")
-                            .append(dataViewMethod).append("(pos");
+                            .append(dvMethod).append("(pos");
 
                         if (needsEndianness(primitiveType))
                         {
@@ -912,20 +939,77 @@ public class TypeScriptGenerator implements CodeGenerator
                     }
                     else
                     {
-                        // Skip duplicate field - just advance position
                         sb.append("      pos += ").append(typeToken.encodedLength()).append(";\n\n");
                     }
                 });
 
-                // Skip to next block for forward compatibility
-                sb.append("      // Skip to next block for forward compatibility\n");
+                // Skip to end of fixed block for forward compatibility
+                sb.append("      // Skip to end of block for forward compatibility\n");
                 sb.append("      pos = itemStart + blockLength;\n\n");
+
+                // Decode nested groups (after fixed block)
+                for (int g = 0; g < nestedGroups.size();)
+                {
+                    final Token nestedToken = nestedGroups.get(g);
+                    if (nestedToken.signal() == Signal.BEGIN_GROUP)
+                    {
+                        final String nestedName = formatTypeName(nestedToken.name());
+                        final String nestedField = formatFieldName(nestedToken.name());
+
+                        if (seenFieldNames.add(nestedField))
+                        {
+                            final String nestedMethod = "decode" + nestedName + "Group";
+                            sb.append("      const ").append(nestedField)
+                                .append(" = this.").append(nestedMethod).append("(view, pos);\n");
+                            sb.append("      pos = ").append(nestedField).append(".nextOffset;\n\n");
+
+                            groupFieldNames.add(nestedField);
+                            groupFieldValues.add(nestedField + ".items");
+                        }
+
+                        g += nestedToken.componentTokenCount();
+                    }
+                    else
+                    {
+                        g++;
+                    }
+                }
+
+                // Decode variable-length data (after nested groups)
+                for (int v = 0; v < varData.size();)
+                {
+                    final Token varDataToken = varData.get(v);
+                    if (varDataToken.signal() == Signal.BEGIN_VAR_DATA)
+                    {
+                        final String fieldName = formatFieldName(varDataToken.name());
+
+                        if (seenFieldNames.add(fieldName))
+                        {
+                            generateInlineVarDataDecode(
+                                sb, "      ", varData, v, fieldName, "this.littleEndian");
+                            groupFieldNames.add(fieldName);
+                            groupFieldValues.add(fieldName);
+                        }
+                        else
+                        {
+                            generateInlineVarDataDecode(
+                                sb, "      ", varData, v, fieldName + "_dup", "this.littleEndian");
+                        }
+
+                        v += varDataToken.componentTokenCount();
+                    }
+                    else
+                    {
+                        v++;
+                    }
+                }
 
                 // Add item to array
                 sb.append("      items.push({\n");
                 for (int k = 0; k < groupFieldNames.size(); k++)
                 {
-                    sb.append("        ").append(groupFieldNames.get(k)).append(": ").append(groupFieldValues.get(k));
+                    sb.append("        ").append(groupFieldNames.get(k))
+                        .append(": ").append(groupFieldValues.get(k));
                     if (k < groupFieldNames.size() - 1)
                     {
                         sb.append(",\n");
@@ -942,6 +1026,9 @@ public class TypeScriptGenerator implements CodeGenerator
                 sb.append("    return { items, nextOffset: pos };\n");
                 sb.append("  }\n");
 
+                // Recursively generate decoder methods for nested groups
+                generateGroupDecoderMethods(sb, nestedGroups, parentName);
+
                 i = endIndex;
             }
             else
@@ -952,85 +1039,51 @@ public class TypeScriptGenerator implements CodeGenerator
     }
 
     /**
-     * Generate variable-length data decoder methods.
+     * Generate inline variable-length data decode code.
      *
-     * @param sb      to append to.
-     * @param varData the variable-length data tokens.
+     * @param sb              to append to.
+     * @param indent          indentation prefix.
+     * @param varDataTokens   the variable-length data tokens.
+     * @param startIndex      index of the BEGIN_VAR_DATA token.
+     * @param fieldName       the field name to use in generated code.
+     * @param endianRef       the endianness reference (e.g. "this.littleEndian" or "littleEndian").
      */
-    private void generateVarDataDecoderMethods(final StringBuilder sb, final List<Token> varData)
+    private void generateInlineVarDataDecode(
+        final StringBuilder sb,
+        final String indent,
+        final List<Token> varDataTokens,
+        final int startIndex,
+        final String fieldName,
+        final String endianRef)
     {
-        boolean needsVarDataDecoder = false;
-        boolean needsUtf8Decoder = false;
-        boolean needsAsciiDecoder = false;
+        final Token lengthToken = Generators.findFirst("length", varDataTokens, startIndex);
+        final Token dataToken = Generators.findFirst("varData", varDataTokens, startIndex);
+        final PrimitiveType lengthType = lengthToken.encoding().primitiveType();
+        final String characterEncoding = dataToken.encoding().characterEncoding();
 
-        for (int i = 0; i < varData.size();)
+        sb.append(indent).append("const ").append(fieldName).append("Len = view.")
+            .append(dataViewMethod(lengthType)).append("(pos");
+        if (needsEndianness(lengthType))
         {
-            final Token varDataToken = varData.get(i);
-            if (varDataToken.signal() == Signal.BEGIN_VAR_DATA)
-            {
-                final Encoding encoding = varDataToken.encoding();
-                final String characterEncoding = encoding.characterEncoding();
-
-                if (null == characterEncoding)
-                {
-                    needsVarDataDecoder = true;
-                }
-                else if ("UTF-8".equals(characterEncoding))
-                {
-                    needsUtf8Decoder = true;
-                }
-                else
-                {
-                    needsAsciiDecoder = true;
-                }
-
-                i += varDataToken.componentTokenCount();
-            }
-            else
-            {
-                i++;
-            }
+            sb.append(", ").append(endianRef);
         }
+        sb.append(");\n");
+        sb.append(indent).append("pos += ").append(lengthToken.encodedLength()).append(";\n");
 
-        if (needsVarDataDecoder)
+        if (null != characterEncoding)
         {
-            sb.append("\n  private decodeVarData(view: DataView, offset: number): ")
-                .append("{ value: Uint8Array, nextOffset: number } {\n");
-            sb.append("    let pos = offset;\n\n");
-            sb.append("    const length = view.getUint32(pos, this.littleEndian);\n");
-            sb.append("    pos += 4;\n\n");
-            sb.append("    const value = new Uint8Array(view.buffer, view.byteOffset + pos, length);\n");
-            sb.append("    pos += length;\n\n");
-            sb.append("    return { value, nextOffset: pos };\n");
-            sb.append("  }\n");
+            final String tsEncoding = "UTF-8".equals(characterEncoding) ? "utf-8" : "ascii";
+            sb.append(indent).append("const ").append(fieldName)
+                .append(" = new TextDecoder('").append(tsEncoding).append("')")
+                .append(".decode(new Uint8Array(view.buffer, view.byteOffset + pos, ")
+                .append(fieldName).append("Len));\n");
         }
-
-        if (needsUtf8Decoder)
+        else
         {
-            sb.append("\n  private decodeVarStringUtf8(view: DataView, offset: number): ")
-                .append("{ value: string, nextOffset: number } {\n");
-            sb.append("    let pos = offset;\n\n");
-            sb.append("    const length = view.getUint32(pos, this.littleEndian);\n");
-            sb.append("    pos += 4;\n\n");
-            sb.append("    const bytes = new Uint8Array(view.buffer, view.byteOffset + pos, length);\n");
-            sb.append("    const value = new TextDecoder('utf-8').decode(bytes);\n");
-            sb.append("    pos += length;\n\n");
-            sb.append("    return { value, nextOffset: pos };\n");
-            sb.append("  }\n");
+            sb.append(indent).append("const ").append(fieldName)
+                .append(" = new Uint8Array(view.buffer, view.byteOffset + pos, ")
+                .append(fieldName).append("Len);\n");
         }
-
-        if (needsAsciiDecoder)
-        {
-            sb.append("\n  private decodeVarStringAscii(view: DataView, offset: number): ")
-                .append("{ value: string, nextOffset: number } {\n");
-            sb.append("    let pos = offset;\n\n");
-            sb.append("    const length = view.getUint32(pos, this.littleEndian);\n");
-            sb.append("    pos += 4;\n\n");
-            sb.append("    const bytes = new Uint8Array(view.buffer, view.byteOffset + pos, length);\n");
-            sb.append("    const value = new TextDecoder('ascii').decode(bytes);\n");
-            sb.append("    pos += length;\n\n");
-            sb.append("    return { value, nextOffset: pos };\n");
-            sb.append("  }\n");
-        }
+        sb.append(indent).append("pos += ").append(fieldName).append("Len;\n\n");
     }
 }
