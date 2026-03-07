@@ -117,7 +117,8 @@ public class TypeScriptGenerator implements CodeGenerator
             final StringBuilder sb = new StringBuilder();
             sb.append(generateFileHeader(ir.packageName()));
 
-            generateCompositeDecoder(sb, typeName, tokens.subList(1, tokens.size() - 1));
+            generateCompositeDecoder(sb, typeName, tokens.subList(1, tokens.size() - 1),
+                tokens.get(0).encodedLength());
 
             out.append(sb);
         }
@@ -258,7 +259,8 @@ public class TypeScriptGenerator implements CodeGenerator
             final StringBuilder sb = new StringBuilder();
             sb.append(generateFileHeader(ir.packageName()));
 
-            generateCompositeDecoder(sb, compositeName, tokens.subList(1, tokens.size() - 1));
+            generateCompositeDecoder(sb, compositeName, tokens.subList(1, tokens.size() - 1),
+                compositeToken.encodedLength());
 
             out.append(sb);
         }
@@ -274,7 +276,8 @@ public class TypeScriptGenerator implements CodeGenerator
     private void generateCompositeDecoder(
         final StringBuilder sb,
         final String name,
-        final List<Token> tokens)
+        final List<Token> tokens,
+        final int encodedLength)
     {
         final String interfaceName = name;
         final String decoderName = name + "Decoder";
@@ -282,23 +285,26 @@ public class TypeScriptGenerator implements CodeGenerator
         // Generate interface
         sb.append("export interface ").append(interfaceName).append(" {\n");
 
-        Generators.forEachField(tokens, (fieldToken, typeToken) ->
+        for (int i = 0; i < tokens.size(); i++)
         {
-            final String fieldName = formatFieldName(fieldToken.name());
-            final String typeName = typeScriptTypeName(typeToken.encoding().primitiveType());
-            final boolean isConstant = typeToken.isConstantEncoding();
-
-            if (isConstant)
+            final Token token = tokens.get(i);
+            if (token.signal() == Signal.ENCODING)
             {
-                sb.append("  readonly ");
-            }
-            else
-            {
-                sb.append("  ");
-            }
+                final String fieldName = formatFieldName(token.name());
+                final String typeName = typeScriptTypeName(token.encoding().primitiveType());
 
-            sb.append(fieldName).append(": ").append(typeName).append(";\n");
-        });
+                if (token.isConstantEncoding())
+                {
+                    sb.append("  readonly ");
+                }
+                else
+                {
+                    sb.append("  ");
+                }
+
+                sb.append(fieldName).append(": ").append(typeName).append(";\n");
+            }
+        }
 
         sb.append("}\n\n");
 
@@ -306,22 +312,23 @@ public class TypeScriptGenerator implements CodeGenerator
         sb.append("export class ").append(decoderName).append(" {\n");
 
         // Add constants
-        Generators.forEachField(tokens, (fieldToken, typeToken) ->
+        for (int i = 0; i < tokens.size(); i++)
         {
-            if (typeToken.isConstantEncoding())
+            final Token token = tokens.get(i);
+            if (token.signal() == Signal.ENCODING && token.isConstantEncoding())
             {
-                final String constantName = formatConstantName(fieldToken.name());
+                final String constantName = formatConstantName(token.name());
                 final String value = generateLiteral(
-                    typeToken.encoding().primitiveType(),
-                    typeToken.encoding().constValue().toString());
+                    token.encoding().primitiveType(),
+                    token.encoding().constValue().toString());
 
                 sb.append("  private static readonly ").append(constantName)
                     .append(" = ").append(value).append(";\n");
             }
-        });
+        }
 
         sb.append("  private static readonly ENCODED_LENGTH = ")
-            .append(tokens.get(0).encodedLength()).append(";\n\n");
+            .append(encodedLength).append(";\n\n");
 
         // Generate decode method
         sb.append("  static decode(view: DataView, offset: number, littleEndian: boolean): ")
@@ -331,37 +338,39 @@ public class TypeScriptGenerator implements CodeGenerator
         final List<String> fieldNames = new ArrayList<>();
         final List<String> fieldValues = new ArrayList<>();
 
-        Generators.forEachField(tokens, (fieldToken, typeToken) ->
+        for (int i = 0; i < tokens.size(); i++)
         {
-            final String fieldName = formatFieldName(fieldToken.name());
-            fieldNames.add(fieldName);
-
-            if (typeToken.isConstantEncoding())
+            final Token token = tokens.get(i);
+            if (token.signal() == Signal.ENCODING)
             {
-                // Constant field - not read from buffer
-                final String constantName = formatConstantName(fieldToken.name());
-                fieldValues.add(decoderName + "." + constantName);
-            }
-            else
-            {
-                // Regular field - read from buffer
-                final PrimitiveType primitiveType = typeToken.encoding().primitiveType();
-                final String dataViewMethod = dataViewMethod(primitiveType);
+                final String fieldName = formatFieldName(token.name());
+                fieldNames.add(fieldName);
 
-                sb.append("    const ").append(fieldName).append(" = view.")
-                    .append(dataViewMethod).append("(pos");
-
-                if (needsEndianness(primitiveType))
+                if (token.isConstantEncoding())
                 {
-                    sb.append(", littleEndian");
+                    final String constantName = formatConstantName(token.name());
+                    fieldValues.add(decoderName + "." + constantName);
                 }
+                else
+                {
+                    final PrimitiveType primitiveType = token.encoding().primitiveType();
+                    final String dataViewMethod = dataViewMethod(primitiveType);
 
-                sb.append(");\n");
-                sb.append("    pos += ").append(typeToken.encodedLength()).append(";\n\n");
+                    sb.append("    const ").append(fieldName).append(" = view.")
+                        .append(dataViewMethod).append("(pos");
 
-                fieldValues.add(fieldName);
+                    if (needsEndianness(primitiveType))
+                    {
+                        sb.append(", littleEndian");
+                    }
+
+                    sb.append(");\n");
+                    sb.append("    pos += ").append(token.encodedLength()).append(";\n\n");
+
+                    fieldValues.add(fieldName);
+                }
             }
-        });
+        }
 
         sb.append("    return {\n");
         for (int i = 0; i < fieldNames.size(); i++)
