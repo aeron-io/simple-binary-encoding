@@ -1,5 +1,10 @@
 use issue_987::{
-    issue_987_codec::{Issue987Decoder, Issue987Encoder, SBE_BLOCK_LENGTH, SBE_SCHEMA_ID, SBE_SCHEMA_VERSION, SBE_TEMPLATE_ID}, message_header_codec::MessageHeaderDecoder, *
+    issue_987_codec::{
+        Issue987Decoder, Issue987Encoder, SBE_BLOCK_LENGTH, SBE_SCHEMA_ID, SBE_SCHEMA_VERSION,
+        SBE_TEMPLATE_ID,
+    },
+    message_header_codec::MessageHeaderDecoder,
+    *,
 };
 
 fn create_encoder(buffer: &mut Vec<u8>, off: usize) -> Issue987Encoder {

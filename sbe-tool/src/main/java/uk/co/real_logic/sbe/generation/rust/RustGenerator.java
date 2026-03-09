@@ -111,7 +111,7 @@ public class RustGenerator implements CodeGenerator
         // create Cargo.toml
         try (Writer writer = outputManager.createCargoToml())
         {
-            final String packageName = toLowerSnakeCase(ir.packageName()).replaceAll("[.-]", "_");
+            final String packageName = toLowerSnakeCase(ir.packageName().replaceAll("[\\s.-]", "_"));
             final String namespace;
             if (ir.namespaceName() == null || ir.namespaceName().equalsIgnoreCase(packageName))
             {
@@ -353,20 +353,22 @@ public class RustGenerator implements CodeGenerator
             // function to write slice ... todo - handle character encoding ?
             indent(sb, level, "/// VAR_DATA ENCODER - character encoding: '%s'\n", characterEncoding);
             indent(sb, level, "#[inline]\n");
-            indent(sb, level, "pub fn %s(&mut self, value: %s) {\n", propertyName, varDataType);
+            indent(sb, level, "pub fn %s(&mut self, value: %s) -> &mut Self {\n", propertyName, varDataType);
 
             indent(sb, level + 1, "let limit = self.get_limit();\n");
-            indent(sb, level + 1, "let data_length = value.len();\n");
+            indent(sb, level + 1, "let data_length = value.len().min((%s::MAX - 1) as usize);\n",
+                rustTypeName(lengthType));
             indent(sb, level + 1, "self.set_limit(limit + %d + data_length);\n", lengthType.size());
 
             indent(sb, level + 1,
                 "self.get_buf_mut().put_%s_at(limit, data_length as %1$s);\n",
                 rustTypeName(lengthType));
 
-            indent(sb, level + 1, "self.get_buf_mut().put_slice_at(limit + %d, value%s);\n",
+            indent(sb, level + 1, "self.get_buf_mut().put_slice_at(limit + %d, &value[0..data_length]%s);\n",
                 lengthType.size(),
                 toBytesFn);
 
+            indent(sb, level + 1, "self\n");
             indent(sb, level, "}\n\n");
 
             i += varDataToken.componentTokenCount();
@@ -408,7 +410,7 @@ public class RustGenerator implements CodeGenerator
         indent(sb, level, "/// primitive array field '%s' from an Iterator\n", name);
         generateRustDoc(sb, level, typeToken, encoding);
         indent(sb, level, "#[inline]\n");
-        indent(sb, level, "pub fn %s_from_iter(&mut self, iter: impl Iterator<Item = %s>) {\n",
+        indent(sb, level, "pub fn %s_from_iter(&mut self, iter: impl Iterator<Item = %s>) -> &mut Self {\n",
             formatFunctionName(name), rustPrimitiveType);
 
         indent(sb, level + 1, "let offset = self.%s;\n", getBufOffset(typeToken));
@@ -425,6 +427,7 @@ public class RustGenerator implements CodeGenerator
                 rustPrimitiveType, primitiveType.size());
         }
         indent(sb, level + 1, "}\n");
+        indent(sb, level + 1, "self\n");
         indent(sb, level, "}\n\n");
     }
 
@@ -442,13 +445,14 @@ public class RustGenerator implements CodeGenerator
         indent(sb, level, "/// primitive array field '%s' with zero padding\n", name);
         generateRustDoc(sb, level, typeToken, encoding);
         indent(sb, level, "#[inline]\n");
-        indent(sb, level, "pub fn %s_zero_padded(&mut self, value: &[%s]) {\n",
+        indent(sb, level, "pub fn %s_zero_padded(&mut self, value: &[%s]) -> &mut Self {\n",
             formatFunctionName(name), rustPrimitiveType);
 
         indent(sb, level + 1, "let iter = value.iter().copied().chain(std::iter::repeat(0_%s)).take(%d);\n",
             rustPrimitiveType, arrayLength);
 
         indent(sb, level + 1, "self.%s_from_iter(iter);\n", formatFunctionName(name));
+        indent(sb, level + 1, "self\n");
         indent(sb, level, "}\n\n");
     }
 
@@ -464,7 +468,7 @@ public class RustGenerator implements CodeGenerator
         final int arrayLength = typeToken.arrayLength();
 
         indent(sb, level, "#[inline]\n");
-        indent(sb, level, "pub fn %s_at(&mut self, index: usize, value: %s) {\n",
+        indent(sb, level, "pub fn %s_at(&mut self, index: usize, value: %s) -> &mut Self {\n",
             formatFunctionName(name), rustPrimitiveType);
         indent(sb, level + 1, "let offset = self.%s;\n", getBufOffset(typeToken));
         indent(sb, level + 1, "let buf = self.get_buf_mut();\n");
@@ -478,12 +482,13 @@ public class RustGenerator implements CodeGenerator
             indent(sb, level + 1, "buf.put_%s_at(offset + index * %d, value);\n",
                 rustPrimitiveType, primitiveType.size());
         }
+        indent(sb, level + 1, "self\n");
         indent(sb, level, "}\n\n");
 
         indent(sb, level, "/// primitive array field '%s'\n", name);
         generateRustDoc(sb, level, typeToken, encoding);
         indent(sb, level, "#[inline]\n");
-        indent(sb, level, "pub fn %s(&mut self, value: &[%s]) {\n",
+        indent(sb, level, "pub fn %s(&mut self, value: &[%s]) -> &mut Self {\n",
             formatFunctionName(name), rustPrimitiveType);
 
         // NB: must create variable 'offset' before calling mutable self.get_buf_mut()
@@ -494,6 +499,7 @@ public class RustGenerator implements CodeGenerator
         if (rustPrimitiveType.equals("u8"))
         {
             indent(sb, level + 1, "buf.put_slice_at(offset, value);\n");
+            indent(sb, level + 1, "self\n");
             indent(sb, level, "}\n\n");
         }
         else
@@ -513,6 +519,7 @@ public class RustGenerator implements CodeGenerator
                 }
             }
 
+            indent(sb, level + 1, "self\n");
             indent(sb, level, "}\n\n");
         }
 
@@ -546,12 +553,13 @@ public class RustGenerator implements CodeGenerator
         indent(sb, level, "/// primitive field '%s'\n", name);
         generateRustDoc(sb, level, typeToken, encoding);
         indent(sb, level, "#[inline]\n");
-        indent(sb, level, "pub fn %s(&mut self, value: %s) {\n",
+        indent(sb, level, "pub fn %s(&mut self, value: %s) -> &mut Self {\n",
             formatFunctionName(name), rustPrimitiveType);
 
         // NB: must create variable 'offset' before calling mutable self.get_buf_mut()
         indent(sb, level + 1, "let offset = self.%s;\n", getBufOffset(typeToken));
         indent(sb, level + 1, "self.get_buf_mut().put_%s_at(offset, value);\n", rustPrimitiveType);
+        indent(sb, level + 1, "self\n");
         indent(sb, level, "}\n\n");
     }
 
@@ -578,11 +586,12 @@ public class RustGenerator implements CodeGenerator
 
             indent(sb, level, "/// REQUIRED enum\n");
             indent(sb, level, "#[inline]\n");
-            indent(sb, level, "pub fn %s(&mut self, value: %s) {\n", formatFunctionName(name), enumType);
+            indent(sb, level, "pub fn %s(&mut self, value: %s) -> &mut Self {\n", formatFunctionName(name), enumType);
 
             // NB: must create variable 'offset' before calling mutable self.get_buf_mut()
             indent(sb, level + 1, "let offset = self.%s;\n", getBufOffset(typeToken));
-            indent(sb, level + 1, "self.get_buf_mut().put_%s_at(offset, value as %1$s)\n", rustPrimitiveType);
+            indent(sb, level + 1, "self.get_buf_mut().put_%s_at(offset, value as %1$s);\n", rustPrimitiveType);
+            indent(sb, level + 1, "self\n");
             indent(sb, level, "}\n\n");
         }
     }

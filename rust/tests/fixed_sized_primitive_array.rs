@@ -337,28 +337,32 @@ fn test_encode_then_decode_non_u8_signed_primitive_slice() {
         DemoDecoder::fixed_16_i8,
         DemoEncoder::fixed_16_i8_end,
         DemoDecoder::fixed_16_i8_end,
-        i8, i8::from_le_bytes([uninit])
+        i8,
+        i8::from_le_bytes([uninit])
     );
     run_encode_then_decode_for_array_of_signed_len_16!(
         DemoEncoder::fixed_16_i16_from_iter,
         DemoDecoder::fixed_16_i16,
         DemoEncoder::fixed_16_i16_end,
         DemoDecoder::fixed_16_i16_end,
-        i16, i16::from_le_bytes([uninit, uninit])
+        i16,
+        i16::from_le_bytes([uninit, uninit])
     );
     run_encode_then_decode_for_array_of_signed_len_16!(
         DemoEncoder::fixed_16_i32_from_iter,
         DemoDecoder::fixed_16_i32,
         DemoEncoder::fixed_16_i32_end,
         DemoDecoder::fixed_16_i32_end,
-        i32, i32::from_le_bytes([uninit, uninit, uninit, uninit])
+        i32,
+        i32::from_le_bytes([uninit, uninit, uninit, uninit])
     );
     run_encode_then_decode_for_array_of_signed_len_16!(
         DemoEncoder::fixed_16_i64_from_iter,
         DemoDecoder::fixed_16_i64,
         DemoEncoder::fixed_16_i64_end,
         DemoDecoder::fixed_16_i64_end,
-        i64, i64::from_le_bytes([uninit, uninit, uninit, uninit, uninit, uninit, uninit, uninit])
+        i64,
+        i64::from_le_bytes([uninit, uninit, uninit, uninit, uninit, uninit, uninit, uninit])
     );
 }
 

@@ -83,7 +83,7 @@ class MessageCoderDef implements RustGenerator.ParentDef
         appendWrapFn(sb);
 
         indent(sb, 2, "#[inline]\n");
-        indent(sb, 2, "pub fn encoded_length(&self) -> usize {\n");
+        indent(sb, 2, "pub const fn encoded_length(&self) -> usize {\n");
         indent(sb, 3, "self.limit - self.offset\n");
         indent(sb, 2, "}\n\n");
 

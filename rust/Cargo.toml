@@ -2,7 +2,7 @@
 name = "sbe_rust_example"
 version = "0.1.0"
 authors = []
-edition = "2018"
+edition = "2021"
 publish = false
 
 [dependencies]
@@ -19,12 +19,13 @@ issue_987 = { path = "../generated/rust/issue987" }
 issue_1028 = { path = "../generated/rust/issue1028" }
 issue_1057 = { path = "../generated/rust/issue1057" }
 issue_1066 = { path = "../generated/rust/issue1066" }
-baseline_bigendian = { path = "../generated/rust/baseline-bigendian" }
-nested_composite_name = { path = "../generated/rust/nested-composite-name" }
+baseline_bigendian = { path = "../generated/rust/baseline_bigendian" }
+nested_composite_name = { path = "../generated/rust/nested_composite_name" }
+sbe_tests = { path = "../generated/rust/sbe_tests" }
 fixed_sized_primitive_array = { path = "../generated/rust/fixed_sized_primitive_array" }
 
 [dev-dependencies]
-criterion = "0.5"
+criterion = "0.7"
 
 [[bench]]
 name = "car_benchmark"

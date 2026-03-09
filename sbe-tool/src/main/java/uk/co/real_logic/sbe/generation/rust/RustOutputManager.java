@@ -60,7 +60,7 @@ public class RustOutputManager implements OutputManager
         Verify.notNull(packageName, "packageName");
 
         String dirName = baseDirName.endsWith("" + separatorChar) ? baseDirName : baseDirName + separatorChar;
-        dirName += packageName.replaceAll("\\.", "_").toLowerCase() + separatorChar;
+        dirName += packageName.replaceAll("[\\s.-]", "_").toLowerCase() + separatorChar;
         final String libDirName = dirName;
         rootDir = new File(libDirName);
 
