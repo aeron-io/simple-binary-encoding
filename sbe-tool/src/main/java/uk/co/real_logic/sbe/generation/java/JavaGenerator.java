@@ -30,6 +30,7 @@ import org.agrona.generation.DynamicPackageOutputManager;
 import org.agrona.sbe.*;
 
 import java.io.IOException;
+import java.nio.ByteOrder;
 import java.io.Writer;
 import java.util.*;
 import java.util.function.Function;
@@ -2100,6 +2101,16 @@ public class JavaGenerator implements CodeGenerator
                 i += encodingToken.componentTokenCount();
             }
 
+            if ("messageHeader".equals(compositeName))
+            {
+                out.append(
+                    "    public " + encoderName + " packedHeader(final long packedValue)\n" +
+                    "    {\n" +
+                    "        buffer.putLong(offset + 0, packedValue, BYTE_ORDER);\n" +
+                    "        return this;\n" +
+                    "    }\n\n");
+            }
+
             out.append(generateCompositeEncoderDisplay(decoderName));
             out.append("}\n");
         }
@@ -3505,11 +3516,35 @@ public class JavaGenerator implements CodeGenerator
             "    int actingBlockLength;\n" +
             "    int actingVersion;\n";
 
+        final String packedHeaderConstant;
+        if (codecType == CodecType.ENCODER)
+        {
+            final long blockLength = token.encodedLength();
+            final long templateId = token.id();
+            final long schemaId = ir.id();
+            final long schemaVersion = ir.version();
+            final long packedHeader;
+            if (ir.byteOrder() == ByteOrder.LITTLE_ENDIAN)
+            {
+                packedHeader = blockLength | (templateId << 16) | (schemaId << 32) | (schemaVersion << 48);
+            }
+            else
+            {
+                packedHeader = (blockLength << 48) | (templateId << 32) | (schemaId << 16) | schemaVersion;
+            }
+            packedHeaderConstant = "    public static final long PACKED_HEADER = " + packedHeader + "L;\n";
+        }
+        else
+        {
+            packedHeaderConstant = "";
+        }
+
         return String.format(
             "    public static final %1$s BLOCK_LENGTH = %2$s;\n" +
             "    public static final %3$s TEMPLATE_ID = %4$s;\n" +
             "    public static final %5$s SCHEMA_ID = %6$s;\n" +
             "    public static final %7$s SCHEMA_VERSION = %8$s;\n" +
+            "%20$s" +
             "    public static final String SEMANTIC_VERSION = \"%19$s\";\n" +
             "    public static final java.nio.ByteOrder BYTE_ORDER = java.nio.ByteOrder.%14$s;\n\n" +
             "    private final %9$s parentMessage = this;\n" +
@@ -3577,7 +3612,8 @@ public class JavaGenerator implements CodeGenerator
             templateIdAccessorType,
             schemaIdAccessorType,
             schemaVersionAccessorType,
-            semanticVersion);
+            semanticVersion,
+            packedHeaderConstant);
     }
 
     private CharSequence generateEncoderFlyweightCode(
@@ -3598,42 +3634,18 @@ public class JavaGenerator implements CodeGenerator
             "        return this;\n" +
             "    }\n\n";
 
-        final StringBuilder builder = new StringBuilder(
+        final String wrapAndApplyTemplate =
             "    public %1$s wrapAndApplyHeader(\n" +
             "        final %2$s buffer, final int offset, final %3$s headerEncoder)\n" +
             "    {\n" +
             "        headerEncoder\n" +
-            "            .wrap(buffer, offset)");
-
-        for (final Token headerToken : ir.headerStructure().tokens())
-        {
-            if (!headerToken.isConstantEncoding())
-            {
-                switch (headerToken.name())
-                {
-                    case "blockLength":
-                        builder.append("\n            .blockLength(BLOCK_LENGTH)");
-                        break;
-
-                    case "templateId":
-                        builder.append("\n            .templateId(TEMPLATE_ID)");
-                        break;
-
-                    case "schemaId":
-                        builder.append("\n            .schemaId(SCHEMA_ID)");
-                        break;
-
-                    case "version":
-                        builder.append("\n            .version(SCHEMA_VERSION)");
-                        break;
-                }
-            }
-        }
-
-        builder.append(";\n\n        return wrap(buffer, offset + %3$s.ENCODED_LENGTH);\n" + "    }\n\n");
+            "            .wrap(buffer, offset)\n" +
+            "            .packedHeader(PACKED_HEADER);\n\n" +
+            "        return wrap(buffer, offset + %3$s.ENCODED_LENGTH);\n" +
+            "    }\n\n";
 
         final String wrapAndApplyMethod = String.format(
-            builder.toString(),
+            wrapAndApplyTemplate,
             className,
             mutableBuffer,
             formatClassName(ir.headerStructure().tokens().get(0).applicableTypeName() + "Encoder"));
