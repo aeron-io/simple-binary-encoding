@@ -76,6 +76,33 @@ class CppGeneratorTest
     }
 
     @Test
+    void shouldGenerateConstexprConstantCharAccessorOnlyForCpp14AndLater() throws Exception
+    {
+        try (InputStream in = Tests.getLocalResource("code-generation-schema.xml"))
+        {
+            final ParserOptions options = ParserOptions.builder().stopOnError(true).build();
+            final MessageSchema schema = parse(in, options);
+            final IrGenerator irg = new IrGenerator();
+            final Ir ir = irg.generate(schema);
+            final StringWriterOutputManager outputManager = new StringWriterOutputManager();
+            outputManager.setPackageName(ir.applicableNamespace());
+
+            final CppGenerator generator = new CppGenerator(ir, false, outputManager);
+            generator.generate();
+
+            final String source = outputManager.getSource("code.generation.test.Engine").toString();
+            assertThat(source, containsString("#if __cplusplus >= 201402L"));
+            assertThat(source, containsString(
+                "SBE_NODISCARD static SBE_CONSTEXPR char fuel(const std::uint64_t index) SBE_NOEXCEPT"));
+            assertThat(source, containsString("const std::uint8_t fuelValues[] = { 80, 101, 116, 114, 111, 108, 0 };"));
+            assertThat(source, containsString("#else"));
+            assertThat(source, containsString("SBE_NODISCARD char fuel(const std::uint64_t index) const"));
+            assertThat(source, containsString(
+                "static const std::uint8_t fuelValues[] = { 80, 101, 116, 114, 111, 108, 0 };"));
+        }
+    }
+
+    @Test
     void dtosShouldReferenceTypesInDifferentPackages() throws Exception
     {
         try (InputStream in = Tests.getLocalResource("explicit-package-test-schema.xml"))
