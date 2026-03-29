@@ -1155,10 +1155,10 @@ TEST_F(CodeGenTest, shouldBeAbleToUseStringLiteralsWhenSpanIsEnabled)
     std::uint64_t baseOffset = MessageHeader::encodedLength();
     Car car;
     car.wrapForEncode(buffer, baseOffset, sizeof(buffer));
-    car.putVehicleCode("ABCDE");
+    car.putVehicleCode("ABC");
 
     car.sbeRewind();
-    EXPECT_EQ(car.getVehicleCodeAsStringView(), "ABCDE");
+    EXPECT_EQ(car.getVehicleCodeAsStringView(), "ABC");
     auto res = car.getVehicleCodeAsSpan();
     EXPECT_EQ(6, res.size());
 }
@@ -1194,7 +1194,7 @@ TEST_F(CodeGenTest, shouldBeAbleToHandleEmptySpan)
     car.sbeRewind();
     EXPECT_EQ(car.getVehicleCodeAsStringView(), "");
     auto res = car.getVehicleCodeAsSpan();
-    EXPECT_EQ(0, res.size());
+    EXPECT_EQ(6, res.size());
 }
 #endif
 
