@@ -1240,7 +1240,7 @@ public class CppGenerator implements CodeGenerator
             generateJsonEscapedStringGetter(sb, token, indent, propertyName);
 
             new Formatter(sb).format("\n" +
-                indent + "    #if __cplusplus >= 201703L\n" +
+                indent + "    #ifdef SBE_USE_STRING_VIEW\n" +
                 indent + "    std::string_view get%1$sAsStringView()\n" +
                 indent + "    {\n" +
                 "%2$s" +
@@ -1279,7 +1279,7 @@ public class CppGenerator implements CodeGenerator
                 lengthToken.encoding().applicableMaxValue().longValue());
 
             new Formatter(sb).format("\n" +
-                indent + "    #if __cplusplus >= 201703L\n" +
+                indent + "    #ifdef SBE_USE_STRING_VIEW\n" +
                 indent + "    %1$s &put%2$s(const std::string_view str)\n" +
                 indent + "    {\n" +
                 indent + "        if (str.length() > %4$d)\n" +
@@ -2323,7 +2323,10 @@ public class CppGenerator implements CodeGenerator
             indent + "    {\n" +
             indent + "        static_assert(N <= %5$d, \"array too large for put%2$s\");\n\n" +
             "%6$s" +
-            indent + "        std::memcpy(m_buffer + m_offset + %3$d, src.data(), sizeof(%4$s) * N);\n" +
+            indent + "        if (N > 0)\n" +
+            indent + "        {\n" +
+            indent + "            std::memcpy(m_buffer + m_offset + %3$d, src.data(), sizeof(%4$s) * N);\n" +
+            indent + "        }\n\n" +
             indent + "        for (std::size_t start = N; start < %5$d; ++start)\n" +
             indent + "        {\n" +
             indent + "            m_buffer[m_offset + %3$d + start] = 0;\n" +
@@ -2350,9 +2353,11 @@ public class CppGenerator implements CodeGenerator
                 indent + "        {\n" +
                 indent + "            throw std::runtime_error(\"array too large for put%2$s [E106]\");\n" +
                 indent + "        }\n\n" +
-
                 "%6$s" +
-                indent + "        std::memcpy(m_buffer + m_offset + %3$d, src.data(), sizeof(%4$s) * srcLength);\n" +
+                indent + "        if (srcLength > 0)\n" +
+                indent + "        {\n" +
+                indent + "            std::memcpy(m_buffer + m_offset + %3$d, src.data(), sizeof(%4$s) * srcLength);\n" +
+                indent + "        }\n\n" +
                 indent + "        for (std::size_t start = srcLength; start < %5$d; ++start)\n" +
                 indent + "        {\n" +
                 indent + "            m_buffer[m_offset + %3$d + start] = 0;\n" +
@@ -2502,14 +2507,15 @@ public class CppGenerator implements CodeGenerator
                 indent + "        {\n" +
                 indent + "            throw std::runtime_error(\"string too large for put%2$s [E106]\");\n" +
                 indent + "        }\n\n" +
-
                 "%5$s" +
-                indent + "        std::memcpy(m_buffer + m_offset + %3$d, str.data(), srcLength);\n" +
+                indent + "        if (srcLength > 0)\n" +
+                indent + "        {\n" +
+                indent + "            std::memcpy(m_buffer + m_offset + %3$d, str.data(), srcLength);\n" +
+                indent + "        }\n\n" +
                 indent + "        for (std::size_t start = srcLength; start < %4$d; ++start)\n" +
                 indent + "        {\n" +
                 indent + "            m_buffer[m_offset + %3$d + start] = 0;\n" +
                 indent + "        }\n\n" +
-
                 indent + "        return *this;\n" +
                 indent + "    }\n" +
                 indent + "    #else\n" +
@@ -2520,14 +2526,12 @@ public class CppGenerator implements CodeGenerator
                 indent + "        {\n" +
                 indent + "            throw std::runtime_error(\"string too large for put%2$s [E106]\");\n" +
                 indent + "        }\n\n" +
-
                 "%5$s" +
                 indent + "        std::memcpy(m_buffer + m_offset + %3$d, str.c_str(), srcLength);\n" +
                 indent + "        for (std::size_t start = srcLength; start < %4$d; ++start)\n" +
                 indent + "        {\n" +
                 indent + "            m_buffer[m_offset + %3$d + start] = 0;\n" +
                 indent + "        }\n\n" +
-
                 indent + "        return *this;\n" +
                 indent + "    }\n" +
                 indent + "    #endif\n",
