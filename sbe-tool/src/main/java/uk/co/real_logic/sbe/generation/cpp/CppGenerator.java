@@ -2356,7 +2356,8 @@ public class CppGenerator implements CodeGenerator
                 "%6$s" +
                 indent + "        if (srcLength > 0)\n" +
                 indent + "        {\n" +
-                indent + "            std::memcpy(m_buffer + m_offset + %3$d, src.data(), sizeof(%4$s) * srcLength);\n" +
+                indent + "            std::memcpy(m_buffer + m_offset + %3$d, src.data(), sizeof(%4$s) * srcLength);" +
+                "\n" +
                 indent + "        }\n\n" +
                 indent + "        for (std::size_t start = srcLength; start < %5$d; ++start)\n" +
                 indent + "        {\n" +
