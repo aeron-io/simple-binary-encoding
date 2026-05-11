@@ -23,6 +23,9 @@ import uk.co.real_logic.sbe.generation.rust.RustGenerator.CodecType;
 import uk.co.real_logic.sbe.ir.Encoding;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -142,6 +145,15 @@ public class RustUtil
     }
 
     static String formatFunctionName(final String value)
+    {
+        if (value.isEmpty())
+        {
+            return value;
+        }
+        return sanitizeMethodOrProperty(toLowerSnakeCase(value));
+    }
+
+    static String formatPropertyName(final String value)
     {
         if (value.isEmpty())
         {
@@ -325,5 +337,102 @@ public class RustUtil
         {
             return LOWER_CASE_NAMES.contains(v.toLowerCase());
         }
+    }
+
+    /**
+     * Separator symbols for `SbeToString` implementations on codecs.
+     */
+    enum Separator
+    {
+        BEGIN_GROUP('['),
+        END_GROUP(']'),
+        BEGIN_COMPOSITE('('),
+        END_COMPOSITE(')'),
+        BEGIN_SET('{'),
+        END_SET('}'),
+        BEGIN_ARRAY('['),
+        END_ARRAY(']'),
+        FIELD('|'),
+        KEY_VALUE('='),
+        ENTRY(',');
+
+        private final char symbol;
+
+        Separator(final char symbol)
+        {
+            this.symbol = symbol;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toString()
+        {
+            return String.valueOf(symbol);
+        }
+    }
+
+     /**
+     * Indexes known charset aliases to the name of the instance in {@link StandardCharsets}.
+     */
+    static final HashMap<String, String> STD_CHARSETS = new HashMap<>();
+
+    static
+    {
+        try
+        {
+            for (final Field field : StandardCharsets.class.getDeclaredFields())
+            {
+                if (Charset.class.isAssignableFrom(field.getType()) && Modifier.isStatic(field.getModifiers()) &&
+                    Modifier.isPublic(field.getModifiers()))
+                {
+                    final Charset charset = (Charset)field.get(null);
+                    final String name = field.getName();
+                    String oldName = STD_CHARSETS.put(charset.name(), name);
+
+                    if (null != oldName)
+                    {
+                        throw new IllegalStateException("Duplicate charset alias: old=" + oldName + ", new=" + name);
+                    }
+
+                    for (final String alias : charset.aliases())
+                    {
+                        oldName = STD_CHARSETS.put(alias, name);
+                        if (null != oldName)
+                        {
+                            throw new IllegalStateException(
+                                "Duplicate charset alias: old=" + oldName + ", new=" + alias);
+                        }
+                    }
+                }
+            }
+        }
+        catch (final IllegalAccessException ex)
+        {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    /**
+     * Checks if the given encoding represents an ASCII charset.
+     *
+     * @param encoding as a string name (e.g. ASCII).
+     * @return {@code true} if the encoding denotes an ASCII charset.
+     */
+    public static boolean isAsciiEncoding(final String encoding)
+    {
+        return "US_ASCII".equals(STD_CHARSETS.get(encoding));
+    }
+
+    /**
+     * Checks if the given encoding represents a UTF-8 charset.
+     *
+     * @param encoding as a string name (e.g. unicode-1-1-utf-8).
+     * @return {@code true} if the encoding denotes a UTF-8 charset.
+     */
+    public static boolean isUtf8Encoding(final String encoding)
+    {
+        return "UTF_8".equals(STD_CHARSETS.get(encoding));
     }
 }
