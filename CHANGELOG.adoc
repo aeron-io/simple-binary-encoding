@@ -2,8 +2,8 @@
 
 == 1.39.0 (unreleased)
 
-* Upgrade to `Gradle` 9.5.0.
-*
+* Upgrade to `Gradle` 9.5.1.
+* Upgrade to `JUnit` 6.1.0.
 
 == 1.38.1 (2026-04-28)
 
