@@ -71,7 +71,7 @@
     ///     </tbody>
     /// </table>
     /// </summary>
-    public class PrimitiveType
+    public sealed class PrimitiveType
     {
         /// <summary>
         /// Primitive type representation for SBE type CHAR

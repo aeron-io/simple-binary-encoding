@@ -6,7 +6,7 @@ namespace Org.SbeTool.Sbe.Dll
     /// Helper class that provides non-returning methods that throw common exception
     /// from the generated C# code
     /// </summary>
-    public class ThrowHelper
+    public static class ThrowHelper
     {
         /// <summary>
         /// Throws a <see cref="ArgumentOutOfRangeException"/> when the "count" parameter is out of range

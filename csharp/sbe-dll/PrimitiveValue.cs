@@ -74,7 +74,7 @@ namespace Org.SbeTool.Sbe.Dll
     ///         </tbody>
     ///     </table>
     /// </summary>
-    public class PrimitiveValue
+    public sealed class PrimitiveValue
     {
         private enum Representation
         {
@@ -485,26 +485,21 @@ namespace Org.SbeTool.Sbe.Dll
         /// <returns> equivalence of values </returns>
         public override bool Equals(object value)
         {
-            if (null != value && this.GetType().Equals(value.GetType()))
+            if (value is PrimitiveValue rhs && _representation == rhs._representation)
             {
-                var rhs = (PrimitiveValue) value;
-
-                if (_representation == rhs._representation)
+                switch (_representation)
                 {
-                    switch (_representation)
-                    {
-                        case Representation.Long:
-                            return _longValue == rhs._longValue;
+                    case Representation.Long:
+                        return _longValue == rhs._longValue;
 
-                        case Representation.ULong:
-                            return _unsignedLongValue == rhs._unsignedLongValue;
+                    case Representation.ULong:
+                        return _unsignedLongValue == rhs._unsignedLongValue;
 
-                        case Representation.Double:
-                            return BitConverter.DoubleToInt64Bits(_doubleValue) == BitConverter.DoubleToInt64Bits(rhs._doubleValue);
+                    case Representation.Double:
+                        return BitConverter.DoubleToInt64Bits(_doubleValue) == BitConverter.DoubleToInt64Bits(rhs._doubleValue);
 
-                        case Representation.ByteArray:
-                            return _byteArrayValue.SequenceEqual(rhs._byteArrayValue);
-                    }
+                    case Representation.ByteArray:
+                        return _byteArrayValue.SequenceEqual(rhs._byteArrayValue);
                 }
             }
 
