@@ -4,6 +4,7 @@
 
 * Upgrade to `Gradle` 9.5.1.
 * Upgrade to `JUnit` 6.1.0.
+* Upgrade to `Shadow` 9.4.2.
 
 == 1.38.1 (2026-04-28)
 
