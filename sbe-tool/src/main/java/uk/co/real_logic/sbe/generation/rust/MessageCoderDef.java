@@ -130,6 +130,7 @@ class MessageCoderDef implements RustGenerator.ParentDef
 
     void appendMessageHeaderEncoderFn(final Appendable out) throws IOException
     {
+        indent(out, 2, "#[inline]\n");
         indent(out, 2, "pub fn header(self, offset: usize) -> MessageHeaderEncoder<Self> {\n");
         indent(out, 3, "let mut header = MessageHeaderEncoder::default().wrap(self, offset);\n");
         indent(out, 3, "header.block_length(SBE_BLOCK_LENGTH);\n");
@@ -142,6 +143,7 @@ class MessageCoderDef implements RustGenerator.ParentDef
 
     void appendMessageHeaderDecoderFn(final Appendable out) throws IOException
     {
+        indent(out, 2, "#[inline]\n");
         indent(out, 2, "pub fn header(self, mut header: MessageHeaderDecoder<ReadBuf<'a>>, offset: usize) -> Self {\n");
         indent(out, 3, "debug_assert_eq!(SBE_TEMPLATE_ID, header.template_id());\n");
         indent(out, 3, "let acting_block_length = header.block_length();\n");
