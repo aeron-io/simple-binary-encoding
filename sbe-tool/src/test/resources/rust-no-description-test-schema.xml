@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+               package="no.description.test"
+               id="2"
+               version="0"
+               semanticVersion="1.0"
+               byteOrder="littleEndian">
+    <types>
+        <composite name="messageHeader">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+        </composite>
+        <composite name="groupSizeEncoding">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="numInGroup" primitiveType="uint16"/>
+        </composite>
+        <composite name="varStringEncoding">
+            <type name="length" primitiveType="uint32" maxValue="1073741824"/>
+            <type name="varData" primitiveType="uint8" length="0" characterEncoding="UTF-8"/>
+        </composite>
+        <composite name="Engine">
+            <type name="capacity" primitiveType="uint16"/>
+            <type name="numCylinders" primitiveType="uint8"/>
+        </composite>
+        <enum name="Colour" encodingType="uint8">
+            <validValue name="RED">0</validValue>
+            <validValue name="GREEN">1</validValue>
+            <validValue name="BLUE">2</validValue>
+        </enum>
+        <set name="Features" encodingType="uint8">
+            <choice name="sunRoof">0</choice>
+            <choice name="sportsPack">1</choice>
+        </set>
+    </types>
+    <sbe:message name="Vehicle" id="1">
+        <field name="serialNumber" id="1" type="uint64"/>
+        <field name="colour" id="2" type="Colour"/>
+        <field name="features" id="3" type="Features"/>
+        <field name="engine" id="4" type="Engine"/>
+        <group name="passengers" id="5" dimensionType="groupSizeEncoding">
+            <field name="age" id="6" type="uint8"/>
+        </group>
+        <data name="model" id="7" type="varStringEncoding"/>
+    </sbe:message>
+</messageSchema>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+               package="description.test"
+               id="1"
+               version="0"
+               semanticVersion="1.0"
+               description="Schema for testing description surfacing in Rust codegen"
+               byteOrder="littleEndian">
+    <types>
+        <composite name="messageHeader" description="Message identifiers and length of message root">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+        </composite>
+        <composite name="groupSizeEncoding" description="Repeating group dimensions">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="numInGroup" primitiveType="uint16"/>
+        </composite>
+        <composite name="varStringEncoding" description="Variable length UTF-8 String">
+            <type name="length" primitiveType="uint32" maxValue="1073741824"/>
+            <type name="varData" primitiveType="uint8" length="0" characterEncoding="UTF-8"/>
+        </composite>
+        <composite name="Engine" description="Internal combustion engine specification">
+            <type name="capacity" primitiveType="uint16"/>
+            <type name="numCylinders" primitiveType="uint8"/>
+        </composite>
+        <enum name="Colour" encodingType="uint8" description="The colour of the vehicle">
+            <validValue name="RED" description="Red colour">0</validValue>
+            <validValue name="GREEN" description="Green colour">1</validValue>
+            <validValue name="BLUE" description="Blue colour">2</validValue>
+        </enum>
+        <set name="Features" encodingType="uint8" description="Optional features fitted to the vehicle">
+            <choice name="sunRoof" description="Panoramic sun roof">0</choice>
+            <choice name="sportsPack" description="Sports handling pack">1</choice>
+        </set>
+    </types>
+    <sbe:message name="Vehicle" id="1" description="A vehicle with various optional features">
+        <field name="serialNumber" id="1" type="uint64" description="Unique serial number of the vehicle"/>
+        <field name="colour" id="2" type="Colour" description="Exterior colour of the vehicle"/>
+        <field name="features" id="3" type="Features" description="Bitset of optional features fitted"/>
+        <field name="engine" id="4" type="Engine" description="Engine specification composite"/>
+        <group name="passengers" id="5" dimensionType="groupSizeEncoding" description="Passengers currently in the vehicle">
+            <field name="age" id="6" type="uint8" description="Age of the passenger in years"/>
+        </group>
+        <data name="model" id="7" type="varStringEncoding" description="Full model name of the vehicle"/>
+    </sbe:message>
+</messageSchema>
