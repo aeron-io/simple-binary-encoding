@@ -5,6 +5,7 @@
 * Upgrade to `Gradle` 9.5.1.
 * Upgrade to `JUnit` 6.1.0.
 * Upgrade to `Shadow` 9.4.2.
+* Upgrade to `jqwik` 1.10.1.
 
 == 1.38.1 (2026-04-28)
 
@@ -13,7 +14,7 @@
 
 == 1.38.0 (2026-04-22)
 
-* **[Rust]** Recursively call nullify_optional_fields on composites
+* **[Rust]** Recursively call nullify_optional_fields on composites.
 * **[Rust]** Generate setters for optional enum fields too.
 * **[Rust]** Generated encoders now produce fluent interface. (https://github.com/aeron-io/simple-binary-encoding/pull/1097[#1097])
 * **[Rust]** Updated some function to `const`. (https://github.com/aeron-io/simple-binary-encoding/pull/1098[#1098])
