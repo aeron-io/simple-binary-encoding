@@ -6,6 +6,7 @@
 * Upgrade to `JUnit` 6.1.0.
 * Upgrade to `Shadow` 9.4.2.
 * Upgrade to `jqwik` 1.10.1.
+* Upgrade to `json` 20260522.
 
 == 1.38.1 (2026-04-28)
 
