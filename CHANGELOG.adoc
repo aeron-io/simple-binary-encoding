@@ -5,7 +5,7 @@
 * **[Rust]** Inline generated header methods. (https://github.com/aeron-io/simple-binary-encoding/pull/1110[#1110])
 * **[Rust]** Add element descriptions to comments.
 * **[C#]** Seal `PrimitiveValue` and `PrimitiveType`, make `ThrowHelper` static. (https://github.com/aeron-io/simple-binary-encoding/pull/1109[#1109])
-* Upgrade to `Gradle` 9.5.1.
+* Upgrade to `Gradle` 9.6.0.
 * Upgrade to `JUnit` 6.1.0.
 * Upgrade to `Shadow` 9.4.2.
 * Upgrade to `jqwik` 1.10.1.
