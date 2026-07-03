@@ -5,16 +5,17 @@
 * **[Rust]** Inline generated header methods. (https://github.com/aeron-io/simple-binary-encoding/pull/1110[#1110])
 * **[Rust]** Add element descriptions to comments.
 * **[C#]** Seal `PrimitiveValue` and `PrimitiveType`, make `ThrowHelper` static. (https://github.com/aeron-io/simple-binary-encoding/pull/1109[#1109])
-* Upgrade to `Gradle` 9.6.1.
-* Upgrade to `JUnit` 6.1.1.
-* Upgrade to `Shadow` 9.4.3.
-* Upgrade to `jqwik` 1.10.1.
-* Upgrade to `json` 20260522.
+* **[Java]** Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.5.0[Agrona 2.5.0].
+* **[Java]** Upgrade to `Gradle` 9.6.1.
+* **[Java]** Upgrade to `JUnit` 6.1.1.
+* **[Java]** Upgrade to `Shadow` 9.4.3.
+* **[Java]** Upgrade to `jqwik` 1.10.1.
+* **[Java]** Upgrade to `json` 20260522.
 
 == 1.38.1 (2026-04-28)
 
-* Upgrade to `Agrona` 2.4.1.
-* Upgrade to `Versions` 0.54.0.
+* **[Java]** Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.4.1[Agrona 2.4.1].
+* **[Java]** Upgrade to `Versions` 0.54.0.
 
 == 1.38.0 (2026-04-22)
 
@@ -25,10 +26,10 @@
 * **[Rust]** Updated generator to correctly limit length of var data written. (https://github.com/aeron-io/simple-binary-encoding/pull/1096[#1096])
 * **[C++]** Protect against a segfault when dealing with empty `std::span` and `std::view`.
 * **[C++]** mark a generated function SBE_CONSTEXPR (#1055) (#1083)
-* Upgrade to `CMake` 4.3.0.
-* Upgrade to `Shadow` 9.4.1.
-* Upgrade to `Gradle` 9.4.1.
-* Upgrade to `Mockito` 5.23.0.
+* **[Java]** Upgrade to `CMake` 4.3.0.
+* **[Java]** Upgrade to `Shadow` 9.4.1.
+* **[Java]** Upgrade to `Gradle` 9.4.1.
+* **[Java]** Upgrade to `Mockito` 5.23.0.
 
 == 1.37.1 (2026-01-13)
 * **[Java]** Ensure Java code generation for precedence checks always produces the same code without re-orderings.
