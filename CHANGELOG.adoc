@@ -1,5 +1,9 @@
 = Changelog
 
+== 1.40.0 (unreleased)
+
+* **[Java]** Upgrade to `Shadow` 9.5.0.
+
 == 1.39.0 (2026-07-03)
 
 * **[Rust]** Inline generated header methods. (https://github.com/aeron-io/simple-binary-encoding/pull/1110[#1110])
