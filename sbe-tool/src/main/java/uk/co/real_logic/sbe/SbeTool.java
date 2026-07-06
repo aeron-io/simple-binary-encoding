@@ -285,7 +285,7 @@ public class SbeTool
                 {
                     schema = parseSchema(fileName);
                 }
-                catch (final IllegalStateException | IllegalArgumentException ex)
+                catch (final Exception ex)
                 {
                     System.err.println(ex.getMessage());
                     exitHandler.accept(-1);
