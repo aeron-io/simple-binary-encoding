@@ -206,7 +206,7 @@ subprojects {
         options.encoding = 'UTF-8'
         options.docEncoding = 'UTF-8'
         options.charSet = 'UTF-8'
-        options.links("https://www.javadoc.io/doc/org.agrona/agrona/${libs.versions.agrona.get()}/")
+        options.links("https://www.javadoc.io/static/org.agrona/agrona/${libs.versions.agrona.get()}/")
         if (isEarlyAccessJavaVersion) {
             options.links("https://download.java.net/java/early_access/jdk${buildJavaVersion}/docs/api/")
         }

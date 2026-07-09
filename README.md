@@ -1,7 +1,7 @@
 Simple Binary Encoding (SBE)
 ============================
 
-[![Javadocs](https://www.javadoc.io/badge/uk.co.real-logic/sbe-tool.svg)](https://www.javadoc.io/doc/uk.co.real-logic/sbe-tool)
+[![Javadocs](https://www.javadoc.io/badge/uk.co.real-logic/sbe-tool.svg)](https://www.javadoc.io/static/uk.co.real-logic/sbe-tool)
 [![GitHub](https://img.shields.io/github/license/aeron-io/simple-binary-encoding.svg)](https://github.com/aeron-io/simple-binary-encoding/blob/master/LICENSE)
 
 [![Actions Status](https://github.com/aeron-io/simple-binary-encoding/workflows/Continuous%20Integration/badge.svg)](https://github.com/aeron-io/simple-binary-encoding/actions)
