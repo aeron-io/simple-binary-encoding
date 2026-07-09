@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.function.IntConsumer;
 
 /**
  * A tool for running the SBE parser, validator, and code generator.
@@ -256,10 +257,16 @@ public class SbeTool
      */
     public static void main(final String[] args) throws Exception
     {
+        run(args, System::exit);
+    }
+
+    static void run(final String[] args, final IntConsumer exitHandler) throws Exception
+    {
         if (args.length == 0)
         {
             System.err.format("Usage: %s <filenames>...%n", SbeTool.class.getName());
-            System.exit(-1);
+            exitHandler.accept(-1);
+            return;
         }
 
         for (final String fileName : args)
@@ -273,7 +280,18 @@ public class SbeTool
                     validateAgainstSchema(fileName, xsdFilename);
                 }
 
-                final MessageSchema schema = parseSchema(fileName);
+                final MessageSchema schema;
+                try
+                {
+                    schema = parseSchema(fileName);
+                }
+                catch (final Exception ex)
+                {
+                    System.err.println(ex.getMessage());
+                    exitHandler.accept(-1);
+                    return;
+                }
+
                 final SchemaTransformer transformer = new SchemaTransformerFactory(
                     System.getProperty(SCHEMA_TRANSFORM_VERSION));
                 ir = new IrGenerator().generate(transformer.transform(schema), System.getProperty(TARGET_NAMESPACE));
@@ -288,7 +306,7 @@ public class SbeTool
             else
             {
                 System.err.println("Input file format not supported: " + fileName);
-                System.exit(-1);
+                exitHandler.accept(-1);
                 return;
             }
 
