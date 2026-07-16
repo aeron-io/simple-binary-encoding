@@ -2,7 +2,7 @@
 
 == 1.40.0 (unreleased)
 
-* **[Java]** Upgrade to `Shadow` 9.5.1.
+* **[Java]** Upgrade to `Shadow` 9.6.0.
 
 == 1.39.0 (2026-07-03)
 
