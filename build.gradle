@@ -428,6 +428,12 @@ project(':sbe-all') {
             'Implementation-Vendor': 'Adaptive Financial Consulting Limited',
             'Automatic-Module-Name': 'uk.co.real_logic.sbe.all'
         )
+
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        mergeServiceFiles()
+        filesMatching('META-INF/services/**') {
+            duplicatesStrategy = DuplicatesStrategy.INCLUDE
+        }
     }
 
     jar.finalizedBy shadowJar
