@@ -176,6 +176,21 @@ class SetTypeTest
     }
 
     @Test
+    void shouldThrowExceptionWhenNegativeValueSpecified()
+    {
+        final String testXmlString =
+            "<types>" +
+            "<set name=\"biOp\" encodingType=\"uint8\">" +
+            "    <choice name=\"Bit0\">0</choice>" +
+            "    <choice name=\"BitNeg\">-1</choice>" +
+            "</set>" +
+            "</types>";
+
+        assertThrows(IllegalArgumentException.class, () ->
+            parseTestXmlWithMap("/types/set", testXmlString));
+    }
+
+    @Test
     void shouldHandleEncodingTypesWithNamedTypes() throws Exception
     {
         try (InputStream in = Tests.getLocalResource("encoding-types-schema.xml"))
