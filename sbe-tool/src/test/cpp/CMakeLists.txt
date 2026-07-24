@@ -103,6 +103,35 @@ sbe_test(FieldAccessOrderCheckTest codecs)
 target_compile_definitions(FieldAccessOrderCheckTest PRIVATE SBE_ENABLE_PRECEDENCE_CHECKS_IN_TESTS)
 sbe_test(VersionedMessageTest codecs)
 
+# ---------------------------------------------------------------------------------------------------
+# sbe.cpp.generate.enum.parse: compile-and-run test for the generated fromString()/operator>>.
+# Regenerates the code-generation schema into its own directory with the option enabled.
+# ---------------------------------------------------------------------------------------------------
+set(ENUM_PARSE_DIR ${CODEC_TARGET_DIR}/cpp_enum_parse)
+add_custom_command(
+    OUTPUT ${ENUM_PARSE_DIR}
+    DEPENDS ${CODE_GENERATION_SCHEMA} sbe-jar ${SBE_JAR}
+    COMMAND
+        ${Java_JAVA_EXECUTABLE} --add-opens java.base/jdk.internal.misc=ALL-UNNAMED
+            -Dsbe.output.dir=${ENUM_PARSE_DIR}
+            -Dsbe.target.language=cpp
+            -Dsbe.keyword.append.token=X
+            -Dsbe.cpp.generate.enum.parse=true
+            -jar ${SBE_JAR}
+            ${CODE_GENERATION_SCHEMA}
+)
+add_custom_target(codecs_enum_parse DEPENDS ${ENUM_PARSE_DIR})
+
+add_executable(CppEnumParseTest CppEnumParseTest.cpp)
+add_dependencies(CppEnumParseTest gmock codecs_enum_parse)
+target_compile_features(CppEnumParseTest PRIVATE cxx_std_17)
+target_include_directories(CppEnumParseTest PRIVATE ${ENUM_PARSE_DIR})
+target_compile_options(CppEnumParseTest PRIVATE $<$<CXX_COMPILER_ID:AppleClang>:-Werror>)
+target_compile_options(CppEnumParseTest PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Werror>)
+target_compile_options(CppEnumParseTest PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Werror>)
+target_link_libraries(CppEnumParseTest gmock_main ${CMAKE_THREAD_LIBS_INIT})
+add_test(NAME CppEnumParseTest COMMAND CppEnumParseTest)
+
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     # Check if the GCC version supports C++17
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "7.0")
