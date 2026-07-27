@@ -63,6 +63,8 @@ public class CppGenerator implements CodeGenerator
     private final String precedenceChecksFlagName;
     private final boolean shouldSupportTypesPackageNames;
     private final Map<String, String> namespaceByType = new HashMap<>();
+    // Opt-in: generate enum string parsing (fromString + operator>>), the inverse of c_str/operator<<.
+    private final boolean shouldGenerateEnumParse = Boolean.getBoolean("sbe.cpp.generate.enum.parse");
 
     /**
      * Create a new Cpp language {@link CodeGenerator}.
@@ -1420,6 +1422,11 @@ public class CppGenerator implements CodeGenerator
 
             out.append(generateEnumDisplay(tokens.subList(1, tokens.size() - 1), enumToken));
 
+            if (shouldGenerateEnumParse)
+            {
+                out.append(generateEnumParse(tokens.subList(1, tokens.size() - 1), enumToken));
+            }
+
             out.append("};\n\n");
             out.append(CppUtil.closingBraces(namespaces.length)).append("\n#endif\n");
         }
@@ -1856,9 +1863,12 @@ public class CppGenerator implements CodeGenerator
         return sb;
     }
 
-    private static CharSequence generateEnumFileHeader(final CharSequence[] namespaces, final String className)
+    private CharSequence generateEnumFileHeader(final CharSequence[] namespaces, final String className)
     {
         final StringBuilder sb = new StringBuilder();
+
+        // fromString() pulls in <unordered_map>, but only while it is emitted inline.
+        final String fromStringInclude = shouldGenerateEnumParse ? "#include <unordered_map>\n" : "";
 
         sb.append("/* Generated SBE (Simple Binary Encoding) message codec */\n");
 
@@ -1877,6 +1887,7 @@ public class CppGenerator implements CodeGenerator
             "#include <stdexcept>\n" +
             "#include <sstream>\n" +
             "#include <string>\n" +
+            "%3$s" +
             "\n" +
 
             "#define SBE_NULLVALUE_INT8 (std::numeric_limits<std::int8_t>::min)()\n" +
@@ -1888,7 +1899,8 @@ public class CppGenerator implements CodeGenerator
             "#define SBE_NULLVALUE_UINT32 (std::numeric_limits<std::uint32_t>::max)()\n" +
             "#define SBE_NULLVALUE_UINT64 (std::numeric_limits<std::uint64_t>::max)()\n",
             String.join("_", namespaces).toUpperCase(),
-            className.toUpperCase()));
+            className.toUpperCase(),
+            fromStringInclude));
 
         sb.append("\nnamespace ");
         sb.append(String.join(" {\nnamespace ", namespaces));
@@ -4122,6 +4134,80 @@ public class CppGenerator implements CodeGenerator
             enumName);
 
         return sb;
+    }
+
+    private CharSequence generateEnumParse(final List<Token> tokens, final Token encodingToken)
+    {
+        final String enumName = formatClassName(encodingToken.applicableTypeName());
+        final StringBuilder sb = new StringBuilder();
+
+        new Formatter(sb).format("\n" +
+            "    static %1$s::Value fromString(const char *str)\n" +
+            "    {\n",
+            enumName);
+
+        appendEnumFromStringBody(sb, tokens, enumName, INDENT + INDENT);
+        sb.append("    }\n\n");
+
+        new Formatter(sb).format(
+            "    template<typename CharT, typename Traits>\n" +
+            "    friend std::basic_istream<CharT, Traits> & operator >> (\n" +
+            "        std::basic_istream<CharT, Traits> &is, %1$s::Value &m)\n" +
+            "    {\n" +
+            "        std::string str;\n" +
+            "        is >> str;\n" +
+            "        m = %1$s::fromString(str.c_str());\n" +
+            "        return is;\n" +
+            "    }\n",
+            enumName);
+
+        return sb;
+    }
+
+    // Body of the enum fromString() reverse lookup, emitted at the given indent.
+    private void appendEnumFromStringBody(
+        final StringBuilder sb, final List<Token> tokens, final String enumName, final String indent)
+    {
+        new Formatter(sb).format(
+            indent + "static const std::unordered_map<std::string, %1$s::Value> stringToEnumMap = []()\n" +
+            indent + "{\n" +
+            indent + "    std::unordered_map<std::string, %1$s::Value> map;\n",
+            enumName);
+
+        for (final Token token : tokens)
+        {
+            new Formatter(sb).format(
+                indent + "    map[\"%1$s\"] = %1$s;\n",
+                formatForCppKeyword(token.name()));
+        }
+
+        sb.append(indent).append("    map[\"NULL_VALUE\"] = NULL_VALUE;\n");
+
+        if (shouldDecodeUnknownEnumValues)
+        {
+            sb.append(indent).append("    map[\"SBE_UNKNOWN\"] = SBE_UNKNOWN;\n");
+        }
+
+        sb.append(indent).append("    return map;\n");
+        sb.append(indent).append("}();\n\n");
+
+        sb.append(indent).append("auto it = stringToEnumMap.find(str);\n");
+        sb.append(indent).append("if (it != stringToEnumMap.end())\n");
+        sb.append(indent).append("{\n");
+        sb.append(indent).append("    return it->second;\n");
+        sb.append(indent).append("}\n\n");
+
+        if (shouldDecodeUnknownEnumValues)
+        {
+            sb.append(indent).append("return SBE_UNKNOWN;\n");
+        }
+        else
+        {
+            new Formatter(sb).format(
+                indent + "throw std::runtime_error(\"unknown enum value: \" + std::string(str) +\n" +
+                indent + "    \" for enum %1$s [E103]\");\n",
+                enumName);
+        }
     }
 
     private Object[] generateMessageLengthArgs(
