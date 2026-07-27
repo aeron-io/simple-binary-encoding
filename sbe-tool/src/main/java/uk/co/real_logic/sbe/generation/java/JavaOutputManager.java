@@ -51,6 +51,7 @@ public class JavaOutputManager implements DynamicPackageOutputManager
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setPackageName(final String packageName)
     {
         actingPackageOutputManager = outputManagerByPackageName.get(packageName);
@@ -69,6 +70,7 @@ public class JavaOutputManager implements DynamicPackageOutputManager
     /**
      * {@inheritDoc}
      */
+    @Override
     public Writer createOutput(final String name) throws IOException
     {
         return new FilterWriter(actingPackageOutputManager.createOutput(name))

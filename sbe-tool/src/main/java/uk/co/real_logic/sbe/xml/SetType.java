@@ -180,6 +180,7 @@ public class SetType extends Type
      * <p>
      * {@inheritDoc}
      */
+    @Override
     public boolean isVariableLength()
     {
         return false;
@@ -188,6 +189,7 @@ public class SetType extends Type
     /**
      * {@inheritDoc}
      */
+    @Override
     public String toString()
     {
         return "SetType{" +
@@ -284,6 +286,7 @@ public class SetType extends Type
         /**
          * {@inheritDoc}
          */
+        @Override
         public String toString()
         {
             return "Choice{" +

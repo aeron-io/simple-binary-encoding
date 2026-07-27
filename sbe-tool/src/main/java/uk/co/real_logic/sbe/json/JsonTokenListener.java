@@ -50,6 +50,7 @@ public class JsonTokenListener implements TokenListener
     /**
      * {@inheritDoc}
      */
+    @Override
     public void onBeginMessage(final Token token)
     {
         startObject();
@@ -58,6 +59,7 @@ public class JsonTokenListener implements TokenListener
     /**
      * {@inheritDoc}
      */
+    @Override
     public void onEndMessage(final Token token)
     {
         endObject();
@@ -66,6 +68,7 @@ public class JsonTokenListener implements TokenListener
     /**
      * {@inheritDoc}
      */
+    @Override
     public void onEncoding(
         final Token fieldToken,
         final DirectBuffer buffer,
@@ -81,6 +84,7 @@ public class JsonTokenListener implements TokenListener
     /**
      * {@inheritDoc}
      */
+    @Override
     public void onEnum(
         final Token fieldToken,
         final DirectBuffer buffer,
@@ -122,6 +126,7 @@ public class JsonTokenListener implements TokenListener
     /**
      * {@inheritDoc}
      */
+    @Override
     public void onBitSet(
         final Token fieldToken,
         final DirectBuffer buffer,
@@ -158,6 +163,7 @@ public class JsonTokenListener implements TokenListener
     /**
      * {@inheritDoc}
      */
+    @Override
     public void onBeginComposite(
         final Token fieldToken, final List<Token> tokens, final int fromIndex, final int toIndex)
     {
@@ -170,6 +176,7 @@ public class JsonTokenListener implements TokenListener
     /**
      * {@inheritDoc}
      */
+    @Override
     public void onEndComposite(
         final Token fieldToken, final List<Token> tokens, final int fromIndex, final int toIndex)
     {
@@ -180,6 +187,7 @@ public class JsonTokenListener implements TokenListener
     /**
      * {@inheritDoc}
      */
+    @Override
     public void onGroupHeader(final Token token, final int numInGroup)
     {
         property(token.name());
@@ -196,6 +204,7 @@ public class JsonTokenListener implements TokenListener
     /**
      * {@inheritDoc}
      */
+    @Override
     public void onBeginGroup(final Token token, final int groupIndex, final int numInGroup)
     {
         startObject();
@@ -204,6 +213,7 @@ public class JsonTokenListener implements TokenListener
     /**
      * {@inheritDoc}
      */
+    @Override
     public void onEndGroup(final Token token, final int groupIndex, final int numInGroup)
     {
         endObject();
@@ -217,6 +227,7 @@ public class JsonTokenListener implements TokenListener
     /**
      * {@inheritDoc}
      */
+    @Override
     public void onVarData(
         final Token fieldToken,
         final DirectBuffer buffer,

@@ -100,6 +100,7 @@ public class IrDecoder implements AutoCloseable
     /**
      * {@inheritDoc}
      */
+    @Override
     public void close()
     {
         CloseHelper.quietClose(channel);

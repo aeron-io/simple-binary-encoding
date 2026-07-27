@@ -29,6 +29,7 @@ class SinceVersionSchemaTransformer implements SchemaTransformer
     /**
      * {@inheritDoc}
      */
+    @Override
     public MessageSchema transform(final MessageSchema originalSchema)
     {
         final Collection<Type> types = originalSchema.types();

@@ -69,6 +69,7 @@ public class JavaUtil
         /**
          * {@inheritDoc}
          */
+        @Override
         public String toString()
         {
             return String.valueOf(symbol);

@@ -388,6 +388,7 @@ public class CompositeType extends Type
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isVariableLength()
     {
         return false;
@@ -499,6 +500,7 @@ public class CompositeType extends Type
     /**
      * {@inheritDoc}
      */
+    @Override
     public String toString()
     {
         return "CompositeType{" +

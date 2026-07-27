@@ -100,6 +100,7 @@ public class JavaDtoGenerator implements CodeGenerator
     /**
      * {@inheritDoc}
      */
+    @Override
     public void generate() throws IOException
     {
         generateDtosForTypes();

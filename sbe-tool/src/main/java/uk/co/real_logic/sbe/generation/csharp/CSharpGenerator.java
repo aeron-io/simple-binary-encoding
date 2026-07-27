@@ -162,6 +162,7 @@ public class CSharpGenerator implements CodeGenerator
     /**
      * {@inheritDoc}
      */
+    @Override
     public void generate() throws IOException
     {
         packageNameByTypes.clear();

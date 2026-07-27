@@ -616,6 +616,7 @@ public final class FieldPrecedenceModel
         /**
          * {@inheritDoc}.
          */
+        @Override
         public int compareTo(final State other)
         {
             final int result = Integer.compare(number, other.number);
@@ -629,6 +630,7 @@ public final class FieldPrecedenceModel
         /**
          * {@inheritDoc}
          */
+        @Override
         public String toString()
         {
             return "State{" +
@@ -697,6 +699,7 @@ public final class FieldPrecedenceModel
         /**
          * {@inheritDoc}
          */
+        @Override
         public String toString()
         {
             return "Transition{" +

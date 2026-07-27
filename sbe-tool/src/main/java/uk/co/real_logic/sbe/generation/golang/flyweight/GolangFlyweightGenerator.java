@@ -593,6 +593,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
     /**
      * {@inheritDoc}
      */
+    @Override
     public void generate() throws IOException
     {
 

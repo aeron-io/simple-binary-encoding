@@ -29,6 +29,7 @@ public class CppDtos implements TargetCodeGenerator
     /**
      * {@inheritDoc}
      */
+    @Override
     public CodeGenerator newInstance(final Ir ir, final String outputDir)
     {
         return new CppDtoGenerator(ir, false, new NamespaceOutputManager(outputDir, ir.applicableNamespace()));

@@ -250,6 +250,7 @@ public class JavaGenerator implements CodeGenerator
     /**
      * {@inheritDoc}
      */
+    @Override
     public void generate() throws IOException
     {
         packageNameByTypes.clear();

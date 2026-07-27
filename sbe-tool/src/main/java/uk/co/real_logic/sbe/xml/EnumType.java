@@ -233,6 +233,7 @@ public class EnumType extends Type
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isVariableLength()
     {
         return false;
@@ -241,6 +242,7 @@ public class EnumType extends Type
     /**
      * {@inheritDoc}
      */
+    @Override
     public String toString()
     {
         return "EnumType{" +
@@ -332,6 +334,7 @@ public class EnumType extends Type
         /**
          * {@inheritDoc}
          */
+        @Override
         public String toString()
         {
             return "ValidValue{" +

@@ -30,6 +30,7 @@ public class CSharpDtos implements TargetCodeGenerator
     /**
      * {@inheritDoc}
      */
+    @Override
     public CodeGenerator newInstance(final Ir ir, final String outputDir)
     {
         final boolean shouldSupportTypesPackageNames = Boolean.getBoolean(TYPES_PACKAGE_OVERRIDE);

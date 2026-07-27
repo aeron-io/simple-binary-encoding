@@ -146,6 +146,7 @@ public class GolangGenerator implements CodeGenerator
     /**
      * {@inheritDoc}
      */
+    @Override
     public void generate() throws IOException
     {
         // Add the Marshalling from the big or little endian

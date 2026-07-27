@@ -48,6 +48,7 @@ public enum TargetCodeGeneratorLoader implements TargetCodeGenerator
         /**
          * {@inheritDoc}
          */
+        @Override
         public CodeGenerator newInstance(final Ir ir, final String outputDir)
         {
             final JavaOutputManager outputManager = new JavaOutputManager(outputDir, ir.applicableNamespace());
@@ -88,6 +89,7 @@ public enum TargetCodeGeneratorLoader implements TargetCodeGenerator
         /**
          * {@inheritDoc}
          */
+        @Override
         public CodeGenerator newInstance(final Ir ir, final String outputDir)
         {
             return new CGenerator(ir, new COutputManager(outputDir, ir.applicableNamespace()));
@@ -102,6 +104,7 @@ public enum TargetCodeGeneratorLoader implements TargetCodeGenerator
         /**
          * {@inheritDoc}
          */
+        @Override
         public CodeGenerator newInstance(final Ir ir, final String outputDir)
         {
             final NamespaceOutputManager outputManager = new NamespaceOutputManager(
@@ -140,6 +143,7 @@ public enum TargetCodeGeneratorLoader implements TargetCodeGenerator
         /**
          * {@inheritDoc}
          */
+        @Override
         public CodeGenerator newInstance(final Ir ir, final String outputDir)
         {
             if ("true".equals(System.getProperty(GO_GENERATE_FLYWEIGHTS)))
@@ -166,6 +170,7 @@ public enum TargetCodeGeneratorLoader implements TargetCodeGenerator
         /**
          * {@inheritDoc}
          */
+        @Override
         public CodeGenerator newInstance(final Ir ir, final String outputDir)
         {
             return new RustGenerator(

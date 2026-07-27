@@ -271,6 +271,7 @@ public class Encoding
     /**
      * {@inheritDoc}
      */
+    @Override
     public String toString()
     {
         return

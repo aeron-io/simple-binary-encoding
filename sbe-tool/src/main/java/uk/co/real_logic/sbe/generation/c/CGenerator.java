@@ -125,6 +125,7 @@ public class CGenerator implements CodeGenerator
     /**
      * {@inheritDoc}
      */
+    @Override
     public void generate() throws IOException
     {
         generateMessageHeaderStub();
