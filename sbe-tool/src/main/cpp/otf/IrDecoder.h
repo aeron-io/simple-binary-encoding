@@ -141,6 +141,10 @@ public:
         return m_id;
     }
 
+    int schemaVersion() const {
+        return m_version;
+    }
+
 protected:
     // OS specifics
     static long long getFileSize(const char *filename)
@@ -188,6 +192,7 @@ private:
     std::unique_ptr<char[]> m_buffer;
     std::uint64_t m_length = 0;
     int m_id = 0;
+    int m_version = 0;
 
     int decodeIr()
     {
@@ -221,6 +226,7 @@ private:
         std::uint64_t headerLength = readHeader(offset);
 
         m_id = frame.irId();
+        m_version = frame.schemaVersion();
 
         offset += headerLength;
 

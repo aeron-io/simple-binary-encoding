@@ -16,6 +16,7 @@
 
 #include <gtest/gtest.h>
 
+#include "otf/IrDecoder.h"
 #include "versmsg/VersionedMessageV1.h"
 #include "versmsg/VersionedMessageV2.h"
 
@@ -54,4 +55,13 @@ TEST_F(VersionedMessageTest, shouldV1DecodeV2Message)
     EXPECT_STREQ(m_versionedMessageV1Decoder.string1(), "asdf");
 
     EXPECT_EQ(m_versionedMessageV1Decoder.decodeLength(), (uint64_t)26);
+}
+
+TEST_F(VersionedMessageTest, shouldExposeSchemaVersionFromIr)
+{
+    IrDecoder irDecoder = {};
+
+    ASSERT_GE(irDecoder.decode("versioned-message-v2.sbeir"), 0);
+    EXPECT_EQ(irDecoder.schemaId(), 1);
+    EXPECT_EQ(irDecoder.schemaVersion(), 2);
 }
