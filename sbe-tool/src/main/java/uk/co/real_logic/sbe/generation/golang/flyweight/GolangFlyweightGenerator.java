@@ -1855,14 +1855,22 @@ public class GolangFlyweightGenerator implements CodeGenerator
             offset,
             formatClassName(containingClassName));
 
-        new Formatter(sb).format("\n" +
-            indent + "func (m *%1$s) Put%2$s(src []byte) *%1$s {\n" +
-            indent + "    copy(m.buffer[(m.offset+%3$d):], src)\n" +
-            indent + "    return m\n" +
-            indent + "}\n",
-            formatClassName(containingClassName),
-            formatPropertyName(propertyName),
-            offset);
+        if (primitiveType == PrimitiveType.CHAR)
+        {
+            generateNullPaddedSetter(
+                sb, containingClassName, "Put", propertyName, "[]byte", offset, arrayLength, indent);
+        }
+        else
+        {
+            new Formatter(sb).format("\n" +
+                indent + "func (m *%1$s) Put%2$s(src []byte) *%1$s {\n" +
+                indent + "    copy(m.buffer[(m.offset+%3$d):], src)\n" +
+                indent + "    return m\n" +
+                indent + "}\n",
+                formatClassName(containingClassName),
+                formatPropertyName(propertyName),
+                offset);
+        }
 
         if (arrayLength > 1 && arrayLength <= 4)
         {
@@ -1922,15 +1930,54 @@ public class GolangFlyweightGenerator implements CodeGenerator
 
             generateJsonEscapedStringGetter(sb, encodingToken, indent, propertyName, containingClassName);
 
-            new Formatter(sb).format("\n" +
-                indent + "func (m *%1$s) Set%2$s(src string) *%1$s {\n" +
-                indent + "    copy(m.buffer[(m.offset+%3$d):], []byte(src))\n" +
-                indent + "    return m\n" +
-                indent + "}\n",
-                formatClassName(containingClassName),
-                formatPropertyName(propertyName),
-                offset);
+            generateNullPaddedSetter(
+                sb, containingClassName, "Set", propertyName, "string", offset, arrayLength, indent);
         }
+    }
+
+    /**
+     * Generate a setter for a fixed length character array which pads any unused trailing bytes with NUL, matching
+     * the Java and C{plus}{plus} codecs. The field is therefore fully defined after the call regardless of what the
+     * buffer previously held, which is what {@code Get&lt;name&gt;AsString} relies on when it trims at the first NUL.
+     *
+     * @param sb                  to append the generated code to.
+     * @param containingClassName of the flyweight the setter belongs to.
+     * @param methodPrefix        of the generated method, either {@code Set} or {@code Put}.
+     * @param propertyName        of the field being set.
+     * @param srcGoType           Go type of the source parameter, either {@code string} or {@code []byte}.
+     * @param offset              of the field within the containing block.
+     * @param arrayLength         declared length of the character array.
+     * @param indent              for the generated code.
+     */
+    private void generateNullPaddedSetter(
+        final StringBuilder sb,
+        final String containingClassName,
+        final String methodPrefix,
+        final String propertyName,
+        final String srcGoType,
+        final int offset,
+        final int arrayLength,
+        final String indent)
+    {
+        new Formatter(sb).format("\n" +
+            indent + "func (m *%1$s) %2$s%3$s(src %4$s) *%1$s {\n" +
+            indent + "    length := uint64(len(src))\n" +
+            indent + "    if length > %6$d {\n" +
+            indent + "        panic(\"src too large for %2$s%3$s [E106]\")\n" +
+            indent + "    }\n\n" +
+            indent + "    start := m.offset + %5$d\n" +
+            indent + "    copy(m.buffer[start:start+%6$d], src)\n" +
+            indent + "    for i := length; i < %6$d; i++ {\n" +
+            indent + "        m.buffer[start+i] = 0\n" +
+            indent + "    }\n\n" +
+            indent + "    return m\n" +
+            indent + "}\n",
+            formatClassName(containingClassName),
+            methodPrefix,
+            formatPropertyName(propertyName),
+            srcGoType,
+            offset,
+            arrayLength);
     }
 
     private void generateJsonEscapedStringGetter(

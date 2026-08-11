@@ -137,3 +137,102 @@ func TestDecodeJavaBuffer(t *testing.T) {
 	// fmt.Println(c)
 	return
 }
+
+// newRangeCheckableCar builds a Car that passes RangeCheck, so that tests below can vary a single
+// character array and attribute any failure to that field alone.
+func newRangeCheckableCar(vehicleCode [6]byte, manufacturerCode [3]byte) Car {
+	var optionalExtras [8]bool
+	optionalExtras[OptionalExtrasChoice.CruiseControl] = true
+
+	engine := Engine{2000, 4, 0, manufacturerCode, [6]byte{}, 42, BooleanType.T,
+		EngineBooster{BoostType.NITROUS, 200}}
+
+	fuel := []CarFuelFigures{{30, 35.9, []uint8("Urban Cycle")}}
+	acceleration := []CarPerformanceFiguresAcceleration{{30, 3.8}}
+	performance := []CarPerformanceFigures{{95, acceleration}}
+
+	return Car{1234, 2013, BooleanType.T, Model.A, [4]uint32{0, 1, 2, 3}, vehicleCode,
+		optionalExtras, Model.A, engine, fuel, performance,
+		[]uint8("Honda"), []uint8("Civic VTi"), []uint8("deadbeef")}
+}
+
+func makeVehicleCode(value string) [6]byte {
+	var code [6]byte
+	copy(code[:], value)
+
+	return code
+}
+
+// vehicleCode is a char[6]. NUL is the pad byte written by the Java, C++ and Go flyweight codecs, and is
+// also what the idiomatic `copy` into a zeroed Go array leaves behind, so RangeCheck has to accept it.
+// Space padding must keep working, and genuinely out of range bytes must still be rejected.
+func TestRangeCheckAcceptsPaddedCharArrays(t *testing.T) {
+	var manufacturerCode [3]byte
+	copy(manufacturerCode[:], "123")
+
+	tests := []struct {
+		name      string
+		code      [6]byte
+		wantError bool
+	}{
+		{"exact length", makeVehicleCode("abcdef"), false},
+		{"NUL padded", makeVehicleCode("abc"), false},
+		{"space padded", makeVehicleCode("abc   "), false},
+		{"all NUL", makeVehicleCode(""), false},
+		{"all space", makeVehicleCode("      "), false},
+		{"below range", [6]byte{'a', 'b', 'c', 0x01, 0, 0}, true},
+		{"above range", [6]byte{'a', 'b', 'c', 0x7F, 0, 0}, true},
+	}
+
+	for _, test := range tests {
+		c := newRangeCheckableCar(test.code, manufacturerCode)
+		err := c.RangeCheck(c.SbeSchemaVersion(), c.SbeSchemaVersion())
+
+		if test.wantError && err == nil {
+			t.Errorf("%s (%q): expected RangeCheck to fail, got nil", test.name, test.code)
+		}
+		if !test.wantError && err != nil {
+			t.Errorf("%s (%q): expected RangeCheck to pass, got %v", test.name, test.code, err)
+		}
+	}
+}
+
+// A NUL padded char array must survive a round trip with range checking enabled at both ends.
+func TestEncodeDecodeNulPaddedCharArray(t *testing.T) {
+	var manufacturerCode [3]byte
+	copy(manufacturerCode[:], "12")
+
+	in := newRangeCheckableCar(makeVehicleCode("abc"), manufacturerCode)
+
+	m := NewSbeGoMarshaller()
+	buf := new(bytes.Buffer)
+	if err := in.Encode(m, buf, true); err != nil {
+		t.Fatalf("Encode with range check failed: %v", err)
+	}
+
+	var out Car
+	if err := out.Decode(m, buf, in.SbeSchemaVersion(), in.SbeBlockLength(), true); err != nil {
+		t.Fatalf("Decode with range check failed: %v", err)
+	}
+
+	if in.VehicleCode != out.VehicleCode {
+		t.Errorf("VehicleCode round trip: encoded %q, decoded %q", in.VehicleCode, out.VehicleCode)
+	}
+	if in.Engine.ManufacturerCode != out.Engine.ManufacturerCode {
+		t.Errorf("ManufacturerCode round trip: encoded %q, decoded %q",
+			in.Engine.ManufacturerCode, out.Engine.ManufacturerCode)
+	}
+}
+
+// The NullValue escape must apply only to character arrays; numeric arrays keep strict range checking.
+func TestRangeCheckStillStrictForNumericArrays(t *testing.T) {
+	var manufacturerCode [3]byte
+	copy(manufacturerCode[:], "123")
+
+	c := newRangeCheckableCar(makeVehicleCode("abcdef"), manufacturerCode)
+	c.SomeNumbers[2] = c.SomeNumbersMaxValue() + 1
+
+	if err := c.RangeCheck(c.SbeSchemaVersion(), c.SbeSchemaVersion()); err == nil {
+		t.Error("expected RangeCheck to reject an out of range uint32 array element, got nil")
+	}
+}

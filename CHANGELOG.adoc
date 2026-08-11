@@ -2,6 +2,12 @@
 
 == 1.40.0 (unreleased)
 
+* **[Go]** Fix padding on fixed length character arrays so they are null padded in the Go flyweight codec, matching
+the Java and C{plus}{plus} codecs. Setters now also reject values longer than the field rather than overrunning into
+the following field.
+* **[Go]** `RangeCheck` in the Go struct codec no longer rejects null padded fixed length character arrays. `NullValue`
+for `char` is `0`, which sits below `MinValue` of `0x20`, so null padding written by any codec previously failed
+validation, including when decoding a buffer produced by the Java or C{plus}{plus} codec.
 * **[Java]** Upgrade to `JUnit` 6.1.2.
 * **[Java]** Upgrade to `Shadow` 9.6.0.
 
