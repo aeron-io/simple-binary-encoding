@@ -3,6 +3,7 @@
 == 1.40.0 (unreleased)
 
 * **[Java]** Upgrade to `Gradle` 9.7.0.
+* **[Java]** Upgrade to `json` 20260814.
 * **[Java]** Upgrade to `JUnit` 6.1.3.
 * **[Java]** Upgrade to `Shadow` 9.6.1.
 * **[Java]** Upgrade to `Versions` 0.61.0.
