@@ -6,6 +6,13 @@
 
 * **[Java]** Reject negative choice values in `SetType`. (https://github.com/aeron-io/simple-binary-encoding/pull/1112[#1112])
 * **[C{plus}{plus}]** Expose schema version from `IrDecoder`. (https://github.com/aeron-io/simple-binary-encoding/pull/1117[#1117]).
+* **[Go]** Fix padding on fixed length character arrays so they are null padded in the Go flyweight codec, matching
+the Java and C{plus}{plus} codecs. Setters now also reject values longer than the field rather than overrunning into
+the following field. (https://github.com/aeron-io/simple-binary-encoding/pull/1119[#1119])
+* **[Go]** `RangeCheck` in the Go struct codec no longer rejects null padded fixed length character arrays. `NullValue`
+for `char` is `0`, which sits below `MinValue` of `0x20`, so null padding written by any codec previously failed
+validation, including when decoding a buffer produced by the Java or C{plus}{plus} codec.
+(https://github.com/aeron-io/simple-binary-encoding/pull/1119[#1119])
 
 == 1.40.0 (2026-08-21)
 
