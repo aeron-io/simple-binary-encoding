@@ -1935,20 +1935,6 @@ public class GolangFlyweightGenerator implements CodeGenerator
         }
     }
 
-    /**
-     * Generate a setter for a fixed length character array which pads any unused trailing bytes with NUL, matching
-     * the Java and C{plus}{plus} codecs. The field is therefore fully defined after the call regardless of what the
-     * buffer previously held, which is what {@code Get&lt;name&gt;AsString} relies on when it trims at the first NUL.
-     *
-     * @param sb                  to append the generated code to.
-     * @param containingClassName of the flyweight the setter belongs to.
-     * @param methodPrefix        of the generated method, either {@code Set} or {@code Put}.
-     * @param propertyName        of the field being set.
-     * @param srcGoType           Go type of the source parameter, either {@code string} or {@code []byte}.
-     * @param offset              of the field within the containing block.
-     * @param arrayLength         declared length of the character array.
-     * @param indent              for the generated code.
-     */
     private void generateNullPaddedSetter(
         final StringBuilder sb,
         final String containingClassName,
@@ -1959,6 +1945,8 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final int arrayLength,
         final String indent)
     {
+        // Generate a setter for a fixed length character array which pads any unused trailing bytes with NUL,
+        // matching the Java and C++ codecs
         new Formatter(sb).format("\n" +
             indent + "func (m *%1$s) %2$s%3$s(src %4$s) *%1$s {\n" +
             indent + "    length := uint64(len(src))\n" +
