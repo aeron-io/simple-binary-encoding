@@ -1,5 +1,5 @@
 [versions]
-agrona = "2.5.0"
+agrona = "2.6.0"
 checkstyle = "12.3.1"
 commons-codec = "1.15"
 commons-lang3 = "3.8.1"
@@ -7,12 +7,12 @@ hamcrest = "3.0"
 httpcore = "4.4.14"
 jqwik = "1.10.1"
 jmh = "1.37"
-json = "20260522"
-junit = "6.1.2"
+json = "20260814"
+junit = "6.1.3"
 mockito = "5.23.0"
 plexus = "3.3.0"
-shadow = "9.6.0"
-versions = "0.54.0"
+shadow = "9.6.1"
+versions = "0.61.0"
 
 [libraries]
 agrona = { group = "org.agrona", name = "agrona", version.ref = "agrona" }
@@ -30,4 +30,4 @@ plexus-utils = { group = "org.codehaus.plexus", name = "plexus-utils", version.r
 
 [plugins]
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
-versions = { id = "com.github.ben-manes.versions", version.ref = "versions" }
+versions = { id = "io.github.ben-manes.versions", version.ref = "versions" }

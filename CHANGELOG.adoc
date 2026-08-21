@@ -1,15 +1,28 @@
 = Changelog
 
-== 1.40.0 (unreleased)
+== 1.41.0 (unreleased)
 
+== 1.40.1 (2026-08-21)
+
+* **[Java]** Reject negative choice values in `SetType`. (https://github.com/aeron-io/simple-binary-encoding/pull/1112[#1112])
+* **[C{plus}{plus}]** Expose schema version from `IrDecoder`. (https://github.com/aeron-io/simple-binary-encoding/pull/1117[#1117]).
 * **[Go]** Fix padding on fixed length character arrays so they are null padded in the Go flyweight codec, matching
 the Java and C{plus}{plus} codecs. Setters now also reject values longer than the field rather than overrunning into
-the following field.
+the following field. (https://github.com/aeron-io/simple-binary-encoding/pull/1119[#1119])
 * **[Go]** `RangeCheck` in the Go struct codec no longer rejects null padded fixed length character arrays. `NullValue`
 for `char` is `0`, which sits below `MinValue` of `0x20`, so null padding written by any codec previously failed
 validation, including when decoding a buffer produced by the Java or C{plus}{plus} codec.
-* **[Java]** Upgrade to `JUnit` 6.1.2.
-* **[Java]** Upgrade to `Shadow` 9.6.0.
+(https://github.com/aeron-io/simple-binary-encoding/pull/1119[#1119])
+
+== 1.40.0 (2026-08-21)
+
+* **[Java]** New agreed Aeron checkstyle and fixes (`MissingOverride` and `NewLineAtEndOfFile`).
+* **[Java]** Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.6.0[Agrona 2.6.0].
+* **[Java]** Upgrade to `Gradle` 9.7.1.
+* **[Java]** Upgrade to `json` 20260814.
+* **[Java]** Upgrade to `JUnit` 6.1.3.
+* **[Java]** Upgrade to `Shadow` 9.6.1.
+* **[Java]** Upgrade to `Versions` 0.61.0.
 
 == 1.39.0 (2026-07-03)
 
@@ -35,8 +48,8 @@ validation, including when decoding a buffer produced by the Java or C{plus}{plu
 * **[Rust]** Generated encoders now produce fluent interface. (https://github.com/aeron-io/simple-binary-encoding/pull/1097[#1097])
 * **[Rust]** Updated some function to `const`. (https://github.com/aeron-io/simple-binary-encoding/pull/1098[#1098])
 * **[Rust]** Updated generator to correctly limit length of var data written. (https://github.com/aeron-io/simple-binary-encoding/pull/1096[#1096])
-* **[C++]** Protect against a segfault when dealing with empty `std::span` and `std::view`.
-* **[C++]** mark a generated function SBE_CONSTEXPR (#1055) (#1083)
+* **[C{plus}{plus}]** Protect against a segfault when dealing with empty `std::span` and `std::view`.
+* **[C{plus}{plus}]** mark a generated function SBE_CONSTEXPR (#1055) (#1083)
 * **[Java]** Upgrade to `CMake` 4.3.0.
 * **[Java]** Upgrade to `Shadow` 9.4.1.
 * **[Java]** Upgrade to `Gradle` 9.4.1.
