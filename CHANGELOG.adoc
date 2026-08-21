@@ -2,8 +2,14 @@
 
 == 1.41.0 (unreleased)
 
+== 1.40.1 (2026-08-21)
+
+* **[Java]** Reject negative choice values in `SetType`. (https://github.com/aeron-io/simple-binary-encoding/pull/1112[#1112])
+* **[C{plus}{plus}]** Expose schema version from `IrDecoder`. (https://github.com/aeron-io/simple-binary-encoding/pull/1117[#1117]).
+
 == 1.40.0 (2026-08-21)
 
+* **[Java]** New agreed Aeron checkstyle and fixes (`MissingOverride` and `NewLineAtEndOfFile`).
 * **[Java]** Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.6.0[Agrona 2.6.0].
 * **[Java]** Upgrade to `Gradle` 9.7.1.
 * **[Java]** Upgrade to `json` 20260814.
@@ -35,8 +41,8 @@
 * **[Rust]** Generated encoders now produce fluent interface. (https://github.com/aeron-io/simple-binary-encoding/pull/1097[#1097])
 * **[Rust]** Updated some function to `const`. (https://github.com/aeron-io/simple-binary-encoding/pull/1098[#1098])
 * **[Rust]** Updated generator to correctly limit length of var data written. (https://github.com/aeron-io/simple-binary-encoding/pull/1096[#1096])
-* **[C++]** Protect against a segfault when dealing with empty `std::span` and `std::view`.
-* **[C++]** mark a generated function SBE_CONSTEXPR (#1055) (#1083)
+* **[C{plus}{plus}]** Protect against a segfault when dealing with empty `std::span` and `std::view`.
+* **[C{plus}{plus}]** mark a generated function SBE_CONSTEXPR (#1055) (#1083)
 * **[Java]** Upgrade to `CMake` 4.3.0.
 * **[Java]** Upgrade to `Shadow` 9.4.1.
 * **[Java]** Upgrade to `Gradle` 9.4.1.
