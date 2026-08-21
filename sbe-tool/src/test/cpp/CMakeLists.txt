@@ -103,6 +103,20 @@ sbe_test(FieldAccessOrderCheckTest codecs)
 target_compile_definitions(FieldAccessOrderCheckTest PRIVATE SBE_ENABLE_PRECEDENCE_CHECKS_IN_TESTS)
 sbe_test(VersionedMessageTest codecs)
 
+# OtfMessageEncoderTest lives in the otf/ subdirectory and provides its own main() that takes the
+# IR file path as argv[1]; it is handed the generated code-generation-schema IR.
+add_executable(OtfMessageEncoderTest otf/OtfMessageEncoderTest.cpp)
+add_dependencies(OtfMessageEncoderTest gmock codecs)
+target_include_directories(OtfMessageEncoderTest PRIVATE ${CXX_CODEC_TARGET_DIR})
+target_compile_options(OtfMessageEncoderTest PRIVATE $<$<CXX_COMPILER_ID:AppleClang>:-Werror>)
+target_compile_options(OtfMessageEncoderTest PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Werror>)
+target_compile_options(OtfMessageEncoderTest PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Werror>)
+target_link_libraries(OtfMessageEncoderTest sbe gmock_main ${CMAKE_THREAD_LIBS_INIT})
+add_test(
+    NAME OtfMessageEncoderTest
+    COMMAND OtfMessageEncoderTest ${CXX_CODEC_TARGET_DIR}/code-generation-schema.sbeir
+    WORKING_DIRECTORY ${CXX_CODEC_TARGET_DIR})
+
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     # Check if the GCC version supports C++17
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "7.0")
