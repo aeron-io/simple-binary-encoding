@@ -1441,7 +1441,7 @@ public class RustGenerator implements CodeGenerator
                 continue;
             }
 
-            final String choiceName = formatFunctionName(token.name());
+            final String choiceName = bitSetChoiceName(token);
             final Encoding encoding = token.encoding();
             final String choiceBitIndex = encoding.constValue().toString();
 
@@ -1479,7 +1479,7 @@ public class RustGenerator implements CodeGenerator
                 continue;
             }
 
-            final String choiceName = formatFunctionName(token.name());
+            final String choiceName = bitSetChoiceName(token);
             final String choiceBitIndex = token.encoding().constValue().toString();
 
             if (comma)
@@ -1496,6 +1496,14 @@ public class RustGenerator implements CodeGenerator
         indent(writer, 3, arguments + ")\n");
         indent(writer, 1, "}\n");
         indent(writer, 0, "}\n");
+    }
+
+    // A choice is only ever reached through a get_ or set_ prefixed accessor, so its name cannot
+    // shadow a Rust keyword on its own and must not be escaped as a raw identifier. Escaping it
+    // would place the r# in the middle of the accessor name, where it does not parse.
+    private static String bitSetChoiceName(final Token token)
+    {
+        return toLowerSnakeCase(token.name());
     }
 
     static void appendImplEncoderTrait(
