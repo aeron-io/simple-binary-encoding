@@ -1096,7 +1096,10 @@ public class RustGenerator implements CodeGenerator
             indent(sb, level, "pub fn %s(&self) -> %s {\n",
                 formatFunctionName(name),
                 rustPrimitiveType);
-            indent(sb, level + 1, "%s\n", rawConstValue);
+            final String constValue = (primitiveType == PrimitiveType.FLOAT || primitiveType == PrimitiveType.DOUBLE) &&
+                rawConstValue.endsWith("Infinity") ?
+                generateRustLiteral(primitiveType, rawConstValue) : rawConstValue;
+            indent(sb, level + 1, "%s\n", constValue);
             indent(sb, level, "}\n\n");
         }
     }

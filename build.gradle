@@ -337,7 +337,8 @@ project(':sbe-tool') {
                 'sbe.java.precedence.checks.property.name': 'sbe.enable.test.precedence.checks')
         args = ['src/test/resources/json-printer-test-schema.xml',
                 'src/test/resources/composite-elements-schema.xml',
-                'src/test/resources/field-order-check-schema.xml']
+                'src/test/resources/field-order-check-schema.xml',
+                'src/test/resources/floating-point-infinity-schema.xml']
     }
 
     tasks.register('generateTestDtos', JavaExec) {
@@ -354,7 +355,9 @@ project(':sbe-tool') {
                 'sbe.java.precedence.checks.property.name': 'sbe.enable.test.precedence.checks',
                 'sbe.keyword.append.token': '$',
                 'sbe.java.generate.dtos': 'true')
-        args = ['src/test/resources/example-extension-schema.xml', 'src/test/resources/dto-test-schema.xml']
+        args = ['src/test/resources/example-extension-schema.xml',
+                'src/test/resources/dto-test-schema.xml',
+                'src/test/resources/floating-point-infinity-schema.xml']
     }
 
     jar {
@@ -684,6 +687,7 @@ tasks.register('generateRustTestCodecs', JavaExec) {
             'sbe-tool/src/test/resources/issue1066.xml',
             'sbe-tool/src/test/resources/issue1116.xml',
             'sbe-tool/src/test/resources/issue1118.xml',
+            'sbe-tool/src/test/resources/floating-point-infinity-schema.xml',
             'sbe-tool/src/test/resources/optional_enum_nullify.xml',
             'sbe-tool/src/test/resources/basic-variable-length-schema.xml',
             'sbe-tool/src/test/resources/example-bigendian-test-schema.xml',
@@ -805,6 +809,7 @@ tasks.register('generateGolangCodecsWithXSD', JavaExec) {
             'sbe-tool/src/test/resources/issue847.xml',
             'sbe-tool/src/test/resources/issue848.xml',
             'sbe-tool/src/test/resources/issue849.xml',
+            'sbe-tool/src/test/resources/floating-point-infinity-schema.xml',
             'sbe-tool/src/test/resources/since-deprecated-test-schema.xml',
             'sbe-tool/src/test/resources/example-bigendian-test-schema.xml',
             'gocode/resources/example-composite.xml',
@@ -891,6 +896,7 @@ tasks.register('generateGolangFlyweightCodecsWithXSD', JavaExec) {
             'sbe-tool/src/test/resources/issue847.xml',
             'sbe-tool/src/test/resources/issue848.xml',
             'sbe-tool/src/test/resources/issue849.xml',
+            'sbe-tool/src/test/resources/floating-point-infinity-schema.xml',
             'sbe-tool/src/test/resources/since-deprecated-test-schema.xml',
             'sbe-tool/src/test/resources/example-bigendian-test-schema.xml',
             'sbe-tool/src/test/resources/value-ref-with-lower-case-enum.xml',
@@ -953,6 +959,7 @@ tasks.register('generateCSharpTestCodecs', JavaExec) {
             'sbe-tool/src/test/resources/since-deprecated-test-schema.xml',
             'sbe-tool/src/test/resources/example-bigendian-test-schema.xml',
             'sbe-tool/src/test/resources/field-order-check-schema.xml',
+            'sbe-tool/src/test/resources/floating-point-infinity-schema.xml',
             'sbe-benchmarks/src/main/resources/fix-message-samples.xml']
 }
 
@@ -966,7 +973,8 @@ tasks.register('generateCSharpTestDtos', JavaExec) {
             'sbe.xinclude.aware': 'true',
             'sbe.validation.xsd': validationXsdPath,
             'sbe.types.package.override': 'true')
-    args = ['sbe-samples/src/main/resources/example-extension-schema.xml']
+    args = ['sbe-samples/src/main/resources/example-extension-schema.xml',
+            'sbe-tool/src/test/resources/floating-point-infinity-schema.xml']
 }
 
 tasks.register('generateCSharpExplicitPackageOverrideCodecs', JavaExec) {

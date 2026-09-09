@@ -1084,6 +1084,8 @@ public class CGenerator implements CodeGenerator
             "#include <limits.h>\n" +
             "#define SBE_FLOAT_NAN NAN\n" +
             "#define SBE_DOUBLE_NAN NAN\n" +
+            "#define SBE_FLOAT_INFINITY ((float)INFINITY)\n" +
+            "#define SBE_DOUBLE_INFINITY ((double)INFINITY)\n" +
             "#include <math.h>\n" +
             "#include <stdbool.h>\n" +
             "#include <stdint.h>\n" +
@@ -2496,7 +2498,20 @@ public class CGenerator implements CodeGenerator
             }
 
             case FLOAT:
-                literal = value.endsWith("NaN") ? "SBE_FLOAT_NAN" : value + "f";
+                if (value.endsWith("NaN"))
+                {
+                    literal = "SBE_FLOAT_NAN";
+                }
+                else if (value.endsWith("Infinity"))
+                {
+                    literal = value.startsWith("-") ?
+                            "-SBE_FLOAT_INFINITY" :
+                            "SBE_FLOAT_INFINITY";
+                }
+                else
+                {
+                    literal = value + "f";
+                }
                 break;
 
             case INT64:
@@ -2518,7 +2533,20 @@ public class CGenerator implements CodeGenerator
                 break;
 
             case DOUBLE:
-                literal = value.endsWith("NaN") ? "SBE_DOUBLE_NAN" : value;
+                if (value.endsWith("NaN"))
+                {
+                    literal = "SBE_DOUBLE_NAN";
+                }
+                else if (value.endsWith("Infinity"))
+                {
+                    literal = value.startsWith("-") ?
+                            "-SBE_DOUBLE_INFINITY" :
+                            "SBE_DOUBLE_INFINITY";
+                }
+                else
+                {
+                    literal = value;
+                }
                 break;
         }
 

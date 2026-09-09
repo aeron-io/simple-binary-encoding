@@ -258,6 +258,35 @@ class JavaGeneratorTest
     }
 
     @Test
+    void shouldGenerateFloatingPointInfinityLiterals() throws Exception
+    {
+        try (InputStream in = Tests.getLocalResource("floating-point-infinity-schema.xml"))
+        {
+            final ParserOptions options = ParserOptions.builder().stopOnError(true).build();
+            final MessageSchema schema = parse(in, options);
+            ir = new IrGenerator().generate(schema);
+
+            outputManager.clear();
+            outputManager.setPackageName(ir.applicableNamespace());
+
+            generator().generate();
+            new JavaDtoGenerator(ir, false, outputManager).generate();
+
+            final String source = outputManager.getSources().values().stream()
+                .map(CharSequence::toString)
+                .collect(java.util.stream.Collectors.joining("\n"));
+
+            assertThat(source, allOf(
+                containsString("Float.POSITIVE_INFINITY"),
+                containsString("Double.NEGATIVE_INFINITY")));
+            assertNotNull(CompilerUtil.compileInMemory(
+                ir.applicableNamespace() + ".InfinityValuesDecoder", outputManager.getSources()));
+            assertNotNull(CompilerUtil.compileInMemory(
+                ir.applicableNamespace() + ".InfinityValuesDto", outputManager.getSources()));
+        }
+    }
+
+    @Test
     void shouldGenerateWithoutPrecedenceChecksByDefault() throws Exception
     {
         final PrecedenceChecks.Context context = new PrecedenceChecks.Context();

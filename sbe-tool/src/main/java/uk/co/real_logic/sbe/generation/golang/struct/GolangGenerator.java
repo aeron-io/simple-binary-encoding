@@ -2390,11 +2390,37 @@ public class GolangGenerator implements CodeGenerator
                 break;
 
             case FLOAT:
-                literal = "float32(" + (value.endsWith("NaN") ? "math.NaN()" : value) + ")";
+                if (value.endsWith("NaN"))
+                {
+                    imports.peek().add("math");
+                    literal = "float32(math.NaN())";
+                }
+                else if (value.endsWith("Infinity"))
+                {
+                    imports.peek().add("math");
+                    literal = "float32(math.Inf(" + (value.startsWith("-") ? "-1" : "1") + "))";
+                }
+                else
+                {
+                    literal = "float32(" + value + ")";
+                }
                 break;
 
             case DOUBLE:
-                literal = value.endsWith("NaN") ? "math.NaN()" : value;
+                if (value.endsWith("NaN"))
+                {
+                    imports.peek().add("math");
+                    literal = "math.NaN()";
+                }
+                else if (value.endsWith("Infinity"))
+                {
+                    imports.peek().add("math");
+                    literal = "math.Inf(" + (value.startsWith("-") ? "-1" : "1") + ")";
+                }
+                else
+                {
+                    literal = value;
+                }
                 break;
         }
 

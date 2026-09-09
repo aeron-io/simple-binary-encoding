@@ -514,4 +514,36 @@ class GolangGeneratorTest
                 """));
         }
     }
+
+    @Test
+    void shouldGenerateFloatingPointInfinityLiterals() throws Exception
+    {
+        try (InputStream in = Tests.getLocalResource("floating-point-infinity-schema.xml"))
+        {
+            final ParserOptions options = ParserOptions.builder().stopOnError(true).build();
+            final MessageSchema schema = parse(in, options);
+            final Ir ir = new IrGenerator().generate(schema);
+            final StringWriterOutputManager outputManager = new StringWriterOutputManager();
+            outputManager.setPackageName(ir.applicableNamespace());
+
+            new GolangGenerator(ir, outputManager).generate();
+
+            final java.util.Map<String, CharSequence> sources = outputManager.getSources();
+            final String source = sources.values().stream()
+                .map(CharSequence::toString)
+                .collect(java.util.stream.Collectors.joining("\n"));
+            assertThat(source, containsString("float32(math.Inf(1))"));
+            assertThat(source, containsString("float32(math.Inf(-1))"));
+            assertThat(source, containsString("math.Inf(1)"));
+            assertThat(source, containsString("math.Inf(-1)"));
+
+            final String floatConstantsSource = sources.values().stream()
+                .map(CharSequence::toString)
+                .filter(value -> value.contains("type FloatConstants struct"))
+                .findFirst()
+                .orElseThrow();
+            assertThat(floatConstantsSource, containsString("\"math\""));
+            assertThat(floatConstantsSource, containsString("math.Inf"));
+        }
+    }
 }
