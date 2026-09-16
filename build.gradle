@@ -745,6 +745,8 @@ project(':sbe-benchmarks') {
         implementation libs.jmh.core
         annotationProcessor libs.jmh.generator.annprocess
         implementation project(':sbe-tool')
+        implementation project(':sbe-jackson')
+        implementation libs.jackson.databind
         implementation files("${layout.buildDirectory.get()}/classes/java/generated")
     }
 
