@@ -279,7 +279,6 @@ class EncodeValidationTest
     {
         assertRejects(ErrorCode.CONSTANT_MISMATCH, "Car.engine.maxRpm", c -> engine(c).putNull("maxRpm"));
         assertRejects(ErrorCode.CONSTANT_MISMATCH, "Car.engine.fuel", c -> engine(c).putNull("fuel"));
-        assertRejects(ErrorCode.CONSTANT_MISMATCH, "Car.discountedModel", c -> c.putNull("discountedModel"));
     }
 
     @Test

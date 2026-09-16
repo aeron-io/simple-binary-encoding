@@ -15,10 +15,12 @@
  */
 package uk.co.real_logic.sbe.jackson;
 
+import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -27,8 +29,19 @@ class Utf8Test
     @Test
     void encodedLengthMatchesTheJdkForMixedWidthText()
     {
-        final String text = "aé中🚗\uDC00z";
+        final String text = "aé中🚗z";
         assertEquals(text.getBytes(StandardCharsets.UTF_8).length, Utf8.encodedLength(text));
+    }
+
+    @Test
+    void loneSurrogateLengthMatchesReplacementCharacterEncoding()
+    {
+        final String text = "aé中🚗\uDC00z";
+        final byte[] expected = "aé中🚗\uFFFDz".getBytes(StandardCharsets.UTF_8);
+        final UnsafeBuffer buffer = TestMessages.newBuffer(expected.length);
+        assertEquals(expected.length, Utf8.encodedLength(text));
+        assertEquals(expected.length, Utf8.encode(text, buffer, 0));
+        assertArrayEquals(expected, buffer.byteArray());
     }
 
     @Test

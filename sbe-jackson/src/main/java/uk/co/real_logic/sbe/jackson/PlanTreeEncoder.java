@@ -847,9 +847,23 @@ final class PlanTreeEncoder
         }
         else if (node.isTextual())
         {
-            // Upper bound of the decoded size from the text length, checked before the payload is decoded.
-            final long upperBound = ((long)node.textValue().length() + 3) / 4 * 3;
-            checkVarDataLength(v, upperBound, lengthOffset);
+            // Count payload bytes without padding or whitespace; binaryValue validates the base64 syntax.
+            final String text = node.textValue();
+            long decodedLength = 0;
+            int unitIndex = 0;
+            for (int i = 0; i < text.length(); i++)
+            {
+                final char c = text.charAt(i);
+                if (c > ' ')
+                {
+                    if (unitIndex > 0 && '=' != c)
+                    {
+                        decodedLength++;
+                    }
+                    unitIndex = (unitIndex + 1) & 3;
+                }
+            }
+            checkVarDataLength(v, decodedLength, lengthOffset);
             bytes = binaryValue(v, node, dataIndex);
         }
         else

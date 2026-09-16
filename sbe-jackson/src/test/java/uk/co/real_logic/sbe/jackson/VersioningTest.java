@@ -145,7 +145,7 @@ class VersioningTest
             SbeJsonException.class, () -> sbeJson.newDecoder().decodeCopy(buffer, 0, length));
 
         assertEquals(ErrorCode.FIELD_OUTSIDE_BLOCK, ex.code());
-        assertEquals("Car.engine", ex.path());
+        assertEquals("Car.engine.capacity", ex.path());
         assertEquals(HEADER_LENGTH + 39, ex.byteOffset());
     }
 

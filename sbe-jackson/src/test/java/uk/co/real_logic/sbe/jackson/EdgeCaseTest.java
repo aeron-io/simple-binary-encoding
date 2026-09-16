@@ -46,7 +46,7 @@ class EdgeCaseTest
     private static final int HEADER = 8;
     private static final int BLOCK_LENGTH = 44;
     private static final JsonNodeFactory F = JsonNodeFactory.instance;
-    private static final Ir IR = TestMessages.ir(TestMessages.EDGE_SCHEMA);
+    private static final Ir IR = ProgrammaticIrs.edgeCases();
     private static final BigInteger TWO_POW_63 = BigInteger.ONE.shiftLeft(63);
     private static final BigInteger TWO_POW_64 = BigInteger.ONE.shiftLeft(64);
     private static final BigInteger MAX_UINT64 = TWO_POW_64.subtract(BigInteger.ONE);
@@ -98,6 +98,7 @@ class EdgeCaseTest
         assertRejects(sbeJson, ErrorCode.OUT_OF_RANGE, "Edge.bigSet", e -> e.put("bigSet", -1));
         assertRejects(sbeJson, ErrorCode.OUT_OF_RANGE, "Edge.bigSet", e -> e.set("bigSet", F.numberNode(TWO_POW_64)));
         assertRejects(sbeJson, ErrorCode.CONSTANT_MISMATCH, "Edge.constEnum", e -> e.put("constEnum", -2));
+        assertRejects(sbeJson, ErrorCode.CONSTANT_MISMATCH, "Edge.constEnum", e -> e.putNull("constEnum"));
     }
 
     @Test
@@ -171,7 +172,7 @@ class EdgeCaseTest
         assertEquals(2.5d, decoded.get("optDouble").doubleValue());
         assertEquals(TOP, decoded.get("optU64").bigIntegerValue());
 
-        // Required float NaN stays a number: a wire NaN in an optional slot is the sentinel, nothing else.
+        // A wire NaN in an optional slot is the sentinel.
         buffer.putFloat(HEADER + 16, Float.NaN, LITTLE_ENDIAN);
         buffer.putDouble(HEADER + 20, Double.NaN, LITTLE_ENDIAN);
         decoded = sbeJson.newDecoder().decodeCopy(buffer, 0, length);
@@ -225,6 +226,31 @@ class EdgeCaseTest
             "héllo 🚗".getBytes(StandardCharsets.UTF_16).length,
             buffer.getShort(fullLength - 2 - 3 - 2 - "héllo 🚗".getBytes(StandardCharsets.UTF_16).length,
             LITTLE_ENDIAN));
+    }
+
+    @Test
+    void paddedBase64FitsExactPayloadLimits()
+    {
+        for (final int size : new int[]{ 1, 2, 3, 4, 10 })
+        {
+            final SbeJson sbeJson = SbeJson.builder(IR)
+                .limits(Limits.builder().maxVarDataBytes(size).build()).build();
+            final byte[] payload = new byte[size];
+            final String base64 = Base64.getEncoder().encodeToString(payload);
+            // Jackson accepts whitespace between base64 units; it consumes no payload bytes.
+            final String spaced = " \n" + base64.substring(0, 4) + " \n" + base64.substring(4);
+            final SbeJsonEncoder encoder = sbeJson.newEncoder("Edge");
+            final int expectedLength = encoder.encodedLength(edge().set("blob", F.binaryNode(payload)));
+            for (final String text : new String[]{ base64, spaced })
+            {
+                final ObjectNode node = edge().put("blob", text);
+                assertEquals(expectedLength, encoder.encodedLength(node));
+                final UnsafeBuffer buffer = TestMessages.newBuffer(expectedLength);
+                assertEquals(expectedLength, encoder.encode(node, buffer, 0, expectedLength));
+                assertEquals(F.binaryNode(payload),
+                    sbeJson.newDecoder().decodeCopy(buffer, 0, expectedLength).get("blob"));
+            }
+        }
     }
 
     @Test
@@ -288,7 +314,8 @@ class EdgeCaseTest
         return node;
     }
 
-    private static int encode(final SbeJson sbeJson, final String message, final ObjectNode node, final UnsafeBuffer dst)
+    private static int encode(
+        final SbeJson sbeJson, final String message, final ObjectNode node, final UnsafeBuffer dst)
     {
         final SbeJsonEncoder encoder = sbeJson.newEncoder(message);
         final int length = encoder.encode(node, dst, 0, dst.capacity());

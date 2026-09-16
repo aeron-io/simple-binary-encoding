@@ -651,10 +651,10 @@ project(':sbe-jackson') {
         classpath = project(':sbe-tool').sourceSets.main.runtimeClasspath
         jvmArgs('--add-opens', 'java.base/jdk.internal.misc=ALL-UNNAMED')
         systemProperties(
-                'sbe.output.dir': generatedDir,
+                'sbe.output.dir': generatedDir.toString(),
                 'sbe.target.language': 'Java',
                 'sbe.validation.stop.on.error': 'true',
-                'sbe.validation.xsd': validationXsdPath,
+                'sbe.validation.xsd': validationXsdPath.toString(),
                 'sbe.generate.precedence.checks': 'false')
         def schemaDir = project(':sbe-tool').file('src/test/resources')
         def schemas = [new File(schemaDir, 'json-printer-test-schema.xml'),

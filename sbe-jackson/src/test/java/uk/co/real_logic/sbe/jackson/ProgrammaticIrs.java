@@ -16,6 +16,7 @@
 package uk.co.real_logic.sbe.jackson;
 
 import uk.co.real_logic.sbe.PrimitiveType;
+import uk.co.real_logic.sbe.PrimitiveValue;
 import uk.co.real_logic.sbe.ir.Encoding;
 import uk.co.real_logic.sbe.ir.Ir;
 import uk.co.real_logic.sbe.ir.Signal;
@@ -39,10 +40,39 @@ final class ProgrammaticIrs
 {
     static final int SCHEMA_ID = 77;
 
-    private static final Encoding NONE = new Encoding();
+    private static final Encoding NONE = new Encoding.Builder().build();
 
     private ProgrammaticIrs()
     {
+    }
+
+    static Ir edgeCases()
+    {
+        // The XML enum validator compares signed longs, so install the unsigned encoding directly in the IR.
+        final Ir ir = TestMessages.ir(TestMessages.EDGE_SCHEMA);
+        for (final List<Token> message : ir.messages())
+        {
+            for (int i = 0; i < message.size(); i++)
+            {
+                final Token token = message.get(i);
+                if (PrimitiveType.INT64 == token.encoding().primitiveType())
+                {
+                    final PrimitiveValue value = "HIGH".equals(token.name()) ?
+                        PrimitiveValue.parse("9223372036854775808", PrimitiveType.UINT64) :
+                        token.encoding().constValue();
+                    message.set(i, new Token.Builder()
+                        .signal(token.signal()).name(token.name()).id(token.id()).version(token.version())
+                        .size(token.encodedLength()).offset(token.offset())
+                        .componentTokenCount(token.componentTokenCount())
+                        .encoding(new Encoding.Builder()
+                            .primitiveType(PrimitiveType.UINT64).byteOrder(token.encoding().byteOrder())
+                            .presence(token.encoding().presence()).constValue(value).build())
+                        .build());
+                }
+            }
+        }
+
+        return ir;
     }
 
     /**

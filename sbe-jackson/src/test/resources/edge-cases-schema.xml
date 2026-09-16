@@ -25,11 +25,13 @@
             <type name="length" primitiveType="uint16"/>
             <type name="varData" primitiveType="uint8" length="0"/>
         </composite>
-        <type name="u64" primitiveType="uint64"/>
-        <enum name="BigEnum" encodingType="u64">
+        <!-- ProgrammaticIrs.edgeCases widens the signed enum to uint64 after XML range validation. -->
+        <type name="i64" primitiveType="int64"/>
+        <type name="BigConstant" primitiveType="uint64" presence="constant">18446744073709551614</type>
+        <enum name="BigEnum" encodingType="i64">
             <validValue name="ONE">1</validValue>
-            <validValue name="HIGH">9223372036854775808</validValue>
-            <validValue name="TOP">18446744073709551614</validValue>
+            <validValue name="HIGH">-9223372036854775807</validValue>
+            <validValue name="TOP">-2</validValue>
         </enum>
         <set name="BigSet" encodingType="uint64">
             <choice name="low">0</choice>
@@ -45,7 +47,7 @@
         <field name="optDouble" id="4" type="double" presence="optional"/>
         <field name="optU64" id="5" type="uint64" presence="optional"/>
         <field name="name16" id="6" type="Utf16Name"/>
-        <field name="bigConst" id="7" type="uint64" presence="constant">18446744073709551614</field>
+        <field name="bigConst" id="7" type="BigConstant"/>
         <field name="constEnum" id="8" type="BigEnum" presence="constant" valueRef="BigEnum.TOP"/>
         <group name="items" id="9" dimensionType="groupSizeEncoding">
             <field name="v" id="10" type="uint8"/>
