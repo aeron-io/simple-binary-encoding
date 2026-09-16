@@ -88,8 +88,8 @@ class PlanCompilerTest
         TestMessages.encodeNestedGroups(buffer, 0);
 
         final List<String> events = assertWalksMatch(ir, buffer, 0);
-        assertTrue(events.contains("encoding d@18 len=1"), events.toString());
-        assertTrue(events.contains("encoding b@19 len=1"), events.toString());
+        assertTrue(events.contains("encoding d@33 len=1"), events.toString());
+        assertTrue(events.contains("encoding b@34 len=1"), events.toString());
     }
 
     @Test

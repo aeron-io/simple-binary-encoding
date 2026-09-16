@@ -224,8 +224,8 @@ final class TestMessages
     }
 
     /*
-     * Hand-encoded message for {@code nested-group-schema.xml} (three group levels, all uint8; the schema has no
-     * legal Java package so there are no generated codecs).
+     * Hand-encoded message for {@code nested-group-schema.xml} (three group levels, all uint8, root block length
+     * 16 as declared by the schema; the schema has no legal Java package so there are no generated codecs).
      * <pre>
      * a=7
      * x[2]: {b=1, y[1]: {c=11, z[2]: {d=21}, {d=22}}}, {b=2, y[0]}
@@ -234,7 +234,7 @@ final class TestMessages
     static int encodeNestedGroups(final MutableDirectBuffer buffer, final int offset)
     {
         int pos = offset;
-        buffer.putShort(pos, (short)1);
+        buffer.putShort(pos, (short)16);
         pos += 2;
         buffer.putShort(pos, (short)1);
         pos += 2;
@@ -243,7 +243,8 @@ final class TestMessages
         buffer.putShort(pos, (short)0);
         pos += 2;
 
-        buffer.putByte(pos++, (byte)7);
+        buffer.putByte(pos, (byte)7);
+        pos += 16;
         buffer.putByte(pos++, (byte)1);
         buffer.putByte(pos++, (byte)2);
 
