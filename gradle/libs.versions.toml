@@ -5,6 +5,8 @@ commons-codec = "1.15"
 commons-lang3 = "3.8.1"
 hamcrest = "3.0"
 httpcore = "4.4.14"
+jackson = "2.16.1"
+jackson-latest = "2.21.6"
 jqwik = "1.10.1"
 jmh = "1.37"
 json = "20260814"
@@ -20,6 +22,7 @@ commons-codec = { group = "commons-codec", name = "commons-codec", version.ref =
 commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version.ref = "commons-lang3" }
 hamcrest = { group = "org.hamcrest", name = "hamcrest", version.ref = "hamcrest" }
 httpcore = { group = "org.apache.httpcomponents", name = "httpcore", version.ref = "httpcore" }
+jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
 jqwik = { group = "net.jqwik", name = "jqwik", version.ref = "jqwik" }
 json = { group = "org.json", name = "json", version.ref = "json" }
 jmh-core = { group = "org.openjdk.jmh", name = "jmh-core", version.ref = "jmh" }

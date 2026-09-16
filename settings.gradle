@@ -1,4 +1,4 @@
-include 'sbe-tool', 'sbe-samples', 'sbe-benchmarks', 'sbe-all'
+include 'sbe-tool', 'sbe-samples', 'sbe-benchmarks', 'sbe-all', 'sbe-jackson'
 rootProject.name = 'sbe'
 
 project(':sbe-all').projectDir.mkdirs()

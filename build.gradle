@@ -604,6 +604,132 @@ project(':sbe-samples') {
     }
 }
 
+project(':sbe-jackson') {
+    apply plugin: 'maven-publish'
+    apply plugin: 'signing'
+
+    dependencies {
+        api project(':sbe-tool')
+        api libs.jackson.databind
+    }
+
+    def generatedDir = "${layout.buildDirectory.get()}/generated-src"
+    def generatedClassesDir = "${layout.buildDirectory.get()}/classes/java/generated"
+    sourceSets {
+        generated {
+            java.srcDir generatedDir
+            compileClasspath += project(':sbe-tool').sourceSets.main.runtimeClasspath
+        }
+        test {
+            resources.srcDir project(':sbe-tool').file('src/test/resources')
+        }
+    }
+
+    compileGeneratedJava.dependsOn 'generateTestCodecs'
+    compileTestJava.dependsOn compileGeneratedJava
+
+    testing {
+        suites {
+            test {
+                dependencies {
+                    implementation files(generatedClassesDir)
+                    implementation libs.hamcrest
+                    implementation platform(libs.junit.bom)
+                    implementation "org.junit.jupiter:junit-jupiter-params"
+                    implementation(libs.jqwik) {
+                        // Exclude JUnit 5 dependencies that are already provided due to useJUnitJupiter
+                        exclude group: 'org.junit.platform', module: 'junit-platform-commons'
+                        exclude group: 'org.junit.platform', module: 'junit-platform-engine'
+                    }
+                }
+            }
+        }
+    }
+
+    tasks.register('generateTestCodecs', JavaExec) {
+        mainClass.set('uk.co.real_logic.sbe.SbeTool')
+        classpath = project(':sbe-tool').sourceSets.main.runtimeClasspath
+        jvmArgs('--add-opens', 'java.base/jdk.internal.misc=ALL-UNNAMED')
+        systemProperties(
+                'sbe.output.dir': generatedDir,
+                'sbe.target.language': 'Java',
+                'sbe.validation.stop.on.error': 'true',
+                'sbe.validation.xsd': validationXsdPath,
+                'sbe.generate.precedence.checks': 'false')
+        def schemaDir = project(':sbe-tool').file('src/test/resources')
+        args = [new File(schemaDir, 'json-printer-test-schema.xml').path,
+                new File(schemaDir, 'example-extension-schema.xml').path,
+                new File(schemaDir, 'composite-elements-schema.xml').path,
+                new File(schemaDir, 'group-with-data-schema.xml').path]
+    }
+
+    // Runs the test suite a second time against the latest Jackson 2.21.x release.
+    configurations {
+        latestJacksonTestRuntimeClasspath {
+            extendsFrom testRuntimeClasspath
+            resolutionStrategy.force "com.fasterxml.jackson.core:jackson-databind:${libs.versions.jackson.latest.get()}"
+        }
+    }
+
+    tasks.register('testLatestJackson', Test) {
+        description = 'Runs the sbe-jackson tests against the latest Jackson 2.21.x release.'
+        group = 'verification'
+        dependsOn 'compileTestJava'
+        testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.output + sourceSets.main.output +
+            files(generatedClassesDir) + configurations.latestJacksonTestRuntimeClasspath
+        useJUnitPlatform()
+        jvmArgs('--add-opens', 'java.base/jdk.internal.misc=ALL-UNNAMED')
+        javaLauncher.set(toolchainLauncher)
+        testLogging {
+            exceptionFormat = 'full'
+            events = ["FAILED", "STANDARD_OUT", "STANDARD_ERROR"]
+        }
+    }
+
+    jar {
+        manifest.attributes(
+            'Specification-Title': 'Simple Binary Encoding',
+            'Specification-Version': '1.0',
+            'Implementation-Title': 'SBE',
+            'Implementation-Version': sbeVersion,
+            'Implementation-Vendor': 'Adaptive Financial Consulting Limited',
+            'Automatic-Module-Name': 'uk.co.real_logic.sbe.jackson'
+        )
+    }
+
+    java {
+        withSourcesJar()
+        withJavadocJar()
+    }
+
+    publishing {
+        publications {
+            sbeJackson(MavenPublication) {
+                from components.java
+                pom(projectPom)
+            }
+        }
+
+        repositories {
+            maven {
+                url = !isReleaseVersion ? sonatypeCentralPortalSnapshotsRepoUrl : sonatypeCentralPortalReleasesRepoUrl
+                credentials {
+                    username = sonatypeCentralPortalUsername
+                    password = sonatypeCentralPortalPassword
+                }
+            }
+        }
+    }
+
+    signing {
+        if (signingKey != null) {
+            useInMemoryPgpKeys(signingKey, signingPassword)
+        }
+        sign publishing.publications.sbeJackson
+    }
+}
+
 project(':sbe-benchmarks') {
     apply plugin: 'com.gradleup.shadow'
 
