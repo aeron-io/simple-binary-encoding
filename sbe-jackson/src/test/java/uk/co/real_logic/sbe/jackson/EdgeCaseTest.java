@@ -15,10 +15,12 @@
  */
 package uk.co.real_logic.sbe.jackson;
 
+import com.fasterxml.jackson.core.Base64Variant;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.Test;
 import uk.co.real_logic.sbe.ir.Ir;
@@ -32,6 +34,7 @@ import java.util.function.Consumer;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -192,6 +195,9 @@ class EdgeCaseTest
         assertRejects(small, ErrorCode.LIMIT_EXCEEDED, "Edge.blob", e -> e.put("blob", base64));
         assertRejects(small, ErrorCode.LIMIT_EXCEEDED, "Edge.blob", e -> e.set("blob", F.binaryNode(thirtyBytes)));
 
+        // The base64 text is rejected on its counted payload size: binaryValue() fails the test if reached.
+        assertRejects(small, ErrorCode.LIMIT_EXCEEDED, "Edge.blob", e -> e.set("blob", new UndecodableText(base64)));
+
         // Within budget in the other charset path: exactly 10 bytes of UTF-16 (BOM + 4 chars).
         final UnsafeBuffer buffer = TestMessages.newBuffer(CAPACITY);
         final int length = encode(small, "Edge", edge().put("text16", "abcd"), buffer);
@@ -202,6 +208,8 @@ class EdgeCaseTest
         assertRejects(defaults, ErrorCode.OUT_OF_RANGE, "Edge.text16", e -> e.put("text16", "y".repeat(40000)));
         assertRejects(defaults, ErrorCode.OUT_OF_RANGE, "Edge.blob",
             e -> e.put("blob", Base64.getEncoder().encodeToString(new byte[70000])));
+        assertRejects(defaults, ErrorCode.OUT_OF_RANGE, "Edge.blob",
+            e -> e.set("blob", new UndecodableText(Base64.getEncoder().encodeToString(new byte[70000]))));
 
         // Destination smaller than the payload: rejected before decoding the base64 or encoding the text.
         final UnsafeBuffer tiny = TestMessages.newBuffer(HEADER + BLOCK_LENGTH + 4 + 2 + 2 + 4);
@@ -211,7 +219,7 @@ class EdgeCaseTest
         assertEquals(ErrorCode.DESTINATION_OVERFLOW, text.code());
         assertEquals("Edge.text16", text.path());
         final SbeJsonException blob = assertThrows(SbeJsonException.class,
-            () -> encoder.encode(edge().put("blob", base64), tiny, 0, tiny.capacity()));
+            () -> encoder.encode(edge().set("blob", new UndecodableText(base64)), tiny, 0, tiny.capacity()));
         assertEquals(ErrorCode.DESTINATION_OVERFLOW, blob.code());
         assertEquals("Edge.blob", blob.path());
 
@@ -226,6 +234,127 @@ class EdgeCaseTest
             "héllo 🚗".getBytes(StandardCharsets.UTF_16).length,
             buffer.getShort(fullLength - 2 - 3 - 2 - "héllo 🚗".getBytes(StandardCharsets.UTF_16).length,
             LITTLE_ENDIAN));
+    }
+
+    @Test
+    void otherCharsetScratchIsSizedFromTheBudgetNotTheText()
+    {
+        final Ir spyIr = ProgrammaticIrs.spyCharset();
+        final SbeJson small = SbeJson.builder(spyIr).limits(Limits.builder().maxVarDataBytes(10).build()).build();
+        final SbeJsonEncoder encoder = small.newEncoder("Spy");
+        final UnsafeBuffer buffer = TestMessages.newBuffer(CAPACITY);
+
+        // Var-data: 100 chars would encode to 200 bytes; the encoder is handed budget + 1 = 11 bytes.
+        final ObjectNode longText = F.objectNode().put("name", "ab").put("text", "x".repeat(100));
+        SpyCharset.reset();
+        SbeJsonException ex = assertThrows(SbeJsonException.class, () -> encoder.encode(longText, buffer, 0, CAPACITY));
+        assertEquals(ErrorCode.LIMIT_EXCEEDED, ex.code());
+        assertEquals("Spy.text", ex.path());
+        assertEquals(11, SpyCharset.maxOutputCapacity());
+
+        SpyCharset.reset();
+        ex = assertThrows(SbeJsonException.class, () -> encoder.encodedLength(longText));
+        assertEquals(ErrorCode.LIMIT_EXCEEDED, ex.code());
+        assertEquals(11, SpyCharset.maxOutputCapacity());
+
+        // Fixed char[8]: the budget is the array length, so the scratch is 9 bytes.
+        final ObjectNode longName = F.objectNode().put("name", "y".repeat(100)).put("text", "");
+        SpyCharset.reset();
+        ex = assertThrows(SbeJsonException.class, () -> encoder.encode(longName, buffer, 0, CAPACITY));
+        assertEquals(ErrorCode.OUT_OF_RANGE, ex.code());
+        assertEquals("Spy.name", ex.path());
+        assertEquals(9, SpyCharset.maxOutputCapacity());
+
+        // Within budget the text round-trips through the spy charset.
+        final ObjectNode fits = F.objectNode().put("name", "abc").put("text", "hello");
+        SpyCharset.reset();
+        final int length = encoder.encode(fits, buffer, 0, CAPACITY);
+        assertEquals(length, encoder.encodedLength(fits));
+        assertTrue(SpyCharset.encodeCalls() > 0);
+        final ObjectNode decoded = small.newDecoder().decodeCopy(buffer, 0, length);
+        assertEquals("abc", decoded.get("name").textValue());
+        assertEquals("hello", decoded.get("text").textValue());
+    }
+
+    @Test
+    void optionalUint64ScalarRejectsItsNumericSentinel()
+    {
+        final SbeJson sbeJson = SbeJson.builder(IR).build();
+        assertRejects(sbeJson, ErrorCode.OUT_OF_RANGE, "Edge.optU64", e -> e.set("optU64", F.numberNode(MAX_UINT64)));
+        assertRejects(sbeJson, ErrorCode.OUT_OF_RANGE, "Edge.optU64", e -> e.put("optU64", MAX_UINT64.toString()));
+        assertRejects(sbeJson, ErrorCode.OUT_OF_RANGE, "Edge.optU64", e -> e.put("optU64", -1L));
+    }
+
+    @Test
+    void optionalFloatingArraysWithFiniteSentinelsRoundTripFromOmission()
+    {
+        final SbeJson sbeJson = SbeJson.builder(IR).build();
+        final SbeJsonEncoder encoder = sbeJson.newEncoder("Arrays");
+        final UnsafeBuffer buffer = TestMessages.newBuffer(CAPACITY);
+
+        final ObjectNode omitted = arrays();
+        final int length = encoder.encode(omitted, buffer, 0, CAPACITY);
+        assertEquals(length, encoder.encodedLength(omitted));
+        assertEquals(HEADER + 12 + 16 + 8, length);
+        for (int i = 0; i < 3; i++)
+        {
+            assertEquals(-1.1f, buffer.getFloat(HEADER + i * 4, LITTLE_ENDIAN));
+        }
+        assertEquals(-1d, buffer.getDouble(HEADER + 12, LITTLE_ENDIAN));
+        assertEquals(-1d, buffer.getDouble(HEADER + 20, LITTLE_ENDIAN));
+
+        // Decode exposes the sentinels as numbers; the decoded tree must re-encode byte-identically.
+        final ObjectNode decoded = sbeJson.newDecoder().decodeCopy(buffer, 0, length);
+        assertEquals(-1.1f, decoded.get("floats").get(2).floatValue());
+        assertEquals(-1d, decoded.get("doubles").get(1).doubleValue());
+        final UnsafeBuffer again = TestMessages.newBuffer(CAPACITY);
+        assertEquals(length, encoder.encode(decoded, again, 0, CAPACITY));
+        assertEquals(length, encoder.encodedLength(decoded));
+        assertArrayEquals(Arrays.copyOf(buffer.byteArray(), length), Arrays.copyOf(again.byteArray(), length));
+
+        // A double-precision -1.1 element is the sentinel at float (wire) precision, not a range violation.
+        final ObjectNode viaDouble = arrays();
+        viaDouble.putArray("floats").add(-1.1d).add(-1.1d).add(-1.1d);
+        viaDouble.putArray("doubles").add(-1d).add(-1d);
+        assertEquals(length, encoder.encode(viaDouble, again, 0, CAPACITY));
+        assertEquals(length, encoder.encodedLength(viaDouble));
+        assertArrayEquals(Arrays.copyOf(buffer.byteArray(), length), Arrays.copyOf(again.byteArray(), length));
+
+        // Sentinel elements mixed with in-range values are fine; out-of-range non-sentinels still fail.
+        final ObjectNode mixed = arrays();
+        mixed.putArray("floats").add(-1.1f).add(50f).add(100f);
+        mixed.putArray("doubles").add(0d).add(-1d);
+        final int mixedLength = encoder.encode(mixed, buffer, 0, CAPACITY);
+        final ObjectNode mixedDecoded = sbeJson.newDecoder().decodeCopy(buffer, 0, mixedLength);
+        assertEquals(50f, mixedDecoded.get("floats").get(1).floatValue());
+        assertEquals(-1d, mixedDecoded.get("doubles").get(1).doubleValue());
+        assertRejects(sbeJson, "Arrays", arrays(), ErrorCode.OUT_OF_RANGE, "Arrays.floats",
+            a -> a.putArray("floats").add(-1.1f).add(101f).add(0f));
+        assertRejects(sbeJson, "Arrays", arrays(), ErrorCode.OUT_OF_RANGE, "Arrays.floats",
+            a -> a.putArray("floats").add(-1f).add(0f).add(0f));
+        assertRejects(sbeJson, "Arrays", arrays(), ErrorCode.OUT_OF_RANGE, "Arrays.doubles",
+            a -> a.putArray("doubles").add(-2d).add(0d));
+    }
+
+    @Test
+    void loneSurrogatesAreRejectedInFixedArraysAndVarDataAlike()
+    {
+        final SbeJson sbeJson = SbeJson.builder(IR).build();
+        final String lone = "ab\uD800c";
+
+        assertRejects(sbeJson, "Arrays", arrays(), ErrorCode.TYPE_MISMATCH, "Arrays.utf8Name",
+            a -> a.put("utf8Name", lone));
+        assertRejects(sbeJson, ErrorCode.TYPE_MISMATCH, "Edge.name16", e -> e.put("name16", lone));
+        assertRejects(sbeJson, ErrorCode.TYPE_MISMATCH, "Edge.text16", e -> e.put("text16", lone));
+        assertRejects(sbeJson, ErrorCode.TYPE_MISMATCH, "Edge.text16", e -> e.put("text16", "\uDC00"));
+
+        // Paired surrogates are ordinary text.
+        final UnsafeBuffer buffer = TestMessages.newBuffer(CAPACITY);
+        final SbeJsonEncoder encoder = sbeJson.newEncoder("Arrays");
+        final ObjectNode paired = arrays().put("utf8Name", "a\uD83D\uDE80");
+        final int length = encoder.encode(paired, buffer, 0, CAPACITY);
+        assertEquals("a\uD83D\uDE80", sbeJson.newDecoder().decodeCopy(buffer, 0, length).get("utf8Name").textValue());
+        assertFalse(sbeJson.newDecoder().decodeCopy(buffer, 0, length).get("floats").isNull());
     }
 
     @Test
@@ -250,6 +379,13 @@ class EdgeCaseTest
                 assertEquals(F.binaryNode(payload),
                     sbeJson.newDecoder().decodeCopy(buffer, 0, expectedLength).get("blob"));
             }
+
+            // One payload byte over the limit, padded: rejected on the counted length before any decoding.
+            final String oneOver = Base64.getEncoder().encodeToString(new byte[size + 1]);
+            assertRejects(sbeJson, ErrorCode.LIMIT_EXCEEDED, "Edge.blob",
+                e -> e.set("blob", new UndecodableText(oneOver)));
+            assertRejects(sbeJson, ErrorCode.LIMIT_EXCEEDED, "Edge.blob",
+                e -> e.set("blob", new UndecodableText(" " + oneOver.substring(0, 4) + "\n" + oneOver.substring(4))));
         }
     }
 
@@ -324,12 +460,50 @@ class EdgeCaseTest
         return length;
     }
 
+    private static ObjectNode arrays()
+    {
+        return F.objectNode().put("utf8Name", "n");
+    }
+
     private static void assertRejects(
         final SbeJson sbeJson, final ErrorCode code, final String path, final Consumer<ObjectNode> mutation)
     {
-        final ObjectNode node = edge();
+        assertRejects(sbeJson, "Edge", edge(), code, path, mutation);
+    }
+
+    /**
+     * Base64 text whose payload must never be materialised: the limits are checked on the counted length first.
+     */
+    private static final class UndecodableText extends TextNode
+    {
+        private static final long serialVersionUID = 1L;
+
+        UndecodableText(final String base64)
+        {
+            super(base64);
+        }
+
+        public byte[] binaryValue()
+        {
+            throw new AssertionError("base64 payload materialised before the var-data limits were checked");
+        }
+
+        public byte[] getBinaryValue(final Base64Variant variant)
+        {
+            throw new AssertionError("base64 payload materialised before the var-data limits were checked");
+        }
+    }
+
+    private static void assertRejects(
+        final SbeJson sbeJson,
+        final String message,
+        final ObjectNode node,
+        final ErrorCode code,
+        final String path,
+        final Consumer<ObjectNode> mutation)
+    {
         mutation.accept(node);
-        final SbeJsonEncoder encoder = sbeJson.newEncoder("Edge");
+        final SbeJsonEncoder encoder = sbeJson.newEncoder(message);
         final UnsafeBuffer buffer = TestMessages.newBuffer(CAPACITY);
 
         final SbeJsonException ex = assertThrows(

@@ -22,12 +22,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.co.real_logic.sbe.ir.Ir;
 
+import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -272,6 +275,59 @@ class EncodeValidationTest
         assertEquals(Long.MIN_VALUE, uuid.get(0).longValue());
         assertEquals(7L, uuid.get(1).longValue());
         assertRejects(ErrorCode.OUT_OF_RANGE, "Car.modelYear", c -> c.put("modelYear", 65535));
+    }
+
+    @Test
+    void optionalScalarsRejectTheirNumericSentinel()
+    {
+        // uint8 cupHolderCount: 255 is the null sentinel, above the schema maximum of 254.
+        assertRejects(ErrorCode.OUT_OF_RANGE, "Car.cupHolderCount", c -> c.put("cupHolderCount", 255));
+        assertRejects(ErrorCode.OUT_OF_RANGE, "Car.cupHolderCount", c -> c.put("cupHolderCount", 256));
+        assertRejects(ErrorCode.OUT_OF_RANGE, "Car.cupHolderCount", c -> c.put("cupHolderCount", -1));
+
+        // Omission and JSON null still select the sentinel.
+        car.put("cupHolderCount", 254);
+        int length = sbeJson.newEncoder("Car").encode(car, buffer, 0, CAPACITY);
+        assertEquals(254, sbeJson.newDecoder().decodeCopy(buffer, 0, length).get("cupHolderCount").intValue());
+        car.putNull("cupHolderCount");
+        length = sbeJson.newEncoder("Car").encode(car, buffer, 0, CAPACITY);
+        assertTrue(sbeJson.newDecoder().decodeCopy(buffer, 0, length).get("cupHolderCount").isNull());
+    }
+
+    @Test
+    void utf8VarDataRejectsLoneSurrogates()
+    {
+        assertRejects(ErrorCode.TYPE_MISMATCH, "Car.model", c -> c.put("model", "ab\uD800c"));
+        assertRejects(ErrorCode.TYPE_MISMATCH, "Car.model", c -> c.put("model", "\uDC00"));
+        assertRejects(ErrorCode.TYPE_MISMATCH, "Car.model", c -> c.put("model", "\uDC00\uD800"));
+
+        car.put("model", "a\uD83D\uDE97z");
+        final int length = sbeJson.newEncoder("Car").encode(car, buffer, 0, CAPACITY);
+        assertEquals("a\uD83D\uDE97z", sbeJson.newDecoder().decodeCopy(buffer, 0, length).get("model").textValue());
+    }
+
+    @Test
+    void encoderReleasesTheDestinationAfterEachCall() throws Exception
+    {
+        final SbeJsonEncoder encoder = sbeJson.newEncoder("Car");
+        assertEquals(encoder.encodedLength(car), encoder.encode(car, buffer, 0, CAPACITY));
+        assertNull(retainedDestination(encoder));
+
+        car.put("modelYear", 65535);
+        assertThrows(SbeJsonException.class, () -> encoder.encode(car, buffer, 0, CAPACITY));
+        assertNull(retainedDestination(encoder));
+    }
+
+    private static Object retainedDestination(final SbeJsonEncoder encoder) throws Exception
+    {
+        final Field context = SbeJsonEncoder.class.getDeclaredField("context");
+        context.setAccessible(true);
+        final WalkContext ctx = (WalkContext)context.get(encoder);
+        assertNotNull(ctx.treeEncoder);
+        final Field dst = PlanTreeEncoder.class.getDeclaredField("dst");
+        dst.setAccessible(true);
+
+        return dst.get(ctx.treeEncoder);
     }
 
     @Test

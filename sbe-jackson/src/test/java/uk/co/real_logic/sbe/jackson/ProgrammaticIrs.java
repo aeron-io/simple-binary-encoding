@@ -48,31 +48,63 @@ final class ProgrammaticIrs
 
     static Ir edgeCases()
     {
-        // The XML enum validator compares signed longs, so install the unsigned encoding directly in the IR.
+        // The XML enum validator compares signed longs, so install the unsigned encoding directly in the IR:
+        // only the BigEnum tokens (BEGIN_ENUM .. END_ENUM) are widened, in every message that uses the enum
+        // (bigEnum and constEnum in Edge: 2 x 5 tokens) and in the type map that Ir captured on addMessage.
         final Ir ir = TestMessages.ir(TestMessages.EDGE_SCHEMA);
+        int rewritten = 0;
         for (final List<Token> message : ir.messages())
         {
-            for (int i = 0; i < message.size(); i++)
-            {
-                final Token token = message.get(i);
-                if (PrimitiveType.INT64 == token.encoding().primitiveType())
-                {
-                    final PrimitiveValue value = "HIGH".equals(token.name()) ?
-                        PrimitiveValue.parse("9223372036854775808", PrimitiveType.UINT64) :
-                        token.encoding().constValue();
-                    message.set(i, new Token.Builder()
-                        .signal(token.signal()).name(token.name()).id(token.id()).version(token.version())
-                        .size(token.encodedLength()).offset(token.offset())
-                        .componentTokenCount(token.componentTokenCount())
-                        .encoding(new Encoding.Builder()
-                            .primitiveType(PrimitiveType.UINT64).byteOrder(token.encoding().byteOrder())
-                            .presence(token.encoding().presence()).constValue(value).build())
-                        .build());
-                }
-            }
+            rewritten += widenBigEnum(message);
+        }
+        if (10 != rewritten)
+        {
+            throw new IllegalStateException("expected 10 BigEnum tokens across the messages but rewrote " + rewritten);
+        }
+        if (5 != widenBigEnum(ir.getType("BigEnum")))
+        {
+            throw new IllegalStateException("expected the BigEnum type entry to hold 5 tokens");
         }
 
         return ir;
+    }
+
+    private static int widenBigEnum(final List<Token> tokens)
+    {
+        int rewritten = 0;
+        boolean inside = false;
+        for (int i = 0; i < tokens.size(); i++)
+        {
+            final Token token = tokens.get(i);
+            if (Signal.BEGIN_ENUM == token.signal() && "BigEnum".equals(token.name()))
+            {
+                inside = true;
+            }
+            if (!inside)
+            {
+                continue;
+            }
+
+            final PrimitiveValue value = Signal.VALID_VALUE == token.signal() && "HIGH".equals(token.name()) ?
+                PrimitiveValue.parse("9223372036854775808", PrimitiveType.UINT64) :
+                token.encoding().constValue();
+            tokens.set(i, new Token.Builder()
+                .signal(token.signal()).name(token.name()).id(token.id()).version(token.version())
+                .size(token.encodedLength()).offset(token.offset())
+                .componentTokenCount(token.componentTokenCount())
+                .encoding(new Encoding.Builder()
+                    .primitiveType(PrimitiveType.UINT64).byteOrder(token.encoding().byteOrder())
+                    .presence(token.encoding().presence()).constValue(value).build())
+                .build());
+            rewritten++;
+
+            if (Signal.END_ENUM == token.signal() && "BigEnum".equals(token.name()))
+            {
+                inside = false;
+            }
+        }
+
+        return rewritten;
     }
 
     /**
@@ -136,6 +168,43 @@ final class ProgrammaticIrs
         msg.add(token(Signal.END_MESSAGE, "Mixed", 1, 4, 0, 0, NONE));
 
         return ir(0, header(PrimitiveType.UINT16, LITTLE_ENDIAN, BIG_ENDIAN, LITTLE_ENDIAN, BIG_ENDIAN), msg);
+    }
+
+    /**
+     * Message {@code Spy} (template 1, block length 8): {@code name} is {@code char[8]} and {@code text} is
+     * var-data with a uint16 length prefix, both in {@link SpyCharset} so a test can observe how much scratch
+     * the encoder hands the charset.
+     *
+     * @return the IR.
+     */
+    static Ir spyCharset()
+    {
+        final Encoding spyChars = new Encoding.Builder()
+            .primitiveType(PrimitiveType.CHAR)
+            .byteOrder(LITTLE_ENDIAN)
+            .characterEncoding(SpyCharset.NAME)
+            .build();
+        final Encoding spyBytes = new Encoding.Builder()
+            .primitiveType(PrimitiveType.UINT8)
+            .byteOrder(LITTLE_ENDIAN)
+            .characterEncoding(SpyCharset.NAME)
+            .build();
+
+        final List<Token> msg = new ArrayList<>();
+        msg.add(token(Signal.BEGIN_MESSAGE, "Spy", 1, 8, 0, 0, NONE));
+        msg.add(token(Signal.BEGIN_FIELD, "name", 1, 0, 0, 0, NONE));
+        msg.add(token(Signal.ENCODING, "char", 0, 8, 0, 0, spyChars));
+        msg.add(token(Signal.END_FIELD, "name", 1, 0, 0, 0, NONE));
+
+        msg.add(token(Signal.BEGIN_VAR_DATA, "text", 2, 0, 0, 0, NONE));
+        msg.add(token(Signal.BEGIN_COMPOSITE, "varSpyEncoding", 0, Token.VARIABLE_LENGTH, 0, 0, NONE));
+        msg.add(token(Signal.ENCODING, "length", 0, 2, 0, 0, encoding(PrimitiveType.UINT16, LITTLE_ENDIAN)));
+        msg.add(token(Signal.ENCODING, "varData", 0, Token.VARIABLE_LENGTH, 2, 0, spyBytes));
+        msg.add(token(Signal.END_COMPOSITE, "varSpyEncoding", 0, Token.VARIABLE_LENGTH, 0, 0, NONE));
+        msg.add(token(Signal.END_VAR_DATA, "text", 2, 0, 0, 0, NONE));
+        msg.add(token(Signal.END_MESSAGE, "Spy", 1, 8, 0, 0, NONE));
+
+        return ir(0, header(PrimitiveType.UINT16, LITTLE_ENDIAN, LITTLE_ENDIAN, LITTLE_ENDIAN, LITTLE_ENDIAN), msg);
     }
 
     /**

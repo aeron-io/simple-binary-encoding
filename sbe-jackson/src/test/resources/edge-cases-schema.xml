@@ -39,6 +39,10 @@
         </set>
         <type name="Utf16Name" primitiveType="char" length="8" characterEncoding="UTF-16BE"/>
         <type name="Pad" primitiveType="char" length="65000"/>
+        <!-- Finite null sentinels below the range: -1.1 has no exact float representation. -->
+        <type name="OptFloats" primitiveType="float" length="3" presence="optional" nullValue="-1.1" minValue="0" maxValue="100"/>
+        <type name="OptDoubles" primitiveType="double" length="2" presence="optional" nullValue="-1" minValue="0" maxValue="100"/>
+        <type name="Utf8Name" primitiveType="char" length="8" characterEncoding="UTF-8"/>
     </types>
     <sbe:message name="Edge" id="1" description="uint64 enum/set, optional float/double, UTF-16 text">
         <field name="bigEnum" id="1" type="BigEnum"/>
@@ -54,6 +58,11 @@
         </group>
         <data name="text16" id="11" type="varUtf16Encoding"/>
         <data name="blob" id="12" type="varBinaryEncoding"/>
+    </sbe:message>
+    <sbe:message name="Arrays" id="3" description="Optional numeric arrays with finite sentinels and a UTF-8 char array">
+        <field name="floats" id="1" type="OptFloats"/>
+        <field name="doubles" id="2" type="OptDoubles"/>
+        <field name="utf8Name" id="3" type="Utf8Name"/>
     </sbe:message>
     <sbe:message name="Wide" id="2" description="Group whose entries can push a message past the int range">
         <group name="rows" id="1" dimensionType="groupSizeEncoding">

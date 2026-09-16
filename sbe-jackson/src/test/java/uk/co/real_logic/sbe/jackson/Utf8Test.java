@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class Utf8Test
@@ -34,14 +34,14 @@ class Utf8Test
     }
 
     @Test
-    void loneSurrogateLengthMatchesReplacementCharacterEncoding()
+    void loneSurrogatesAreReportedByEncodedLengthAndRefusedByEncode()
     {
-        final String text = "aé中🚗\uDC00z";
-        final byte[] expected = "aé中🚗\uFFFDz".getBytes(StandardCharsets.UTF_8);
-        final UnsafeBuffer buffer = TestMessages.newBuffer(expected.length);
-        assertEquals(expected.length, Utf8.encodedLength(text));
-        assertEquals(expected.length, Utf8.encode(text, buffer, 0));
-        assertArrayEquals(expected, buffer.byteArray());
+        for (final String text : new String[]{ "a\uDC00z", "\uD800", "x\uD800\uD800y", "\uDC00\uD800" })
+        {
+            assertEquals(-1, Utf8.encodedLength(text), text);
+            final UnsafeBuffer buffer = TestMessages.newBuffer(16);
+            assertThrows(IllegalArgumentException.class, () -> Utf8.encode(text, buffer, 0), text);
+        }
     }
 
     @Test

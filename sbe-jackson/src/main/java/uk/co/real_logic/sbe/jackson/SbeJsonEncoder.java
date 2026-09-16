@@ -60,7 +60,12 @@ public final class SbeJsonEncoder
 
     /**
      * Encode header and body in a single pass. On failure the destination region is undefined and the exception
-     * carries the field path.
+     * carries the field path. The destination is not retained after the call returns or throws.
+     * <p>
+     * Text is coerced strictly: an unpaired UTF-16 surrogate, or a character the field's charset cannot
+     * represent, is rejected with {@link ErrorCode#TYPE_MISMATCH} for fixed {@code char[N]} and var-data alike;
+     * nothing is replaced. An optional scalar takes its null sentinel from omission or JSON {@code null} only;
+     * elements of an optional numeric array may also carry the sentinel value so decoded arrays re-encode.
      *
      * @param body      root object; see DESIGN.md section 9 for the accepted shapes per field type.
      * @param dst       destination buffer.

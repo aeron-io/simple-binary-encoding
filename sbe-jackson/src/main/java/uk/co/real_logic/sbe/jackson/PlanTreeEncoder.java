@@ -40,7 +40,14 @@ import java.util.Map;
  * the supported {@code int} size is rejected with {@link ErrorCode#DESTINATION_OVERFLOW} instead of wrapping.
  * Var-data lengths are validated before any payload is materialised.
  * <p>
+ * Text is coerced strictly: an unpaired UTF-16 surrogate, or a character the field's charset cannot represent,
+ * is {@link ErrorCode#TYPE_MISMATCH} for fixed {@code char[N]} and var-data alike; nothing is silently replaced.
+ * Null sentinels: an optional scalar takes its sentinel from omission or JSON {@code null} only, so a numeric
+ * value equal to the sentinel fails the schema range like any other number. Elements of an optional numeric
+ * array additionally accept the sentinel (compared at wire precision) so that decoded arrays re-encode.
+ * <p>
  * One instance is retained per thread-confined {@link SbeJsonEncoder} (via {@link WalkContext#treeEncoder}).
+ * The destination is released when a call returns or throws; nothing owned by the caller is retained.
  */
 final class PlanTreeEncoder
 {
@@ -79,8 +86,14 @@ final class PlanTreeEncoder
         this.dst = dst;
         this.limit = offset + available;
         this.sizing = false;
-
-        return walk(body, offset) - offset;
+        try
+        {
+            return walk(body, offset) - offset;
+        }
+        finally
+        {
+            this.dst = null;
+        }
     }
 
     int encodedLength(final JsonNode body)
@@ -205,17 +218,17 @@ final class PlanTreeEncoder
         switch (f.kind)
         {
             case FieldPlan.KIND_INT:
-                putLong(f, index, signedValue(f, node, index));
+                putLong(f, index, signedValue(f, node, index, false));
                 break;
 
             case FieldPlan.KIND_UINT64:
-                putLong(f, index, uint64Value(f, node, index));
+                putLong(f, index, uint64Value(f, node, index, false));
                 break;
 
             case FieldPlan.KIND_FLOAT:
             case FieldPlan.KIND_DOUBLE:
             {
-                final double value = floatingValue(f, node, index);
+                final double value = floatingValue(f, node, index, false);
                 if (!sizing)
                 {
                     putNumeric(f, index, 0, value);
@@ -337,10 +350,11 @@ final class PlanTreeEncoder
     }
 
     /*
-     * Signed integer value for an int / uint8..uint32 field: integral node within the schema range, or the null
-     * sentinel of an optional field (so decoded sentinels round-trip).
+     * Signed integer value for an int / uint8..uint32 field: an integral node within the schema range. Inside an
+     * optional numeric array (arrayElement) the null sentinel is also accepted so that decoded arrays re-encode;
+     * a scalar sentinel is selected by omission or JSON null only, never by its numeric value.
      */
-    private long signedValue(final FieldPlan f, final JsonNode node, final int index)
+    private long signedValue(final FieldPlan f, final JsonNode node, final int index, final boolean arrayElement)
     {
         if (!node.isIntegralNumber())
         {
@@ -352,7 +366,7 @@ final class PlanTreeEncoder
         }
 
         final long value = node.longValue();
-        if (f.optional && value == f.nullValueLong)
+        if (arrayElement && f.optional && value == f.nullValueLong)
         {
             return value;
         }
@@ -366,12 +380,13 @@ final class PlanTreeEncoder
     }
 
     /*
-     * Raw value for a uint64 field: unsigned within the schema range, or the null sentinel of an optional field.
+     * Raw value for a uint64 field: unsigned within the schema range, or (inside an optional numeric array only)
+     * the null sentinel; see signedValue.
      */
-    private long uint64Value(final FieldPlan f, final JsonNode node, final int index)
+    private long uint64Value(final FieldPlan f, final JsonNode node, final int index, final boolean arrayElement)
     {
         final long raw = unsignedRaw(f, node, index);
-        if (f.optional && raw == f.nullValueLong)
+        if (arrayElement && f.optional && raw == f.nullValueLong)
         {
             return raw;
         }
@@ -431,7 +446,11 @@ final class PlanTreeEncoder
         return value.longValue();
     }
 
-    private double floatingValue(final FieldPlan f, final JsonNode node, final int index)
+    /*
+     * Floating value within the schema range, or (inside an optional numeric array only) the null sentinel
+     * compared at wire precision; see signedValue.
+     */
+    private double floatingValue(final FieldPlan f, final JsonNode node, final int index, final boolean arrayElement)
     {
         final double value;
         if (node.isNumber())
@@ -466,6 +485,10 @@ final class PlanTreeEncoder
             throw error(ErrorCode.TYPE_MISMATCH, f, index, "expected a number but found " + describe(node));
         }
 
+        if (arrayElement && f.optional && isWireSentinel(f, value))
+        {
+            return value;
+        }
         if (Double.isFinite(value) && (value < f.minValueDouble || value > f.maxValueDouble))
         {
             throw error(ErrorCode.OUT_OF_RANGE, f, index,
@@ -473,6 +496,21 @@ final class PlanTreeEncoder
         }
 
         return value;
+    }
+
+    /*
+     * Whether a value is the field's null sentinel once written: a float field compares as float, so a double
+     * node such as -1.1 matches a float sentinel of -1.1f, and a NaN sentinel matches every NaN.
+     */
+    private static boolean isWireSentinel(final FieldPlan f, final double value)
+    {
+        final double nullValue = f.nullValueDouble;
+        if (Double.isNaN(nullValue))
+        {
+            return Double.isNaN(value);
+        }
+
+        return PrimitiveType.FLOAT == f.primitiveType ? (float)value == (float)nullValue : value == nullValue;
     }
 
     private void encodeChar(final FieldPlan f, final JsonNode node, final int index)
@@ -548,7 +586,7 @@ final class PlanTreeEncoder
                 case FLOAT:
                 case DOUBLE:
                 {
-                    final double value = floatingValue(f, element, elementIndex);
+                    final double value = floatingValue(f, element, elementIndex, true);
                     if (!sizing)
                     {
                         putNumeric(f, elementIndex, 0, value);
@@ -557,11 +595,11 @@ final class PlanTreeEncoder
                 }
 
                 case UINT64:
-                    putLong(f, elementIndex, uint64Value(f, element, elementIndex));
+                    putLong(f, elementIndex, uint64Value(f, element, elementIndex, true));
                     break;
 
                 default:
-                    putLong(f, elementIndex, signedValue(f, element, elementIndex));
+                    putLong(f, elementIndex, signedValue(f, element, elementIndex, true));
                     break;
             }
         }
@@ -792,7 +830,13 @@ final class PlanTreeEncoder
         else if (FieldPlan.ENC_UTF8 == v.characterEncodingTag)
         {
             final String text = requireText(v, node, dataIndex);
-            length = checkVarDataLength(v, Utf8.encodedLength(text), lengthOffset);
+            final long utf8Length = Utf8.encodedLength(text);
+            if (utf8Length < 0)
+            {
+                throw error(ErrorCode.TYPE_MISMATCH, v, dataIndex,
+                    "string contains an unpaired surrogate and cannot be encoded as UTF-8");
+            }
+            length = checkVarDataLength(v, utf8Length, lengthOffset);
             if (!sizing)
             {
                 Utf8.encode(text, dst, dataIndex);
@@ -883,7 +927,8 @@ final class PlanTreeEncoder
     /*
      * Encode text in a non ASCII / UTF-8 charset without materialising more than budget + 1 bytes. When the
      * result would exceed the budget, overflowCode is raised if given, otherwise the var-data budget checks
-     * decide the code.
+     * decide the code. The charset encoder reports (never replaces) malformed and unmappable input, matching
+     * the UTF-8 and ASCII paths.
      */
     private byte[] boundedBytes(
         final FieldPlan f, final String text, final int index, final long budget, final ErrorCode overflowCode)
@@ -907,7 +952,8 @@ final class PlanTreeEncoder
         }
         if (result.isError())
         {
-            throw error(ErrorCode.TYPE_MISMATCH, f, index, "string cannot be encoded in " + f.charset);
+            throw error(ErrorCode.TYPE_MISMATCH, f, index,
+                "string contains characters that cannot be encoded in " + f.charset);
         }
 
         final byte[] bytes = new byte[out.position()];

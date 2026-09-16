@@ -188,7 +188,7 @@ Classes (all in `uk.co.real_logic.sbe.jackson`):
 | `SbeStringNode` | `ValueNode` subclass, `char[]` + length, lazily cached `String`. |
 | `SbeBinaryNode` | `ValueNode` subclass, `byte[]` + length, node type BINARY. |
 | `SbeJsonNodes` | `semanticEquals(JsonNode, JsonNode)` — nodeType + value walk across custom and stock families. |
-| `Utf8` | Hand-rolled UTF-8 decode (buffer → `char[]`, U+FFFD on invalid), encode (`CharSequence` → buffer), validity scan, surrogate aware. |
+| `Utf8` | Hand-rolled UTF-8 decode (buffer → `char[]`, U+FFFD on invalid wire bytes), encode (`CharSequence` → buffer; an unpaired surrogate is reported by `encodedLength`, never replaced), validity scan, surrogate aware. |
 | `SbeJsonException` | Unchecked; all validation failures. Error code, templateId, byte offset, copied path indices; message formatted at throw. |
 | `ErrorCode` | Enum: `UNKNOWN_TEMPLATE`, `UNSUPPORTED_VERSION`, `FRAME_OVERFLOW`, `FIELD_OUTSIDE_BLOCK`, `LIMIT_EXCEEDED`, `MISSING_REQUIRED`, `TYPE_MISMATCH`, `OUT_OF_RANGE`, `UNKNOWN_ENUM`, `UNKNOWN_CHOICE`, `UNKNOWN_PROPERTY`, `CONSTANT_MISMATCH`, `SECTION_OUT_OF_ORDER`, `DESTINATION_OVERFLOW`. |
 
@@ -318,17 +318,25 @@ Coercion policy:
 
 | Field | Accepts | Rejects |
 |---|---|---|
-| ints | `isIntegralNumber()` and `canConvertToLong()` within schema min..max; uint64 also `BigIntegerNode` or decimal string | floating node (`5.0` → error, no silent truncation), out of range, negative into unsigned |
-| float/double | `isNumber()`; strings `"NaN"`, `"Infinity"`, `"-Infinity"` | other strings |
-| `char[N]` | `textValue()` length ≤ N, `charAt` loop, NUL pad | char > 0x7F into an ASCII field, too long |
+| ints | `isIntegralNumber()` and `canConvertToLong()` within schema min..max; uint64 also `BigIntegerNode` or decimal string | floating node (`5.0` → error, no silent truncation), out of range (including an optional scalar's own null sentinel: `cupHolderCount: 255` is `OUT_OF_RANGE`; omit or `null` to select it), negative into unsigned |
+| float/double | `isNumber()` within schema min..max; strings `"NaN"`, `"Infinity"`, `"-Infinity"` | other strings, finite value out of range (an optional scalar's finite sentinel included) |
+| optional numeric `[N]` | each element as above, **plus** the null sentinel per element (compared at wire precision: a float field compares as `float`) so decoded arrays, which expose sentinels as numbers, re-encode byte-identically; missing / `null` fills every element with the sentinel | element out of range, wrong element count |
+| `char[N]` | `textValue()` length ≤ N, `charAt` loop, NUL pad | char > 0x7F into an ASCII field, too long, unpaired surrogate or character unmappable in the field charset (`TYPE_MISMATCH`) |
 | enum | name via `Object2IntHashMap<String>`, or integral | unknown name |
 | bit set | integral mask, or `ObjectNode` of booleans | unknown choice name |
 | composite | `ObjectNode` | other |
 | group | `ArrayNode` of `ObjectNode`; missing → dimensions with `numInGroup = 0` | size outside dimension type range or `Limits` |
-| var-data text | `textValue()` → `Utf8.encode` into `dst` | length > length type max |
+| var-data text | `textValue()` → `Utf8.encode` into `dst` (other charsets through a bounded `CharsetEncoder`) | length > length type max, unpaired surrogate or unmappable character (`TYPE_MISMATCH`) |
 | var-data binary | `binaryValue()` (allocates; inherent) | |
 | constant | omitted, or present and equal to the schema constant | present and different |
 | missing / `null` | optional → nullValue; group → empty; var-data → length 0 | required → error |
+
+Text policy (fixed `char[N]` and var-data alike, every charset): malformed input is **rejected** with
+`TYPE_MISMATCH`, never replaced. An unpaired UTF-16 surrogate in a Java string has no encoding in any charset; the
+strict coercion rule above (`5.0` into an int is an error) applies to text too, so no U+FFFD or `?` ever reaches the
+wire from the encoder. The decoder still maps invalid UTF-8 *wire bytes* to U+FFFD, because rejecting a received
+message for one bad byte in a string is not the decoder's call. The encoder retains nothing owned by the caller
+after a call returns or throws: the destination reference is cleared in a `finally`.
 
 Unknown properties: `ERROR` by default. The happy path counts recognized properties during the plan walk and
 compares with `size()` **per `ObjectNode`** — root, every composite, every group entry — otherwise unknown keys
@@ -384,14 +392,14 @@ Jackson 2.x minors add abstract methods to `NumericNode`. Compile against 2.16.1
 | required field | value | value (absent → error) |
 | absent in acting version | property omitted | ignored if present |
 | `char` | 1-char string | 1-char string |
-| `char[N]` | string, `NUL_TERMINATED` (default) or `EXACT` | string ≤ N chars, NUL padded |
-| numeric `[N]` | array of N numbers | array of N numbers |
+| `char[N]` | string, `NUL_TERMINATED` (default) or `EXACT` | well-formed string ≤ N chars, NUL padded |
+| numeric `[N]` | array of N numbers (optional: sentinels exposed as numbers, never `null` elements) | array of N numbers; optional arrays accept the sentinel per element |
 | enum | name (`NAME`, default); unknown raw → number; `ORDINAL` → number | name or number |
 | bit set | number mask (`MASK`, default); `OBJECT` → `{choice: bool}` (lossy for unnamed bits) | number or object |
 | composite | nested object | nested object |
 | constant | value from IR (consumes no bytes) | omitted, or equal to the constant |
 | group | array of objects; empty → `[]` | array; missing → `numInGroup = 0` |
-| var-data text | string in schema charset | string |
+| var-data text | string in schema charset | well-formed string (unpaired surrogate → `TYPE_MISMATCH`) |
 | var-data binary | base64 string (`BinaryNode` semantics) | base64 string |
 | header | not in body; `templateId` / `actingVersion` / `blockLength` on `BorrowedDocument` or `decoder.lastHeader()` | derived from IR |
 

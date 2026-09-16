@@ -19,25 +19,25 @@ import org.agrona.MutableDirectBuffer;
 
 /**
  * Hand-rolled UTF-8 encoding of a {@link CharSequence} straight into a buffer, without an intermediate
- * {@code byte[]}. Surrogate pairs become four-byte sequences; a lone surrogate becomes U+FFFD (three bytes).
- * {@link #encodedLength} and {@link #encode} agree byte for byte. No Jackson import.
+ * {@code byte[]}. Surrogate pairs become four-byte sequences; an unpaired surrogate is malformed input, reported
+ * by {@link #encodedLength} (-1) and refused by {@link #encode}, never replaced. {@link #encodedLength} and
+ * {@link #encode} agree byte for byte. No Jackson import.
  */
 final class Utf8
 {
-    private static final int REPLACEMENT_LENGTH = 3;
-
     private Utf8()
     {
     }
 
     /**
-     * Number of bytes {@link #encode} will write for a sequence.
+     * Number of bytes {@link #encode} will write for a sequence, or -1 when the sequence contains an unpaired
+     * surrogate and so cannot be encoded.
      *
      * Returned as a {@code long} so that a sequence whose encoding exceeds {@code Integer.MAX_VALUE} bytes is
      * reported rather than wrapped.
      *
      * @param chars source characters.
-     * @return encoded byte count.
+     * @return encoded byte count, or -1 for malformed input.
      */
     static long encodedLength(final CharSequence chars)
     {
@@ -54,21 +54,18 @@ final class Utf8
             {
                 bytes += 2;
             }
-            else if (Character.isHighSurrogate(c))
+            else if (Character.isSurrogate(c))
             {
-                if (i + 1 < length && Character.isLowSurrogate(chars.charAt(i + 1)))
+                if (!Character.isHighSurrogate(c) || i + 1 >= length || !Character.isLowSurrogate(chars.charAt(i + 1)))
                 {
-                    bytes += 4;
-                    i++;
+                    return -1;
                 }
-                else
-                {
-                    bytes += REPLACEMENT_LENGTH;
-                }
+                bytes += 4;
+                i++;
             }
             else
             {
-                bytes += REPLACEMENT_LENGTH;
+                bytes += 3;
             }
         }
 
@@ -76,12 +73,14 @@ final class Utf8
     }
 
     /**
-     * Encode a sequence into a buffer. The caller has already checked that {@link #encodedLength} bytes fit.
+     * Encode a sequence into a buffer. The caller has already checked that {@link #encodedLength} bytes fit,
+     * which also establishes that the sequence is well-formed.
      *
      * @param chars  source characters.
      * @param buffer destination.
      * @param index  where the first byte goes.
      * @return bytes written.
+     * @throws IllegalArgumentException on an unpaired surrogate; {@link #encodedLength} reports those first.
      */
     static int encode(final CharSequence chars, final MutableDirectBuffer buffer, final int index)
     {
@@ -107,12 +106,15 @@ final class Utf8
                 buffer.putByte(pos++, (byte)(0x80 | ((codePoint >> 6) & 0x3F)));
                 buffer.putByte(pos++, (byte)(0x80 | (codePoint & 0x3F)));
             }
+            else if (Character.isSurrogate(c))
+            {
+                throw new IllegalArgumentException("unpaired surrogate U+" + Integer.toHexString(c) + " at " + i);
+            }
             else
             {
-                final char out = Character.isSurrogate(c) ? '�' : c;
-                buffer.putByte(pos++, (byte)(0xE0 | (out >> 12)));
-                buffer.putByte(pos++, (byte)(0x80 | ((out >> 6) & 0x3F)));
-                buffer.putByte(pos++, (byte)(0x80 | (out & 0x3F)));
+                buffer.putByte(pos++, (byte)(0xE0 | (c >> 12)));
+                buffer.putByte(pos++, (byte)(0x80 | ((c >> 6) & 0x3F)));
+                buffer.putByte(pos++, (byte)(0x80 | (c & 0x3F)));
             }
         }
 
