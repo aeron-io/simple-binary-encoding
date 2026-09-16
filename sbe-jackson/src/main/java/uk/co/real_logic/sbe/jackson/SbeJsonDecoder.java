@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.agrona.DirectBuffer;
-import uk.co.real_logic.sbe.otf.OtfHeaderDecoder;
 
 import java.io.IOException;
 
@@ -27,18 +26,21 @@ import java.io.IOException;
  * Thread-confined, non-reentrant decoder for any message of one {@link SbeJson}. Routes by the header template
  * id. Every decode takes an explicit frame {@code (buffer, offset, length)} and no read goes past
  * {@code offset + length}: an SBE header carries no total length and a receive buffer may hold several messages.
+ * <p>
+ * The header is read with the IR's per-member encodings (type and byte order); a header member whose value does
+ * not fit an {@code int} is rejected with {@link ErrorCode#OUT_OF_RANGE} rather than escaping as another exception.
  */
 public final class SbeJsonDecoder
 {
     private final SbeJson sbeJson;
-    private final OtfHeaderDecoder headerDecoder;
+    private final HeaderLayout headerLayout;
     private final HeaderView header = new HeaderView();
     private final WalkContext context;
 
     SbeJsonDecoder(final SbeJson sbeJson)
     {
         this.sbeJson = sbeJson;
-        this.headerDecoder = sbeJson.headerDecoder();
+        this.headerLayout = sbeJson.headerLayout();
         this.context = new WalkContext(JsonNodeFactory.instance, sbeJson.exceptionStackTraces());
     }
 
@@ -59,7 +61,7 @@ public final class SbeJsonDecoder
 
         return codec.decodeCopy(
             buffer,
-            offset + headerDecoder.encodedLength(),
+            offset + headerLayout.encodedLength(),
             frameEnd,
             header.blockLength(),
             header.actingVersion(),
@@ -134,7 +136,7 @@ public final class SbeJsonDecoder
                 buffer.capacity(), sbeJson.exceptionStackTraces());
         }
 
-        final int headerLength = headerDecoder.encodedLength();
+        final int headerLength = headerLayout.encodedLength();
         if (headerLength > length)
         {
             throw new SbeJsonException(
@@ -148,10 +150,10 @@ public final class SbeJsonDecoder
 
     private MessageCodec route(final DirectBuffer buffer, final int offset)
     {
-        final int templateId = headerDecoder.getTemplateId(buffer, offset);
-        final int schemaId = headerDecoder.getSchemaId(buffer, offset);
-        final int actingVersion = headerDecoder.getSchemaVersion(buffer, offset);
-        final int blockLength = headerDecoder.getBlockLength(buffer, offset);
+        final int templateId = headerMember(buffer, offset, HeaderLayout.TEMPLATE_ID);
+        final int schemaId = headerMember(buffer, offset, HeaderLayout.SCHEMA_ID);
+        final int actingVersion = headerMember(buffer, offset, HeaderLayout.SCHEMA_VERSION);
+        final int blockLength = headerMember(buffer, offset, HeaderLayout.BLOCK_LENGTH);
         header.set(templateId, schemaId, actingVersion, blockLength);
 
         if (schemaId != sbeJson.ir().id())
@@ -172,5 +174,19 @@ public final class SbeJsonDecoder
         }
 
         return codec;
+    }
+
+    private int headerMember(final DirectBuffer buffer, final int offset, final int member)
+    {
+        final long value = headerLayout.read(buffer, offset, member);
+        if (value < 0 || value > Integer.MAX_VALUE)
+        {
+            throw new SbeJsonException(
+                ErrorCode.OUT_OF_RANGE, SbeJsonException.NO_TEMPLATE_ID, offset + headerLayout.memberOffset(member),
+                null, "header " + headerLayout.memberName(member) + " value " + Long.toUnsignedString(value) +
+                " does not fit a 32-bit signed integer", sbeJson.exceptionStackTraces());
+        }
+
+        return (int)value;
     }
 }

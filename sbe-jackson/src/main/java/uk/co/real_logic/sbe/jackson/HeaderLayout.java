@@ -15,6 +15,7 @@
  */
 package uk.co.real_logic.sbe.jackson;
 
+import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import uk.co.real_logic.sbe.PrimitiveType;
 import uk.co.real_logic.sbe.ir.HeaderStructure;
@@ -23,72 +24,97 @@ import uk.co.real_logic.sbe.ir.Token;
 import java.nio.ByteOrder;
 
 /**
- * Write-side layout of the message header taken from the IR {@link HeaderStructure}. The read side reuses
- * {@link uk.co.real_logic.sbe.otf.OtfHeaderDecoder}. Header members other than the four standard ones are left
- * as zero bytes.
+ * Layout of the message header taken from the IR {@link HeaderStructure}: offset, primitive type and byte order
+ * of each of the four standard members, consulted individually on both read and write (a header may mix byte
+ * orders per member). Reads return {@code long} so that uint32 members at or above 2^31 never surface as an
+ * {@code IllegalStateException}; the decoder range checks them. Header members other than the four standard
+ * ones are written as zero bytes.
  */
 final class HeaderLayout
 {
+    /**
+     * Index of the block length member in the per-member arrays.
+     */
+    static final int BLOCK_LENGTH = 0;
+
+    /**
+     * Index of the template id member in the per-member arrays.
+     */
+    static final int TEMPLATE_ID = 1;
+
+    /**
+     * Index of the schema id member in the per-member arrays.
+     */
+    static final int SCHEMA_ID = 2;
+
+    /**
+     * Index of the schema version member in the per-member arrays.
+     */
+    static final int SCHEMA_VERSION = 3;
+
+    private static final String[] MEMBER_NAMES = {
+        HeaderStructure.BLOCK_LENGTH, HeaderStructure.TEMPLATE_ID, HeaderStructure.SCHEMA_ID,
+        HeaderStructure.SCHEMA_VERSION
+    };
+
     private final int encodedLength;
-    private final int blockLengthOffset;
-    private final int templateIdOffset;
-    private final int schemaIdOffset;
-    private final int schemaVersionOffset;
-    private final PrimitiveType blockLengthType;
-    private final PrimitiveType templateIdType;
-    private final PrimitiveType schemaIdType;
-    private final PrimitiveType schemaVersionType;
-    private final ByteOrder byteOrder;
+    private final int[] offsets = new int[MEMBER_NAMES.length];
+    private final PrimitiveType[] types = new PrimitiveType[MEMBER_NAMES.length];
+    private final ByteOrder[] byteOrders = new ByteOrder[MEMBER_NAMES.length];
 
     HeaderLayout(final HeaderStructure headerStructure)
     {
         encodedLength = headerStructure.tokens().get(0).encodedLength();
 
-        int blockLengthOffset = 0;
-        int templateIdOffset = 0;
-        int schemaIdOffset = 0;
-        int schemaVersionOffset = 0;
-        ByteOrder byteOrder = ByteOrder.LITTLE_ENDIAN;
         for (final Token token : headerStructure.tokens())
         {
-            switch (token.name())
+            for (int member = 0; member < MEMBER_NAMES.length; member++)
             {
-                case HeaderStructure.BLOCK_LENGTH:
-                    blockLengthOffset = token.offset();
-                    byteOrder = token.encoding().byteOrder();
-                    break;
-
-                case HeaderStructure.TEMPLATE_ID:
-                    templateIdOffset = token.offset();
-                    break;
-
-                case HeaderStructure.SCHEMA_ID:
-                    schemaIdOffset = token.offset();
-                    break;
-
-                case HeaderStructure.SCHEMA_VERSION:
-                    schemaVersionOffset = token.offset();
-                    break;
-
-                default:
-                    break;
+                if (MEMBER_NAMES[member].equals(token.name()) && null != token.encoding().primitiveType())
+                {
+                    offsets[member] = token.offset();
+                    types[member] = token.encoding().primitiveType();
+                    byteOrders[member] = token.encoding().byteOrder();
+                }
             }
         }
 
-        this.blockLengthOffset = blockLengthOffset;
-        this.templateIdOffset = templateIdOffset;
-        this.schemaIdOffset = schemaIdOffset;
-        this.schemaVersionOffset = schemaVersionOffset;
-        this.byteOrder = byteOrder;
-        blockLengthType = headerStructure.blockLengthType();
-        templateIdType = headerStructure.templateIdType();
-        schemaIdType = headerStructure.schemaIdType();
-        schemaVersionType = headerStructure.schemaVersionType();
+        for (int member = 0; member < MEMBER_NAMES.length; member++)
+        {
+            if (null == types[member])
+            {
+                throw new IllegalArgumentException("header is missing member " + MEMBER_NAMES[member]);
+            }
+        }
     }
 
     int encodedLength()
     {
         return encodedLength;
+    }
+
+    /**
+     * Read one header member with its own type and byte order.
+     *
+     * @param buffer buffer holding the header.
+     * @param offset offset of the header.
+     * @param member one of {@link #BLOCK_LENGTH}, {@link #TEMPLATE_ID}, {@link #SCHEMA_ID},
+     *               {@link #SCHEMA_VERSION}.
+     * @return the value widened to a long (unsigned for unsigned types).
+     */
+    long read(final DirectBuffer buffer, final int offset, final int member)
+    {
+        return WireTypes.getLong(buffer, offset + offsets[member], types[member], byteOrders[member]);
+    }
+
+    int memberOffset(final int member)
+    {
+        return offsets[member];
+    }
+
+    String memberName(final int member)
+    {
+        return MEMBER_NAMES[member];
     }
 
     void write(
@@ -100,9 +126,14 @@ final class HeaderLayout
         final int version)
     {
         buffer.setMemory(offset, encodedLength, (byte)0);
-        WireTypes.putLong(buffer, offset + blockLengthOffset, blockLengthType, byteOrder, blockLength);
-        WireTypes.putLong(buffer, offset + templateIdOffset, templateIdType, byteOrder, templateId);
-        WireTypes.putLong(buffer, offset + schemaIdOffset, schemaIdType, byteOrder, schemaId);
-        WireTypes.putLong(buffer, offset + schemaVersionOffset, schemaVersionType, byteOrder, version);
+        put(buffer, offset, BLOCK_LENGTH, blockLength);
+        put(buffer, offset, TEMPLATE_ID, templateId);
+        put(buffer, offset, SCHEMA_ID, schemaId);
+        put(buffer, offset, SCHEMA_VERSION, version);
+    }
+
+    private void put(final MutableDirectBuffer buffer, final int offset, final int member, final long value)
+    {
+        WireTypes.putLong(buffer, offset + offsets[member], types[member], byteOrders[member], value);
     }
 }

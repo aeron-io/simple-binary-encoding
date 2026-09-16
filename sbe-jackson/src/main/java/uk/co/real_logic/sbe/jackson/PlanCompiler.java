@@ -261,6 +261,7 @@ final class PlanCompiler
         b.byteOrder = blockLengthToken.encoding().byteOrder();
         b.numInGroupType = numInGroupToken.encoding().primitiveType();
         b.numInGroupOffset = numInGroupToken.offset();
+        b.numInGroupByteOrder = numInGroupToken.encoding().byteOrder();
         b.numInGroupMin = numInGroupToken.encoding().applicableMinValue().longValue();
         b.numInGroupMax = numInGroupToken.encoding().applicableMaxValue().longValue();
 

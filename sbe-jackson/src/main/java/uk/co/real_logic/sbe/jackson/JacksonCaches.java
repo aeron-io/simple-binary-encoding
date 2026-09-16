@@ -119,7 +119,8 @@ final class JacksonCaches
 
             case FieldPlan.KIND_ENUM:
                 return EnumStyle.NAME == enumStyle ?
-                    factory.textNode(f.constString) : factory.numberNode(f.constLong);
+                    factory.textNode(f.constString) :
+                    PlanMessageCodec.numericNode(f.primitiveType, f.constLong, factory);
 
             default:
                 throw new IllegalStateException("constant not supported for kind " + f.kind + ": " + f);

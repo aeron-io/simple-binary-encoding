@@ -82,7 +82,7 @@ final class PlanMessageCodec implements MessageCodec
         final int available,
         final WalkContext ctx)
     {
-        return new PlanTreeEncoder(plan, config, ctx).encode(body, dst, offset, available);
+        return treeEncoder(ctx).encode(body, dst, offset, available);
     }
 
     /**
@@ -91,7 +91,23 @@ final class PlanMessageCodec implements MessageCodec
     @Override
     public int encodedLength(final JsonNode body, final WalkContext ctx)
     {
-        return new PlanTreeEncoder(plan, config, ctx).encodedLength(body);
+        return treeEncoder(ctx).encodedLength(body);
+    }
+
+    /*
+     * The tree encoder is retained on the thread-confined context so that one instance serves every call of
+     * the owning SbeJsonEncoder.
+     */
+    private PlanTreeEncoder treeEncoder(final WalkContext ctx)
+    {
+        PlanTreeEncoder encoder = ctx.treeEncoder;
+        if (null == encoder || encoder.plan() != plan)
+        {
+            encoder = new PlanTreeEncoder(plan, config, ctx);
+            ctx.treeEncoder = encoder;
+        }
+
+        return encoder;
     }
 
     private int decodeEntry(
@@ -133,6 +149,10 @@ final class PlanMessageCodec implements MessageCodec
                     cursor = decodeVarData(f, buffer, cursor, frameEnd, target, ctx);
                     break;
 
+                case FieldPlan.KIND_COMPOSITE:
+                    target.set(f.name, decodeComposite(f, buffer, entryBase, actingBlockLength, actingVersion, ctx));
+                    break;
+
                 default:
                     if (f.constant)
                     {
@@ -140,13 +160,8 @@ final class PlanMessageCodec implements MessageCodec
                     }
                     else
                     {
-                        if (f.offset + f.encodedLength > actingBlockLength)
-                        {
-                            throw ctx.error(plan, ErrorCode.FIELD_OUTSIDE_BLOCK, f, entryBase + f.offset,
-                                "field ends at " + (f.offset + f.encodedLength) + " but acting block length is " +
-                                actingBlockLength);
-                        }
-                        target.set(f.name, decodeValue(f, buffer, entryBase, actingVersion, ctx));
+                        checkInsideBlock(f, entryBase, actingBlockLength, ctx);
+                        target.set(f.name, decodeLeaf(f, buffer, entryBase + f.offset, ctx.factory));
                     }
                     break;
             }
@@ -155,16 +170,62 @@ final class PlanMessageCodec implements MessageCodec
         return cursor;
     }
 
-    private JsonNode decodeValue(
-        final FieldPlan f,
+    /*
+     * Every present, non-constant leaf must fit inside the acting block of its scope. Composites are not checked
+     * as a whole: a composite whose newer members are absent in the acting version is legitimately shorter.
+     */
+    private void checkInsideBlock(
+        final FieldPlan f, final int entryBase, final int actingBlockLength, final WalkContext ctx)
+    {
+        if (f.offset + f.encodedLength > actingBlockLength)
+        {
+            throw ctx.error(plan, ErrorCode.FIELD_OUTSIDE_BLOCK, f, entryBase + f.offset,
+                "field ends at " + (f.offset + f.encodedLength) + " but acting block length is " +
+                actingBlockLength);
+        }
+    }
+
+    private ObjectNode decodeComposite(
+        final FieldPlan composite,
         final DirectBuffer buffer,
         final int entryBase,
+        final int actingBlockLength,
         final int actingVersion,
         final WalkContext ctx)
     {
-        final JsonNodeFactory factory = ctx.factory;
-        final int index = entryBase + f.offset;
+        final ObjectNode node = ctx.factory.objectNode();
+        final FieldPlan[] fields = plan.fields;
+        ctx.push(composite.index);
+        for (int i = composite.childStart; i < composite.childEnd; i++)
+        {
+            final FieldPlan member = fields[i];
+            if (member.sinceVersion > actingVersion)
+            {
+                continue;
+            }
+            if (member.constant)
+            {
+                node.set(member.name, caches.constant(member.index));
+            }
+            else if (FieldPlan.KIND_COMPOSITE == member.kind)
+            {
+                node.set(
+                    member.name, decodeComposite(member, buffer, entryBase, actingBlockLength, actingVersion, ctx));
+            }
+            else
+            {
+                checkInsideBlock(member, entryBase, actingBlockLength, ctx);
+                node.set(member.name, decodeLeaf(member, buffer, entryBase + member.offset, ctx.factory));
+            }
+        }
+        ctx.pop();
 
+        return node;
+    }
+
+    private JsonNode decodeLeaf(
+        final FieldPlan f, final DirectBuffer buffer, final int index, final JsonNodeFactory factory)
+    {
         switch (f.kind)
         {
             case FieldPlan.KIND_INT:
@@ -229,47 +290,39 @@ final class PlanMessageCodec implements MessageCodec
             case FieldPlan.KIND_BIT_SET:
                 return decodeBitSet(f, buffer, index, factory);
 
-            case FieldPlan.KIND_COMPOSITE:
-                return decodeComposite(f, buffer, entryBase, actingVersion, ctx);
-
             default:
                 throw new IllegalStateException("unexpected kind " + f.kind + " for " + f);
         }
     }
 
-    private ObjectNode decodeComposite(
-        final FieldPlan composite,
-        final DirectBuffer buffer,
-        final int entryBase,
-        final int actingVersion,
-        final WalkContext ctx)
-    {
-        final ObjectNode node = ctx.factory.objectNode();
-        final FieldPlan[] fields = plan.fields;
-        for (int i = composite.childStart; i < composite.childEnd; i++)
-        {
-            final FieldPlan member = fields[i];
-            if (member.sinceVersion > actingVersion)
-            {
-                continue;
-            }
-            if (member.constant)
-            {
-                node.set(member.name, caches.constant(member.index));
-            }
-            else
-            {
-                node.set(member.name, decodeValue(member, buffer, entryBase, actingVersion, ctx));
-            }
-        }
-
-        return node;
-    }
-
+    /*
+     * ASCII and UTF-8 arrays are terminated at the first zero byte (NUL is a single byte in both). Other charsets
+     * are decoded in full and terminated at the first NUL character, since their encoded forms may contain zero
+     * bytes inside ordinary characters.
+     */
     private String decodeCharArray(final FieldPlan f, final DirectBuffer buffer, final int index)
     {
+        final boolean nulTerminated = CharArrayStyle.NUL_TERMINATED == config.charArrayStyle();
+
+        if (FieldPlan.ENC_ASCII == f.characterEncodingTag)
+        {
+            int length = f.arrayLength;
+            final char[] chars = new char[length];
+            for (int i = 0; i < length; i++)
+            {
+                final byte b = buffer.getByte(index + i);
+                if (nulTerminated && 0 == b)
+                {
+                    length = i;
+                    break;
+                }
+                chars[i] = (char)(b & 0xFF);
+            }
+            return new String(chars, 0, length);
+        }
+
         int length = f.arrayLength;
-        if (CharArrayStyle.NUL_TERMINATED == config.charArrayStyle())
+        if (nulTerminated && FieldPlan.ENC_UTF8 == f.characterEncodingTag)
         {
             for (int i = 0; i < f.arrayLength; i++)
             {
@@ -281,20 +334,16 @@ final class PlanMessageCodec implements MessageCodec
             }
         }
 
-        if (FieldPlan.ENC_ASCII == f.characterEncodingTag)
-        {
-            final char[] chars = new char[length];
-            for (int i = 0; i < length; i++)
-            {
-                chars[i] = (char)(buffer.getByte(index + i) & 0xFF);
-            }
-            return new String(chars);
-        }
-
         final byte[] bytes = new byte[length];
         buffer.getBytes(index, bytes, 0, length);
+        final String decoded = new String(bytes, f.charset);
+        if (nulTerminated && FieldPlan.ENC_UTF8 != f.characterEncodingTag)
+        {
+            final int nul = decoded.indexOf('\0');
+            return nul < 0 ? decoded : decoded.substring(0, nul);
+        }
 
-        return new String(bytes, f.charset);
+        return decoded;
     }
 
     private static ArrayNode decodeNumericArray(
@@ -355,8 +404,7 @@ final class PlanMessageCodec implements MessageCodec
             }
         }
 
-        return WireTypes.fitsInt(f.primitiveType) || PrimitiveType.CHAR == f.primitiveType ?
-            factory.numberNode((int)raw) : factory.numberNode(raw);
+        return numericNode(f.primitiveType, raw, factory);
     }
 
     private JsonNode decodeBitSet(
@@ -365,11 +413,7 @@ final class PlanMessageCodec implements MessageCodec
         final long raw = WireTypes.getLong(buffer, index, f.primitiveType, f.byteOrder);
         if (BitSetStyle.MASK == config.bitSetStyle())
         {
-            if (PrimitiveType.UINT64 == f.primitiveType)
-            {
-                return JacksonCaches.unsignedLongNode(factory, raw);
-            }
-            return WireTypes.fitsInt(f.primitiveType) ? factory.numberNode((int)raw) : factory.numberNode(raw);
+            return numericNode(f.primitiveType, raw, factory);
         }
 
         final ObjectNode node = factory.objectNode();
@@ -379,6 +423,27 @@ final class PlanMessageCodec implements MessageCodec
         }
 
         return node;
+    }
+
+    /**
+     * Stock number node for a raw value of an integer encoding type: unsigned ({@code BigIntegerNode} when the
+     * high bit is set) for uint64, {@code IntNode} for types that fit an int (including the byte of a
+     * {@code char} encoded enum), {@code LongNode} otherwise.
+     *
+     * @param type    encoding type of the value.
+     * @param raw     raw value as read from the wire (or the constant).
+     * @param factory node factory.
+     * @return the number node.
+     */
+    static JsonNode numericNode(final PrimitiveType type, final long raw, final JsonNodeFactory factory)
+    {
+        if (PrimitiveType.UINT64 == type)
+        {
+            return JacksonCaches.unsignedLongNode(factory, raw);
+        }
+
+        return WireTypes.fitsInt(type) || PrimitiveType.CHAR == type ?
+            factory.numberNode((int)raw) : factory.numberNode(raw);
     }
 
     private int decodeGroup(
@@ -404,7 +469,7 @@ final class PlanMessageCodec implements MessageCodec
         final long blockLength = WireTypes.getLong(
             buffer, dimensionOffset + g.blockLengthOffset, g.blockLengthType, g.byteOrder);
         final long numInGroup = WireTypes.getLong(
-            buffer, dimensionOffset + g.numInGroupOffset, g.numInGroupType, g.byteOrder);
+            buffer, dimensionOffset + g.numInGroupOffset, g.numInGroupType, g.numInGroupByteOrder);
 
         if (numInGroup < g.numInGroupMin || numInGroup > g.numInGroupMax)
         {
@@ -416,14 +481,16 @@ final class PlanMessageCodec implements MessageCodec
             throw ctx.error(plan, ErrorCode.LIMIT_EXCEEDED, g, dimensionOffset + g.numInGroupOffset,
                 "total group entries exceed maxGroupEntries " + limits.maxGroupEntries());
         }
-        if (blockLength > frameEnd - dimensionOffset)
+
+        int cursor = dimensionOffset + g.dimensionSize;
+        final int count = (int)numInGroup;
+        // An empty group consumes only its dimensions; each present entry is checked against the frame below.
+        if (count > 0 && blockLength > frameEnd - cursor)
         {
             throw ctx.error(plan, ErrorCode.FRAME_OVERFLOW, g, dimensionOffset + g.blockLengthOffset,
                 "group block length " + blockLength + " exceeds the frame");
         }
 
-        int cursor = dimensionOffset + g.dimensionSize;
-        final int count = (int)numInGroup;
         final ArrayNode array = ctx.factory.arrayNode(count);
         ctx.push(g.index);
         for (int i = 0; i < count; i++)

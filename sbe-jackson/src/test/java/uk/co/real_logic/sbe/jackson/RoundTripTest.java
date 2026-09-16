@@ -21,6 +21,7 @@ import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import uk.co.real_logic.sbe.ir.Ir;
 
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Generated-encoder bytes to {@code decodeCopy} to {@code encode} must reproduce the bytes (padding is zero in
@@ -142,6 +144,47 @@ class RoundTripTest
 
         assertArrayEquals(
             Arrays.copyOf(original.byteArray(), length), Arrays.copyOf(reencoded.byteArray(), written));
+    }
+
+    @ParameterizedTest(name = "numInGroup {0}")
+    @ValueSource(ints = { 0, 1, 254 })
+    void groupCountBoundariesRoundTrip(final int count)
+    {
+        final Ir ir = TestMessages.ir(TestMessages.BASELINE_SCHEMA);
+        final SbeJson sbeJson = SbeJson.builder(ir).build();
+        final UnsafeBuffer original = TestMessages.newBuffer(CAPACITY);
+        final int originalLength = TestMessages.encodeBaselineCar(original, 0);
+        final ObjectNode car = sbeJson.newDecoder().decodeCopy(original, 0, originalLength);
+
+        final com.fasterxml.jackson.databind.node.ArrayNode fuelFigures = car.putArray("fuelFigures");
+        for (int i = 0; i < count; i++)
+        {
+            fuelFigures.addObject().put("speed", i).put("mpg", i * 0.5f);
+        }
+        car.putArray("performanceFigures");
+
+        final UnsafeBuffer buffer = TestMessages.newBuffer(CAPACITY);
+        final SbeJsonEncoder encoder = sbeJson.newEncoder("Car");
+        final int length = encoder.encode(car, buffer, 0, CAPACITY);
+        assertEquals(length, encoder.encodedLength(car));
+        // fuelFigures dimensions follow the 62 byte root block: uint16 blockLength then uint8 numInGroup.
+        assertEquals(count, buffer.getByte(8 + 62 + 2) & 0xFF);
+
+        final ObjectNode decoded = sbeJson.newDecoder().decodeCopy(buffer, 0, length);
+        assertEquals(count, decoded.get("fuelFigures").size());
+        assertEquals(0, decoded.get("performanceFigures").size());
+        JsonNodes.assertSemanticEquals(car, decoded);
+
+        // One past the numInGroup maximum of the IR (uint8 max 254) is rejected on encode.
+        fuelFigures.addObject().put("speed", 1).put("mpg", 1.0f);
+        while (fuelFigures.size() < 255)
+        {
+            fuelFigures.addObject().put("speed", 1).put("mpg", 1.0f);
+        }
+        final SbeJsonException ex = assertThrows(
+            SbeJsonException.class, () -> encoder.encode(car, buffer, 0, CAPACITY));
+        assertEquals(ErrorCode.OUT_OF_RANGE, ex.code());
+        assertEquals("Car.fuelFigures", ex.path());
     }
 
     static ObjectNode shuffle(final ObjectNode node)

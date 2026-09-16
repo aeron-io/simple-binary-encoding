@@ -22,6 +22,10 @@ import uk.co.real_logic.sbe.PrimitiveType;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CoderResult;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -31,7 +35,12 @@ import java.util.Map;
  * Unknown properties are detected per {@code ObjectNode} by comparing the recognised count with
  * {@code size()}; the slow path that names the offending key runs only on mismatch.
  * <p>
- * The same walk runs in sizing mode (no destination) for {@link SbeJsonEncoder#encodedLength}.
+ * The same walk runs in sizing mode (no destination, limit {@code Integer.MAX_VALUE}) for
+ * {@link SbeJsonEncoder#encodedLength}; every position is still bounds checked so a message that would exceed
+ * the supported {@code int} size is rejected with {@link ErrorCode#DESTINATION_OVERFLOW} instead of wrapping.
+ * Var-data lengths are validated before any payload is materialised.
+ * <p>
+ * One instance is retained per thread-confined {@link SbeJsonEncoder} (via {@link WalkContext#treeEncoder}).
  */
 final class PlanTreeEncoder
 {
@@ -52,6 +61,11 @@ final class PlanTreeEncoder
         this.config = config;
         this.limits = config.limits();
         this.ctx = ctx;
+    }
+
+    MessagePlan plan()
+    {
+        return plan;
     }
 
     int encode(final JsonNode body, final MutableDirectBuffer dst, final int offset, final int available)
@@ -170,7 +184,8 @@ final class PlanTreeEncoder
         final int index = entryBase + f.offset;
         if (f.constant)
         {
-            if (null != node && !node.isNull())
+            // Any supplied value, including an explicit null, must match; only omission is exempt.
+            if (null != node)
             {
                 validateConstant(f, node, index);
             }
@@ -190,11 +205,11 @@ final class PlanTreeEncoder
         switch (f.kind)
         {
             case FieldPlan.KIND_INT:
-                putLong(f, index, rangeChecked(f, integralValue(f, node, index), index));
+                putLong(f, index, signedValue(f, node, index));
                 break;
 
             case FieldPlan.KIND_UINT64:
-                putLong(f, index, unsignedValue(f, node, index));
+                putLong(f, index, uint64Value(f, node, index));
                 break;
 
             case FieldPlan.KIND_FLOAT:
@@ -253,7 +268,8 @@ final class PlanTreeEncoder
             }
             encodeBlockField(member, memberNode, entryBase);
         }
-        checkUnknownProperties(obj, recognised, composite.childStart, composite.childEnd, entryBase + composite.offset);
+        checkUnknownProperties(
+            obj, recognised, composite.childStart, composite.childEnd, entryBase + composite.offset);
         ctx.pop();
     }
 
@@ -320,18 +336,26 @@ final class PlanTreeEncoder
         }
     }
 
-    private long integralValue(final FieldPlan f, final JsonNode node, final int index)
+    /*
+     * Signed integer value for an int / uint8..uint32 field: integral node within the schema range, or the null
+     * sentinel of an optional field (so decoded sentinels round-trip).
+     */
+    private long signedValue(final FieldPlan f, final JsonNode node, final int index)
     {
-        if (!node.isIntegralNumber() || !node.canConvertToLong())
+        if (!node.isIntegralNumber())
         {
             throw error(ErrorCode.TYPE_MISMATCH, f, index, "expected an integral number but found " + describe(node));
         }
+        if (!node.canConvertToLong())
+        {
+            throw error(ErrorCode.OUT_OF_RANGE, f, index, "value " + node + " does not fit a 64-bit integer");
+        }
 
-        return node.longValue();
-    }
-
-    private long rangeChecked(final FieldPlan f, final long value, final int index)
-    {
+        final long value = node.longValue();
+        if (f.optional && value == f.nullValueLong)
+        {
+            return value;
+        }
         if (value < f.minValueLong || value > f.maxValueLong)
         {
             throw error(ErrorCode.OUT_OF_RANGE, f, index,
@@ -341,7 +365,31 @@ final class PlanTreeEncoder
         return value;
     }
 
-    private long unsignedValue(final FieldPlan f, final JsonNode node, final int index)
+    /*
+     * Raw value for a uint64 field: unsigned within the schema range, or the null sentinel of an optional field.
+     */
+    private long uint64Value(final FieldPlan f, final JsonNode node, final int index)
+    {
+        final long raw = unsignedRaw(f, node, index);
+        if (f.optional && raw == f.nullValueLong)
+        {
+            return raw;
+        }
+        if (Long.compareUnsigned(raw, f.minValueLong) < 0 || Long.compareUnsigned(raw, f.maxValueLong) > 0)
+        {
+            throw error(ErrorCode.OUT_OF_RANGE, f, index,
+                "value " + Long.toUnsignedString(raw) + " outside [" + Long.toUnsignedString(f.minValueLong) +
+                ", " + Long.toUnsignedString(f.maxValueLong) + "]");
+        }
+
+        return raw;
+    }
+
+    /*
+     * Parse an unsigned 64-bit value from an integral node (including BigIntegerNode) or a decimal string.
+     * Negative values and values above 2^64 - 1 are OUT_OF_RANGE.
+     */
+    private long unsignedRaw(final FieldPlan f, final JsonNode node, final int index)
     {
         final BigInteger value;
         if (node.isIntegralNumber())
@@ -351,9 +399,9 @@ final class PlanTreeEncoder
                 final long v = node.longValue();
                 if (v < 0)
                 {
-                    throw error(ErrorCode.OUT_OF_RANGE, f, index, "negative value " + v + " into uint64");
+                    throw error(ErrorCode.OUT_OF_RANGE, f, index, "negative value " + v + " into an unsigned field");
                 }
-                return unsignedRangeChecked(f, v, index);
+                return v;
             }
             value = node.bigIntegerValue();
         }
@@ -380,19 +428,7 @@ final class PlanTreeEncoder
             throw error(ErrorCode.OUT_OF_RANGE, f, index, "value " + value + " outside [0, " + MAX_UINT64 + "]");
         }
 
-        return unsignedRangeChecked(f, value.longValue(), index);
-    }
-
-    private long unsignedRangeChecked(final FieldPlan f, final long raw, final int index)
-    {
-        if (Long.compareUnsigned(raw, f.minValueLong) < 0 || Long.compareUnsigned(raw, f.maxValueLong) > 0)
-        {
-            throw error(ErrorCode.OUT_OF_RANGE, f, index,
-                "value " + Long.toUnsignedString(raw) + " outside [" + Long.toUnsignedString(f.minValueLong) +
-                ", " + Long.toUnsignedString(f.maxValueLong) + "]");
-        }
-
-        return raw;
+        return value.longValue();
     }
 
     private double floatingValue(final FieldPlan f, final JsonNode node, final int index)
@@ -482,12 +518,7 @@ final class PlanTreeEncoder
         }
         else
         {
-            final byte[] bytes = text.getBytes(f.charset);
-            if (bytes.length > f.arrayLength)
-            {
-                throw error(ErrorCode.OUT_OF_RANGE, f, index,
-                    "string of " + bytes.length + " bytes exceeds char[" + f.arrayLength + "]");
-            }
+            final byte[] bytes = boundedBytes(f, text, index, f.arrayLength, ErrorCode.OUT_OF_RANGE);
             if (!sizing)
             {
                 dst.putBytes(index, bytes);
@@ -526,11 +557,11 @@ final class PlanTreeEncoder
                 }
 
                 case UINT64:
-                    putLong(f, elementIndex, unsignedValue(f, element, elementIndex));
+                    putLong(f, elementIndex, uint64Value(f, element, elementIndex));
                     break;
 
                 default:
-                    putLong(f, elementIndex, rangeChecked(f, integralValue(f, element, elementIndex), elementIndex));
+                    putLong(f, elementIndex, signedValue(f, element, elementIndex));
                     break;
             }
         }
@@ -547,13 +578,21 @@ final class PlanTreeEncoder
             }
             return f.enumValues[valueIndex];
         }
-        if (node.isIntegralNumber() && node.canConvertToLong())
+        if (node.isIntegralNumber())
         {
-            final long raw = node.longValue();
             final PrimitiveType type = f.primitiveType;
+            if (PrimitiveType.UINT64 == type)
+            {
+                return unsignedRaw(f, node, index);
+            }
+            if (!node.canConvertToLong())
+            {
+                throw error(ErrorCode.OUT_OF_RANGE, f, index, "enum value " + node + " does not fit " + type);
+            }
+            final long raw = node.longValue();
             final long min = PrimitiveType.CHAR == type ? 0 : type.minValue().longValue();
             final long max = PrimitiveType.CHAR == type ? 0xFF : type.maxValue().longValue();
-            if (PrimitiveType.UINT64 != type && (raw < min || raw > max))
+            if (raw < min || raw > max)
             {
                 throw error(ErrorCode.OUT_OF_RANGE, f, index, "enum value " + raw + " does not fit " + type);
             }
@@ -565,19 +604,23 @@ final class PlanTreeEncoder
 
     private long bitSetValue(final FieldPlan f, final JsonNode node, final int index)
     {
-        if (node.isIntegralNumber() && node.canConvertToLong())
+        if (node.isIntegralNumber())
         {
+            if (PrimitiveType.UINT64 == f.primitiveType)
+            {
+                return unsignedRaw(f, node, index);
+            }
+            if (!node.canConvertToLong())
+            {
+                throw error(ErrorCode.OUT_OF_RANGE, f, index, "mask " + node + " does not fit " + f.primitiveType);
+            }
             final long mask = node.longValue();
-            if (PrimitiveType.UINT64 != f.primitiveType && (mask < 0 || mask > f.maxValueLong))
+            if (mask < 0 || mask > f.maxValueLong)
             {
                 throw error(ErrorCode.OUT_OF_RANGE, f, index,
                     "mask " + mask + " does not fit " + f.primitiveType);
             }
             return mask;
-        }
-        if (node.isBigInteger() && PrimitiveType.UINT64 == f.primitiveType)
-        {
-            return unsignedValue(f, node, index);
         }
         if (node.isObject())
         {
@@ -630,8 +673,18 @@ final class PlanTreeEncoder
                 break;
 
             case FieldPlan.KIND_ENUM:
-                matches = node.isTextual() ? node.textValue().equals(f.constString) :
-                    node.isIntegralNumber() && node.canConvertToLong() && node.longValue() == f.constLong;
+                if (node.isTextual())
+                {
+                    matches = node.textValue().equals(f.constString);
+                }
+                else if (PrimitiveType.UINT64 == f.primitiveType)
+                {
+                    matches = node.isIntegralNumber() && node.bigIntegerValue().equals(unsigned(f.constLong));
+                }
+                else
+                {
+                    matches = node.isIntegralNumber() && node.canConvertToLong() && node.longValue() == f.constLong;
+                }
                 break;
 
             default:
@@ -643,7 +696,23 @@ final class PlanTreeEncoder
         {
             throw error(ErrorCode.CONSTANT_MISMATCH, f, index,
                 "supplied " + node + " but the schema constant is " +
-                (null != f.constString ? "'" + f.constString + "'" : String.valueOf(f.constLong)));
+                (null != f.constString ? "'" + f.constString + "'" : constantDescription(f)));
+        }
+    }
+
+    private static String constantDescription(final FieldPlan f)
+    {
+        switch (f.kind)
+        {
+            case FieldPlan.KIND_UINT64:
+                return Long.toUnsignedString(f.constLong);
+
+            case FieldPlan.KIND_FLOAT:
+            case FieldPlan.KIND_DOUBLE:
+                return String.valueOf(f.constDouble);
+
+            default:
+                return String.valueOf(f.constLong);
         }
     }
 
@@ -685,7 +754,8 @@ final class PlanTreeEncoder
             dst.setMemory(dimensionOffset, g.dimensionSize, (byte)0);
             WireTypes.putLong(
                 dst, dimensionOffset + g.blockLengthOffset, g.blockLengthType, g.byteOrder, g.blockLength);
-            WireTypes.putLong(dst, dimensionOffset + g.numInGroupOffset, g.numInGroupType, g.byteOrder, count);
+            WireTypes.putLong(
+                dst, dimensionOffset + g.numInGroupOffset, g.numInGroupType, g.numInGroupByteOrder, count);
         }
 
         int cursor = dimensionOffset + g.dimensionSize;
@@ -701,10 +771,14 @@ final class PlanTreeEncoder
         return cursor;
     }
 
+    /*
+     * Var-data: the payload length is validated against the length type maximum, the remaining maxVarDataBytes
+     * budget and the destination before any payload bytes are materialised.
+     */
     private int encodeVarData(final FieldPlan v, final JsonNode node, final int lengthOffset)
     {
-        final int dataIndex = lengthOffset + v.dataOffset;
         ensure(lengthOffset, v.dataOffset, v);
+        final int dataIndex = lengthOffset + v.dataOffset;
 
         final int length;
         if (null == node || node.isNull())
@@ -713,17 +787,12 @@ final class PlanTreeEncoder
         }
         else if (FieldPlan.ENC_BINARY == v.characterEncodingTag)
         {
-            final byte[] bytes = binaryValue(v, node, dataIndex);
-            length = checkedVarDataLength(v, bytes.length, lengthOffset);
-            if (!sizing)
-            {
-                dst.putBytes(dataIndex, bytes);
-            }
+            length = encodeBinaryVarData(v, node, lengthOffset, dataIndex);
         }
         else if (FieldPlan.ENC_UTF8 == v.characterEncodingTag)
         {
             final String text = requireText(v, node, dataIndex);
-            length = checkedVarDataLength(v, Utf8.encodedLength(text), lengthOffset);
+            length = checkVarDataLength(v, Utf8.encodedLength(text), lengthOffset);
             if (!sizing)
             {
                 Utf8.encode(text, dst, dataIndex);
@@ -736,7 +805,7 @@ final class PlanTreeEncoder
             {
                 throw error(ErrorCode.TYPE_MISMATCH, v, dataIndex, "string contains non-ASCII characters");
             }
-            length = checkedVarDataLength(v, text.length(), lengthOffset);
+            length = checkVarDataLength(v, text.length(), lengthOffset);
             if (!sizing)
             {
                 for (int i = 0; i < length; i++)
@@ -747,14 +816,18 @@ final class PlanTreeEncoder
         }
         else
         {
-            final byte[] bytes = requireText(v, node, dataIndex).getBytes(v.charset);
-            length = checkedVarDataLength(v, bytes.length, lengthOffset);
+            final String text = requireText(v, node, dataIndex);
+            final long budget = Math.min(
+                v.lengthMax, Math.min(limits.maxVarDataBytes() - ctx.varDataBytes(), limit - dataIndex));
+            final byte[] bytes = boundedBytes(v, text, lengthOffset, budget, null);
+            length = checkVarDataLength(v, bytes.length, lengthOffset);
             if (!sizing)
             {
                 dst.putBytes(dataIndex, bytes);
             }
         }
 
+        ctx.addVarDataBytes(length);
         if (!sizing)
         {
             dst.setMemory(lengthOffset, v.dataOffset, (byte)0);
@@ -764,29 +837,95 @@ final class PlanTreeEncoder
         return dataIndex + length;
     }
 
-    private int checkedVarDataLength(final FieldPlan v, final int length, final int lengthOffset)
+    private int encodeBinaryVarData(
+        final FieldPlan v, final JsonNode node, final int lengthOffset, final int dataIndex)
+    {
+        final byte[] bytes;
+        if (node.isBinary())
+        {
+            bytes = binaryValue(v, node, dataIndex);
+        }
+        else if (node.isTextual())
+        {
+            // Upper bound of the decoded size from the text length, checked before the payload is decoded.
+            final long upperBound = ((long)node.textValue().length() + 3) / 4 * 3;
+            checkVarDataLength(v, upperBound, lengthOffset);
+            bytes = binaryValue(v, node, dataIndex);
+        }
+        else
+        {
+            throw error(ErrorCode.TYPE_MISMATCH, v, dataIndex, "expected base64 binary but found " + describe(node));
+        }
+
+        final int length = checkVarDataLength(v, bytes.length, lengthOffset);
+        if (!sizing)
+        {
+            dst.putBytes(dataIndex, bytes);
+        }
+
+        return length;
+    }
+
+    /*
+     * Encode text in a non ASCII / UTF-8 charset without materialising more than budget + 1 bytes. When the
+     * result would exceed the budget, overflowCode is raised if given, otherwise the var-data budget checks
+     * decide the code.
+     */
+    private byte[] boundedBytes(
+        final FieldPlan f, final String text, final int index, final long budget, final ErrorCode overflowCode)
+    {
+        final CharsetEncoder encoder = f.charset.newEncoder();
+        final long upperBound = (long)Math.ceil(text.length() * (double)encoder.maxBytesPerChar());
+        final long scratch = Math.min(upperBound, Math.min(budget, Integer.MAX_VALUE - 1) + 1);
+        final ByteBuffer out = ByteBuffer.allocate((int)Math.max(0, scratch));
+        CoderResult result = encoder.encode(CharBuffer.wrap(text), out, true);
+        if (result.isUnderflow())
+        {
+            result = encoder.flush(out);
+        }
+        if (result.isOverflow() || out.position() > budget)
+        {
+            if (null != overflowCode)
+            {
+                throw error(overflowCode, f, index, "string encodes to more than " + budget + " bytes");
+            }
+            checkVarDataLength(f, budget + 1, index);
+        }
+        if (result.isError())
+        {
+            throw error(ErrorCode.TYPE_MISMATCH, f, index, "string cannot be encoded in " + f.charset);
+        }
+
+        final byte[] bytes = new byte[out.position()];
+        out.flip();
+        out.get(bytes);
+
+        return bytes;
+    }
+
+    /*
+     * Check a var-data payload length against the length type maximum, the remaining var-data budget and the
+     * destination, in that order, without consuming the budget.
+     */
+    private int checkVarDataLength(final FieldPlan v, final long length, final int lengthOffset)
     {
         if (length > v.lengthMax)
         {
             throw error(ErrorCode.OUT_OF_RANGE, v, lengthOffset,
                 "var-data of " + length + " bytes exceeds the length type maximum " + v.lengthMax);
         }
-        if (ctx.addVarDataBytes(length) > limits.maxVarDataBytes())
+        if (length > limits.maxVarDataBytes() - ctx.varDataBytes())
         {
             throw error(ErrorCode.LIMIT_EXCEEDED, v, lengthOffset,
                 "total var-data bytes exceed maxVarDataBytes " + limits.maxVarDataBytes());
         }
         ensure(lengthOffset + v.dataOffset, length, v);
 
-        return length;
+        return (int)length;
     }
 
     private byte[] binaryValue(final FieldPlan v, final JsonNode node, final int index)
     {
-        if (!node.isBinary() && !node.isTextual())
-        {
-            throw error(ErrorCode.TYPE_MISMATCH, v, index, "expected base64 binary but found " + describe(node));
-        }
         try
         {
             return node.binaryValue();
@@ -821,12 +960,17 @@ final class PlanTreeEncoder
         return node.textValue();
     }
 
-    private void ensure(final int index, final int length, final FieldPlan f)
+    /*
+     * Check that length bytes at index fit before the limit. In sizing mode the limit is Integer.MAX_VALUE, so
+     * this also rejects messages beyond the supported size instead of overflowing int arithmetic.
+     */
+    private void ensure(final int index, final long length, final FieldPlan f)
     {
-        if (!sizing && length > limit - index)
+        if (length > limit - index)
         {
             throw error(ErrorCode.DESTINATION_OVERFLOW, f, index,
-                "need " + length + " bytes at " + index + " but only " + Math.max(0, limit - index) + " available");
+                "need " + length + " bytes at " + index + " but only " + Math.max(0, limit - index) +
+                (sizing ? " remain below the supported message size" : " available"));
         }
     }
 

@@ -256,6 +256,30 @@ class EncodeValidationTest
         assertTrue(decoded.get("cupHolderCount").isNull());
         assertEquals(0, decoded.get("performanceFigures").size());
         assertEquals("", decoded.get("model").textValue());
+
+        // The decoded sentinels (uuid elements at Long.MIN_VALUE, below the schema minimum) must re-encode.
+        final UnsafeBuffer again = TestMessages.newBuffer(CAPACITY);
+        final SbeJsonEncoder encoder = sbeJson.newEncoder("Car");
+        final int written = encoder.encode(decoded, again, 0, CAPACITY);
+        assertEquals(length, written);
+        assertEquals(length, encoder.encodedLength(decoded));
+        assertArrayEquals(Arrays.copyOf(buffer.byteArray(), length), Arrays.copyOf(again.byteArray(), written));
+
+        // A sentinel in one element of an otherwise ordinary array, and an out-of-range non-sentinel, still differ.
+        car.putArray("uuid").add(Long.MIN_VALUE).add(7L);
+        final int mixed = encoder.encode(car, buffer, 0, CAPACITY);
+        final JsonNode uuid = sbeJson.newDecoder().decodeCopy(buffer, 0, mixed).get("uuid");
+        assertEquals(Long.MIN_VALUE, uuid.get(0).longValue());
+        assertEquals(7L, uuid.get(1).longValue());
+        assertRejects(ErrorCode.OUT_OF_RANGE, "Car.modelYear", c -> c.put("modelYear", 65535));
+    }
+
+    @Test
+    void explicitNullForAConstantIsAConstantMismatch()
+    {
+        assertRejects(ErrorCode.CONSTANT_MISMATCH, "Car.engine.maxRpm", c -> engine(c).putNull("maxRpm"));
+        assertRejects(ErrorCode.CONSTANT_MISMATCH, "Car.engine.fuel", c -> engine(c).putNull("fuel"));
+        assertRejects(ErrorCode.CONSTANT_MISMATCH, "Car.discountedModel", c -> c.putNull("discountedModel"));
     }
 
     @Test

@@ -150,6 +150,7 @@ final class FieldPlan
     final int blockLengthOffset;
     final PrimitiveType numInGroupType;
     final int numInGroupOffset;
+    final ByteOrder numInGroupByteOrder;
     final long numInGroupMin;
     final long numInGroupMax;
     final int dimensionSize;
@@ -199,6 +200,7 @@ final class FieldPlan
         blockLengthOffset = b.blockLengthOffset;
         numInGroupType = b.numInGroupType;
         numInGroupOffset = b.numInGroupOffset;
+        numInGroupByteOrder = b.numInGroupByteOrder;
         numInGroupMin = b.numInGroupMin;
         numInGroupMax = b.numInGroupMax;
         dimensionSize = b.dimensionSize;
@@ -323,6 +325,7 @@ final class FieldPlan
         int blockLengthOffset;
         PrimitiveType numInGroupType;
         int numInGroupOffset;
+        ByteOrder numInGroupByteOrder = ByteOrder.LITTLE_ENDIAN;
         long numInGroupMin;
         long numInGroupMax;
         int dimensionSize;

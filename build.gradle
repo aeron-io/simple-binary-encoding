@@ -657,10 +657,18 @@ project(':sbe-jackson') {
                 'sbe.validation.xsd': validationXsdPath,
                 'sbe.generate.precedence.checks': 'false')
         def schemaDir = project(':sbe-tool').file('src/test/resources')
-        args = [new File(schemaDir, 'json-printer-test-schema.xml').path,
-                new File(schemaDir, 'example-extension-schema.xml').path,
-                new File(schemaDir, 'composite-elements-schema.xml').path,
-                new File(schemaDir, 'group-with-data-schema.xml').path]
+        def schemas = [new File(schemaDir, 'json-printer-test-schema.xml'),
+                       new File(schemaDir, 'example-extension-schema.xml'),
+                       new File(schemaDir, 'composite-elements-schema.xml'),
+                       new File(schemaDir, 'group-with-data-schema.xml')]
+        args = schemas.collect { it.path }
+        inputs.files(schemas)
+        inputs.file(validationXsdPath)
+        inputs.files(project(':sbe-tool').sourceSets.main.runtimeClasspath)
+        outputs.dir(generatedDir)
+        doFirst {
+            delete generatedDir
+        }
     }
 
     // Runs the test suite a second time against the latest Jackson 2.21.x release.

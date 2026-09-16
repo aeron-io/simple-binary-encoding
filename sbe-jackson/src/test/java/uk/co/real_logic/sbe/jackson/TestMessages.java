@@ -39,6 +39,7 @@ final class TestMessages
     static final String NESTED_GROUP_SCHEMA = "nested-group-schema.xml";
     static final String VERSIONED_V1_SCHEMA = "versioned-message-v1.xml";
     static final String VERSIONED_V2_SCHEMA = "versioned-message-v2.xml";
+    static final String EDGE_SCHEMA = "edge-cases-schema.xml";
 
     private TestMessages()
     {

@@ -30,6 +30,11 @@ final class WalkContext
     final JsonNodeFactory factory;
     final boolean writableStackTraces;
 
+    /**
+     * Tree encoder retained across calls by the owning thread-confined encoder; created lazily by the codec.
+     */
+    PlanTreeEncoder treeEncoder;
+
     private int[] pathFields = new int[INITIAL_DEPTH];
     private int[] pathElements = new int[INITIAL_DEPTH];
     private int depth;
@@ -85,6 +90,11 @@ final class WalkContext
     long addVarDataBytes(final long count)
     {
         varDataBytes += count;
+        return varDataBytes;
+    }
+
+    long varDataBytes()
+    {
         return varDataBytes;
     }
 

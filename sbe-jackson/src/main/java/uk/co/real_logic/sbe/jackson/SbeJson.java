@@ -18,7 +18,6 @@ package uk.co.real_logic.sbe.jackson;
 import org.agrona.collections.Int2ObjectHashMap;
 import uk.co.real_logic.sbe.ir.Ir;
 import uk.co.real_logic.sbe.ir.Token;
-import uk.co.real_logic.sbe.otf.OtfHeaderDecoder;
 
 import java.util.HashMap;
 import java.util.List;
@@ -48,7 +47,6 @@ public final class SbeJson
     private final NewerVersions newerVersions;
     private final boolean exceptionStackTraces;
     private final Limits limits;
-    private final OtfHeaderDecoder headerDecoder;
     private final HeaderLayout headerLayout;
     private final Int2ObjectHashMap<MessageCodec> codecsById = new Int2ObjectHashMap<>();
     private final Map<String, MessageCodec> codecsByName = new HashMap<>();
@@ -63,7 +61,6 @@ public final class SbeJson
         newerVersions = builder.newerVersions;
         exceptionStackTraces = builder.exceptionStackTraces;
         limits = builder.limits;
-        headerDecoder = new OtfHeaderDecoder(ir.headerStructure());
         headerLayout = new HeaderLayout(ir.headerStructure());
 
         for (final List<Token> tokens : ir.messages())
@@ -226,11 +223,6 @@ public final class SbeJson
     public Limits limits()
     {
         return limits;
-    }
-
-    OtfHeaderDecoder headerDecoder()
-    {
-        return headerDecoder;
     }
 
     HeaderLayout headerLayout()

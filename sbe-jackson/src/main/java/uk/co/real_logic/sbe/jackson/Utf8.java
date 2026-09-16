@@ -33,13 +33,16 @@ final class Utf8
     /**
      * Number of bytes {@link #encode} will write for a sequence.
      *
+     * Returned as a {@code long} so that a sequence whose encoding exceeds {@code Integer.MAX_VALUE} bytes is
+     * reported rather than wrapped.
+     *
      * @param chars source characters.
      * @return encoded byte count.
      */
-    static int encodedLength(final CharSequence chars)
+    static long encodedLength(final CharSequence chars)
     {
         final int length = chars.length();
-        int bytes = 0;
+        long bytes = 0;
         for (int i = 0; i < length; i++)
         {
             final char c = chars.charAt(i);
