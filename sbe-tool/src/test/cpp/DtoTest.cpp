@@ -18,9 +18,13 @@
 #error DTO code requires at least C++17.
 #endif
 
+#include <cstring>
+
 #include <gtest/gtest.h>
 #include "dto_test/ExtendedCar.h"
 #include "dto_test/ExtendedCarDto.h"
+#include "infinity_test/FloatConstantsDto.h"
+#include "infinity_test/InfinityValuesDto.h"
 
 using namespace dto_test;
 
@@ -168,6 +172,35 @@ public:
         return car.encodedLength();
     }
 };
+
+namespace
+{
+std::uint32_t floatBits(const float value)
+{
+    std::uint32_t bits;
+    std::memcpy(&bits, &value, sizeof(bits));
+    return bits;
+}
+
+std::uint64_t doubleBits(const double value)
+{
+    std::uint64_t bits;
+    std::memcpy(&bits, &value, sizeof(bits));
+    return bits;
+}
+}
+
+TEST_F(DtoTest, shouldGenerateInfinityConstants)
+{
+    EXPECT_EQ(0x7f800000U, floatBits(infinity_test::InfinityValuesDto::floatPositiveInfinity()));
+    EXPECT_EQ(0xff800000U, floatBits(infinity_test::InfinityValuesDto::floatNegativeInfinity()));
+    EXPECT_EQ(0x7ff0000000000000ULL,
+        doubleBits(infinity_test::InfinityValuesDto::doublePositiveInfinity()));
+    EXPECT_EQ(0xfff0000000000000ULL,
+        doubleBits(infinity_test::InfinityValuesDto::doubleNegativeInfinity()));
+    EXPECT_EQ(0x7f800000U, floatBits(infinity_test::FloatConstantsDto::positive()));
+    EXPECT_EQ(0xff800000U, floatBits(infinity_test::FloatConstantsDto::negative()));
+}
 
 TEST_F(DtoTest, shouldRoundTripCar1)
 {

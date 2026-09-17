@@ -1803,6 +1803,8 @@ public class CppGenerator implements CodeGenerator
 
             "#define SBE_FLOAT_NAN std::numeric_limits<float>::quiet_NaN()\n" +
             "#define SBE_DOUBLE_NAN std::numeric_limits<double>::quiet_NaN()\n" +
+            "#define SBE_FLOAT_INFINITY std::numeric_limits<float>::infinity()\n" +
+            "#define SBE_DOUBLE_INFINITY std::numeric_limits<double>::infinity()\n" +
             "#define SBE_NULLVALUE_INT8 (std::numeric_limits<std::int8_t>::min)()\n" +
             "#define SBE_NULLVALUE_INT16 (std::numeric_limits<std::int16_t>::min)()\n" +
             "#define SBE_NULLVALUE_INT32 (std::numeric_limits<std::int32_t>::min)()\n" +

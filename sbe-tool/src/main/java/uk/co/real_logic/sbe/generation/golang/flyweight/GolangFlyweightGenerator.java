@@ -2678,6 +2678,12 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 if (value.endsWith("NaN"))
                 {
                     literal = "math.NaN()";
+                    addInclude("math");
+                }
+                else if (value.endsWith("Infinity"))
+                {
+                    literal = "float32(math.Inf(" + (value.startsWith("-") ? "-1" : "1") + "))";
+                    addInclude("math");
                 }
                 else
                 {
@@ -2706,6 +2712,11 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 if (value.endsWith("NaN"))
                 {
                     literal = "math.NaN()";
+                    addInclude("math");
+                }
+                else if (value.endsWith("Infinity"))
+                {
+                    literal = "math.Inf(" + (value.startsWith("-") ? "-1" : "1") + ")";
                     addInclude("math");
                 }
                 else

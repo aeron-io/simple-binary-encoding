@@ -68,8 +68,16 @@ class RustUtilTest
         assertEquals("65_u8", generateRustLiteral(CHAR, "65"));
         assertEquals("64.1_f64", generateRustLiteral(DOUBLE, "64.1"));
         assertEquals("f64::NAN", generateRustLiteral(DOUBLE, "NaN"));
+        assertEquals("f64::INFINITY", generateRustLiteral(DOUBLE, "Infinity"));
+        assertEquals("-f64::INFINITY", generateRustLiteral(DOUBLE, "-Infinity"));
         assertEquals("64.1_f32", generateRustLiteral(FLOAT, "64.1"));
+        assertEquals("-1.5_f32", generateRustLiteral(FLOAT, "-1.5"));
+        assertEquals("-0.0_f32", generateRustLiteral(FLOAT, "-0.0"));
         assertEquals("f32::NAN", generateRustLiteral(FLOAT, "NaN"));
+        assertEquals("f32::INFINITY", generateRustLiteral(FLOAT, "Infinity"));
+        assertEquals("-f32::INFINITY", generateRustLiteral(FLOAT, "-Infinity"));
+        assertEquals("-1.5_f64", generateRustLiteral(DOUBLE, "-1.5"));
+        assertEquals("-0.0_f64", generateRustLiteral(DOUBLE, "-0.0"));
 
         assertEquals("65_i8", generateRustLiteral(INT8, "65"));
         assertEquals("65_i16", generateRustLiteral(INT16, "65"));

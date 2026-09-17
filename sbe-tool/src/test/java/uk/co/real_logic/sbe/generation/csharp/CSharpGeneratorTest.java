@@ -105,4 +105,29 @@ class CSharpGeneratorTest
                 """));
         }
     }
+
+    @Test
+    void shouldGenerateFloatingPointInfinityLiterals() throws Exception
+    {
+        try (InputStream in = Tests.getLocalResource("floating-point-infinity-schema.xml"))
+        {
+            final ParserOptions options = ParserOptions.builder().stopOnError(true).build();
+            final MessageSchema schema = parse(in, options);
+            final Ir ir = new IrGenerator().generate(schema);
+            final StringWriterOutputManager outputManager = new StringWriterOutputManager();
+            outputManager.setPackageName(ir.applicableNamespace());
+
+            new CSharpGenerator(
+                ir,
+                PrecedenceChecks.newInstance(new PrecedenceChecks.Context()),
+                true,
+                outputManager).generate();
+
+            final String source = outputManager.getSources().values().stream()
+                .map(CharSequence::toString)
+                .collect(java.util.stream.Collectors.joining("\n"));
+            assertThat(source, containsString("float.PositiveInfinity"));
+            assertThat(source, containsString("double.NegativeInfinity"));
+        }
+    }
 }

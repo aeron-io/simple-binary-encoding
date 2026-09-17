@@ -56,6 +56,31 @@ class CppGeneratorTest
     }
 
     @Test
+    void shouldGenerateFloatingPointInfinityLiterals() throws Exception
+    {
+        try (InputStream in = Tests.getLocalResource("floating-point-infinity-schema.xml"))
+        {
+            final ParserOptions options = ParserOptions.builder().stopOnError(true).build();
+            final MessageSchema schema = parse(in, options);
+            final Ir ir = new IrGenerator().generate(schema);
+            final StringWriterOutputManager outputManager = new StringWriterOutputManager();
+            outputManager.setPackageName(ir.applicableNamespace());
+
+            new CppGenerator(ir, false, outputManager).generate();
+
+            final String source = outputManager.getSources().values().stream()
+                .map(CharSequence::toString)
+                .collect(java.util.stream.Collectors.joining("\n"));
+            assertThat(source, containsString(
+                "#define SBE_FLOAT_INFINITY std::numeric_limits<float>::infinity()"));
+            assertThat(source, containsString(
+                "#define SBE_DOUBLE_INFINITY std::numeric_limits<double>::infinity()"));
+            assertThat(source, containsString("SBE_FLOAT_INFINITY"));
+            assertThat(source, containsString("-SBE_DOUBLE_INFINITY"));
+        }
+    }
+
+    @Test
     void shouldUseConstexprWhenInitializingSemanticVersion() throws Exception
     {
         try (InputStream in = Tests.getLocalResource("code-generation-schema.xml"))
