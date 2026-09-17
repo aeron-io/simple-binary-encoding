@@ -501,6 +501,143 @@ public:
         }
     }
 
+    static inline void putChar(char *buffer, char value)
+    {
+        *buffer = value;
+    }
+
+    static inline void putInt8(char *buffer, std::int8_t value)
+    {
+        std::memcpy(buffer, &value, sizeof(std::int8_t));
+    }
+
+    static inline void putInt16(char *buffer, const ByteOrder byteOrder, std::int16_t value)
+    {
+        value = SBE_OTF_BYTE_ORDER_16(byteOrder, value);
+        std::memcpy(buffer, &value, sizeof(std::int16_t));
+    }
+
+    static inline void putInt32(char *buffer, const ByteOrder byteOrder, std::int32_t value)
+    {
+        value = SBE_OTF_BYTE_ORDER_32(byteOrder, value);
+        std::memcpy(buffer, &value, sizeof(std::int32_t));
+    }
+
+    static inline void putInt64(char *buffer, const ByteOrder byteOrder, std::int64_t value)
+    {
+        value = SBE_OTF_BYTE_ORDER_64(byteOrder, value);
+        std::memcpy(buffer, &value, sizeof(std::int64_t));
+    }
+
+    static inline void putUInt8(char *buffer, std::uint8_t value)
+    {
+        std::memcpy(buffer, &value, sizeof(std::uint8_t));
+    }
+
+    static inline void putUInt16(char *buffer, const ByteOrder byteOrder, std::uint16_t value)
+    {
+        value = SBE_OTF_BYTE_ORDER_16(byteOrder, value);
+        std::memcpy(buffer, &value, sizeof(std::uint16_t));
+    }
+
+    static inline void putUInt32(char *buffer, const ByteOrder byteOrder, std::uint32_t value)
+    {
+        value = SBE_OTF_BYTE_ORDER_32(byteOrder, value);
+        std::memcpy(buffer, &value, sizeof(std::uint32_t));
+    }
+
+    static inline void putUInt64(char *buffer, const ByteOrder byteOrder, std::uint64_t value)
+    {
+        value = SBE_OTF_BYTE_ORDER_64(byteOrder, value);
+        std::memcpy(buffer, &value, sizeof(std::uint64_t));
+    }
+
+    static inline void putFloat(char *buffer, const ByteOrder byteOrder, float value)
+    {
+        sbe_float_as_uint_t val;
+        val.fp_value = value;
+        val.uint_value = SBE_OTF_BYTE_ORDER_32(byteOrder, val.uint_value);
+        std::memcpy(buffer, &val, sizeof(float));
+    }
+
+    static inline void putDouble(char *buffer, const ByteOrder byteOrder, double value)
+    {
+        sbe_double_as_uint_t val;
+        val.fp_value = value;
+        val.uint_value = SBE_OTF_BYTE_ORDER_64(byteOrder, val.uint_value);
+        std::memcpy(buffer, &val, sizeof(double));
+    }
+
+    static inline void putInt(const PrimitiveType type, const ByteOrder byteOrder, char *buffer, const std::int64_t value)
+    {
+        switch (type)
+        {
+            case PrimitiveType::CHAR:
+                putChar(buffer, static_cast<char>(value));
+                break;
+
+            case PrimitiveType::INT8:
+                putInt8(buffer, static_cast<std::int8_t>(value));
+                break;
+
+            case PrimitiveType::INT16:
+                putInt16(buffer, byteOrder, static_cast<std::int16_t>(value));
+                break;
+
+            case PrimitiveType::INT32:
+                putInt32(buffer, byteOrder, static_cast<std::int32_t>(value));
+                break;
+
+            case PrimitiveType::INT64:
+                putInt64(buffer, byteOrder, value);
+                break;
+
+            default:
+                throw std::runtime_error("incorrect type for Encoding::putInt");
+        }
+    }
+
+    static inline void putUInt(const PrimitiveType type, const ByteOrder byteOrder, char *buffer, const std::uint64_t value)
+    {
+        switch (type)
+        {
+            case PrimitiveType::UINT8:
+                putUInt8(buffer, static_cast<std::uint8_t>(value));
+                break;
+
+            case PrimitiveType::UINT16:
+                putUInt16(buffer, byteOrder, static_cast<std::uint16_t>(value));
+                break;
+
+            case PrimitiveType::UINT32:
+                putUInt32(buffer, byteOrder, static_cast<std::uint32_t>(value));
+                break;
+
+            case PrimitiveType::UINT64:
+                putUInt64(buffer, byteOrder, value);
+                break;
+
+            default:
+                throw std::runtime_error("incorrect type for Encoding::putUInt");
+        }
+    }
+
+    static inline void putDouble(const PrimitiveType type, const ByteOrder byteOrder, char *buffer, const double value)
+    {
+        if (type == PrimitiveType::FLOAT)
+        {
+            putFloat(buffer, byteOrder, static_cast<float>(value));
+        }
+        else if (type == PrimitiveType::DOUBLE)
+        {
+            putDouble(buffer, byteOrder, value);
+        }
+        else
+        {
+            throw std::runtime_error("incorrect type for Encoding::putDouble");
+        }
+    }
+
     inline Presence presence() const
     {
         return m_presence;
@@ -529,6 +666,21 @@ public:
     inline double getAsDouble(const char *buffer) const
     {
         return getDouble(m_primitiveType, m_byteOrder, buffer);
+    }
+
+    inline void putAsInt(char *buffer, const std::int64_t value) const
+    {
+        putInt(m_primitiveType, m_byteOrder, buffer, value);
+    }
+
+    inline void putAsUInt(char *buffer, const std::uint64_t value) const
+    {
+        putUInt(m_primitiveType, m_byteOrder, buffer, value);
+    }
+
+    inline void putAsDouble(char *buffer, const double value) const
+    {
+        putDouble(m_primitiveType, m_byteOrder, buffer, value);
     }
 
     inline const PrimitiveValue &minValue() const
