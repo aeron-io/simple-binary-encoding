@@ -352,6 +352,7 @@ public class Token
     /**
      * {@inheritDoc}
      */
+    @Override
     public String toString()
     {
         return "Token{" +

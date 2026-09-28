@@ -96,7 +96,16 @@ public class RustUtil
                 return "0x" + Long.toHexString(parseLong(value)) + '_' + typeName;
             case FLOAT:
             case DOUBLE:
-                return value.endsWith("NaN") ? typeName + "::NAN" : value + '_' + typeName;
+                if (value.endsWith("NaN"))
+                {
+                    return typeName + "::NAN";
+                }
+                else if (value.endsWith("Infinity"))
+                {
+                    final String infinity = typeName + "::INFINITY";
+                    return value.startsWith("-") ? "-" + infinity : infinity;
+                }
+                return value + '_' + typeName;
 
             default:
                 throw new IllegalArgumentException("Unsupported literal generation for type: " + type.primitiveName());

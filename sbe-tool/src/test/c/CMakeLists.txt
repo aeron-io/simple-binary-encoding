@@ -36,6 +36,7 @@ set(CODE_GENERATION_SCHEMA ${CODEC_SCHEMA_DIR}/code-generation-schema.xml)
 set(CODE_GENERATION_SCHEMA_WITH_VERSION ${CODEC_SCHEMA_DIR}/code-generation-schema-with-version.xml)
 set(GROUP_WITH_DATA_SCHEMA ${CODEC_SCHEMA_DIR}/group-with-data-schema.xml)
 set(ISSUE889_SCHEMA ${CODEC_SCHEMA_DIR}/issue889.xml)
+set(FLOATING_POINT_INFINITY_SCHEMA ${CODEC_SCHEMA_DIR}/floating-point-infinity-schema.xml)
 
 set(GENERATED_CODECS
     ${C_CODEC_TARGET_DIR}
@@ -43,7 +44,7 @@ set(GENERATED_CODECS
 
 add_custom_command(
     OUTPUT ${GENERATED_CODECS}
-    DEPENDS sbe-jar ${SBE_JAR} ${CODE_GENERATION_SCHEMA} ${CODE_GENERATION_SCHEMA_WITH_VERSION} ${GROUP_WITH_DATA_SCHEMA} ${ISSUE889_SCHEMA}
+    DEPENDS sbe-jar ${SBE_JAR} ${CODE_GENERATION_SCHEMA} ${CODE_GENERATION_SCHEMA_WITH_VERSION} ${GROUP_WITH_DATA_SCHEMA} ${ISSUE889_SCHEMA} ${FLOATING_POINT_INFINITY_SCHEMA}
     COMMAND
         ${Java_JAVA_EXECUTABLE} --add-opens java.base/jdk.internal.misc=ALL-UNNAMED
             -Dsbe.output.dir=${C_CODEC_TARGET_DIR}
@@ -54,6 +55,7 @@ add_custom_command(
             ${CODE_GENERATION_SCHEMA_WITH_VERSION}
             ${GROUP_WITH_DATA_SCHEMA}
             ${ISSUE889_SCHEMA}
+            ${FLOATING_POINT_INFINITY_SCHEMA}
 )
 
 add_custom_target(c_codecs DEPENDS ${GENERATED_CODECS})
@@ -63,6 +65,7 @@ sbe_test(BoundsCheckTest c_codecs)
 sbe_test(CodeGenTest c_codecs)
 sbe_test(GroupWithDataTest c_codecs)
 sbe_test(Issue889Test c_codecs)
+sbe_test(InfinityTest c_codecs)
 
 # Compile a dummy C source to test C compliance of generated headers.
 add_executable(CComplianceTest CComplianceTest.c)

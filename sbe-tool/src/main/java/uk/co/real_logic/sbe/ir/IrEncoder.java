@@ -95,6 +95,7 @@ public class IrEncoder implements AutoCloseable
     /**
      * {@inheritDoc}
      */
+    @Override
     public void close()
     {
         CloseHelper.quietClose(channel);

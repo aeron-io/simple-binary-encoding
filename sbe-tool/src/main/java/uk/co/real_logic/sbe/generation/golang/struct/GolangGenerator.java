@@ -146,6 +146,7 @@ public class GolangGenerator implements CodeGenerator
     /**
      * {@inheritDoc}
      */
+    @Override
     public void generate() throws IOException
     {
         // Add the Marshalling from the big or little endian
@@ -476,10 +477,26 @@ public class GolangGenerator implements CodeGenerator
         imports.peek().add("fmt");
         if (token.arrayLength() > 1)
         {
+            // A character array holding a value shorter than its declared length is NUL padded by the Java,
+            // C++ and Go flyweight codecs, and NullValue for CHAR (0) sits below MinValue (0x20), so the pad
+            // bytes have to be accepted here too. Space padded values are unaffected either way because the
+            // pad character is itself within Min->Max.
+            // Structured this way for go fmt sanity on both cases.
+            final String elementCheck;
+            if (token.encoding().primitiveType() == PrimitiveType.CHAR)
+            {
+                elementCheck = "\t\t\tif %1$s[idx] != %1$sNullValue() && " +
+                    "(%1$s[idx] < %1$sMinValue() || %1$s[idx] > %1$sMaxValue()) {\n";
+            }
+            else
+            {
+                elementCheck = "\t\t\tif %1$s[idx] < %1$sMinValue() || %1$s[idx] > %1$sMaxValue() {\n";
+            }
+
             sb.append(String.format(
                 "\tif %1$sInActingVersion(actingVersion) {\n" +
                 "\t\tfor idx := 0; idx < %2$s; idx++ {\n" +
-                "\t\t\tif %1$s[idx] < %1$sMinValue() || %1$s[idx] > %1$sMaxValue() {\n" +
+                elementCheck +
                 "\t\t\t\treturn fmt.Errorf(\"Range check failed on %1$s[%%d] " +
                 "(%%v < %%v > %%v)\", idx, %1$sMinValue(), %1$s[idx], %1$sMaxValue())\n" +
                 "\t\t\t}\n" +
@@ -2373,11 +2390,37 @@ public class GolangGenerator implements CodeGenerator
                 break;
 
             case FLOAT:
-                literal = "float32(" + (value.endsWith("NaN") ? "math.NaN()" : value) + ")";
+                if (value.endsWith("NaN"))
+                {
+                    imports.peek().add("math");
+                    literal = "float32(math.NaN())";
+                }
+                else if (value.endsWith("Infinity"))
+                {
+                    imports.peek().add("math");
+                    literal = "float32(math.Inf(" + (value.startsWith("-") ? "-1" : "1") + "))";
+                }
+                else
+                {
+                    literal = "float32(" + value + ")";
+                }
                 break;
 
             case DOUBLE:
-                literal = value.endsWith("NaN") ? "math.NaN()" : value;
+                if (value.endsWith("NaN"))
+                {
+                    imports.peek().add("math");
+                    literal = "math.NaN()";
+                }
+                else if (value.endsWith("Infinity"))
+                {
+                    imports.peek().add("math");
+                    literal = "math.Inf(" + (value.startsWith("-") ? "-1" : "1") + ")";
+                }
+                else
+                {
+                    literal = value;
+                }
                 break;
         }
 

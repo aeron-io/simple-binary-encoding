@@ -69,6 +69,7 @@ public class JavaUtil
         /**
          * {@inheritDoc}
          */
+        @Override
         public String toString()
         {
             return String.valueOf(symbol);
@@ -312,7 +313,20 @@ public class JavaUtil
                 break;
 
             case FLOAT:
-                literal = value.endsWith("NaN") ? "Float.NaN" : value + "f";
+                if (value.endsWith("NaN"))
+                {
+                    literal = "Float.NaN";
+                }
+                else if (value.endsWith("Infinity"))
+                {
+                    literal = value.startsWith("-") ?
+                            "Float.NEGATIVE_INFINITY" :
+                            "Float.POSITIVE_INFINITY";
+                }
+                else
+                {
+                    literal = value + "f";
+                }
                 break;
 
             case INT64:
@@ -324,7 +338,20 @@ public class JavaUtil
                 break;
 
             case DOUBLE:
-                literal = value.endsWith("NaN") ? "Double.NaN" : value + "d";
+                if (value.endsWith("NaN"))
+                {
+                    literal = "Double.NaN";
+                }
+                else if (value.endsWith("Infinity"))
+                {
+                    literal = value.startsWith("-") ?
+                            "Double.NEGATIVE_INFINITY" :
+                            "Double.POSITIVE_INFINITY";
+                }
+                else
+                {
+                    literal = value + "d";
+                }
                 break;
         }
 

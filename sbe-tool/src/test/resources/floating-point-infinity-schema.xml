@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   package="infinity_test"
+                   id="1"
+                   version="0"
+                   semanticVersion="1.0"
+                   description="Floating point infinity literal test"
+                   byteOrder="littleEndian">
+    <types>
+        <composite name="messageHeader" description="Message identifiers and length of message root">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+        </composite>
+        <type name="floatPositiveInfinity" primitiveType="float" presence="constant">Infinity</type>
+        <type name="floatNegativeInfinity" primitiveType="float" presence="constant">-Infinity</type>
+        <type name="doublePositiveInfinity" primitiveType="double" presence="constant">Infinity</type>
+        <type name="doubleNegativeInfinity" primitiveType="double" presence="constant">-Infinity</type>
+        <type name="floatPositiveNull" primitiveType="float" presence="optional"
+              nullValue="Infinity" minValue="-Infinity" maxValue="1.5"/>
+        <type name="floatNegativeNull" primitiveType="float" presence="optional"
+              nullValue="-Infinity" minValue="-1.5" maxValue="Infinity"/>
+        <type name="doublePositiveNull" primitiveType="double" presence="optional"
+              nullValue="Infinity" minValue="-Infinity" maxValue="1.5"/>
+        <type name="doubleNegativeNull" primitiveType="double" presence="optional"
+              nullValue="-Infinity" minValue="-1.5" maxValue="Infinity"/>
+    </types>
+    <sbe:message name="InfinityValues" id="1" description="All floating point infinity values">
+        <field name="floatPositiveInfinity" id="1" type="floatPositiveInfinity" presence="constant"/>
+        <field name="floatNegativeInfinity" id="2" type="floatNegativeInfinity" presence="constant"/>
+        <field name="doublePositiveInfinity" id="3" type="doublePositiveInfinity" presence="constant"/>
+        <field name="doubleNegativeInfinity" id="4" type="doubleNegativeInfinity" presence="constant"/>
+        <field name="floatPositiveNull" id="5" type="floatPositiveNull" presence="optional"/>
+        <field name="floatNegativeNull" id="6" type="floatNegativeNull" presence="optional"/>
+        <field name="doublePositiveNull" id="7" type="doublePositiveNull" presence="optional"/>
+        <field name="doubleNegativeNull" id="8" type="doubleNegativeNull" presence="optional"/>
+    </sbe:message>
+    <sbe:message name="FloatConstants" id="2" description="Float-only constant values">
+        <field name="positive" id="1" type="floatPositiveInfinity" presence="constant"/>
+        <field name="negative" id="2" type="floatNegativeInfinity" presence="constant"/>
+    </sbe:message>
+</sbe:messageSchema>

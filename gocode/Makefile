@@ -72,7 +72,7 @@ test: $(DEP)
 		go install \
 		;done))
 	(export GOPATH=$(GOPATH)/struct && \
-		(for t in baseline-bigendian mktdata group_with_data group_with_data_extension composite_elements composite since-deprecated simple issue435 issue472 issue483 issue488 issue560 issue847 issue848 issue849 issue505 test973; do \
+		(for t in baseline-bigendian mktdata group_with_data group_with_data_extension composite_elements composite since-deprecated simple issue435 issue472 issue483 issue488 issue560 issue847 issue848 issue849 issue505 test973 infinity_test; do \
 		cd $(GOPATH)/struct/src/$$t && \
 		go build && \
 		go fmt && \
@@ -95,7 +95,7 @@ test: $(DEP)
 		go install \
 		;done))
 	(export GOPATH=$(GOPATH)/flyweight && \
-		(for t in baseline-bigendian mktdata group_with_data group_with_data_extension composite_elements composite since-deprecated simple issue435 issue472 issue483 issue488 issue560 issue847 issue848 issue849; do \
+		(for t in baseline-bigendian mktdata group_with_data group_with_data_extension composite_elements composite since-deprecated simple issue435 issue472 issue483 issue488 issue560 issue847 issue848 issue849 infinity_test; do \
 		cd $(GOPATH)/flyweight/src/$$t && \
 		go build && \
 		go fmt && \

@@ -593,6 +593,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
     /**
      * {@inheritDoc}
      */
+    @Override
     public void generate() throws IOException
     {
 
@@ -1854,14 +1855,22 @@ public class GolangFlyweightGenerator implements CodeGenerator
             offset,
             formatClassName(containingClassName));
 
-        new Formatter(sb).format("\n" +
-            indent + "func (m *%1$s) Put%2$s(src []byte) *%1$s {\n" +
-            indent + "    copy(m.buffer[(m.offset+%3$d):], src)\n" +
-            indent + "    return m\n" +
-            indent + "}\n",
-            formatClassName(containingClassName),
-            formatPropertyName(propertyName),
-            offset);
+        if (primitiveType == PrimitiveType.CHAR)
+        {
+            generateNullPaddedSetter(
+                sb, containingClassName, "Put", propertyName, "[]byte", offset, arrayLength, indent);
+        }
+        else
+        {
+            new Formatter(sb).format("\n" +
+                indent + "func (m *%1$s) Put%2$s(src []byte) *%1$s {\n" +
+                indent + "    copy(m.buffer[(m.offset+%3$d):], src)\n" +
+                indent + "    return m\n" +
+                indent + "}\n",
+                formatClassName(containingClassName),
+                formatPropertyName(propertyName),
+                offset);
+        }
 
         if (arrayLength > 1 && arrayLength <= 4)
         {
@@ -1921,15 +1930,42 @@ public class GolangFlyweightGenerator implements CodeGenerator
 
             generateJsonEscapedStringGetter(sb, encodingToken, indent, propertyName, containingClassName);
 
-            new Formatter(sb).format("\n" +
-                indent + "func (m *%1$s) Set%2$s(src string) *%1$s {\n" +
-                indent + "    copy(m.buffer[(m.offset+%3$d):], []byte(src))\n" +
-                indent + "    return m\n" +
-                indent + "}\n",
-                formatClassName(containingClassName),
-                formatPropertyName(propertyName),
-                offset);
+            generateNullPaddedSetter(
+                sb, containingClassName, "Set", propertyName, "string", offset, arrayLength, indent);
         }
+    }
+
+    private void generateNullPaddedSetter(
+        final StringBuilder sb,
+        final String containingClassName,
+        final String methodPrefix,
+        final String propertyName,
+        final String srcGoType,
+        final int offset,
+        final int arrayLength,
+        final String indent)
+    {
+        // Generate a setter for a fixed length character array which pads any unused trailing bytes with NUL,
+        // matching the Java and C++ codecs
+        new Formatter(sb).format("\n" +
+            indent + "func (m *%1$s) %2$s%3$s(src %4$s) *%1$s {\n" +
+            indent + "    length := uint64(len(src))\n" +
+            indent + "    if length > %6$d {\n" +
+            indent + "        panic(\"src too large for %2$s%3$s [E106]\")\n" +
+            indent + "    }\n\n" +
+            indent + "    start := m.offset + %5$d\n" +
+            indent + "    copy(m.buffer[start:start+%6$d], src)\n" +
+            indent + "    for i := length; i < %6$d; i++ {\n" +
+            indent + "        m.buffer[start+i] = 0\n" +
+            indent + "    }\n\n" +
+            indent + "    return m\n" +
+            indent + "}\n",
+            formatClassName(containingClassName),
+            methodPrefix,
+            formatPropertyName(propertyName),
+            srcGoType,
+            offset,
+            arrayLength);
     }
 
     private void generateJsonEscapedStringGetter(
@@ -2642,6 +2678,12 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 if (value.endsWith("NaN"))
                 {
                     literal = "math.NaN()";
+                    addInclude("math");
+                }
+                else if (value.endsWith("Infinity"))
+                {
+                    literal = "float32(math.Inf(" + (value.startsWith("-") ? "-1" : "1") + "))";
+                    addInclude("math");
                 }
                 else
                 {
@@ -2670,6 +2712,11 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 if (value.endsWith("NaN"))
                 {
                     literal = "math.NaN()";
+                    addInclude("math");
+                }
+                else if (value.endsWith("Infinity"))
+                {
+                    literal = "math.Inf(" + (value.startsWith("-") ? "-1" : "1") + ")";
                     addInclude("math");
                 }
                 else

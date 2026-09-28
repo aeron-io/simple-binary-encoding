@@ -250,6 +250,7 @@ public class JavaGenerator implements CodeGenerator
     /**
      * {@inheritDoc}
      */
+    @Override
     public void generate() throws IOException
     {
         packageNameByTypes.clear();
@@ -1901,11 +1902,11 @@ public class JavaGenerator implements CodeGenerator
         final String encoderName = encoderName(bitSetName);
         final List<Token> choiceList = tokens.subList(1, tokens.size() - 1);
         final String implementsString = implementsInterface(Flyweight.class.getSimpleName());
+        final Encoding encoding = token.encoding();
 
         registerTypesPackageName(token, ir);
         try (Writer out = outputManager.createOutput(decoderName))
         {
-            final Encoding encoding = token.encoding();
             generateFixedFlyweightHeader(
                 out, token, decoderName, implementsString, readOnlyBuffer, fqReadOnlyBuffer, PACKAGES_EMPTY_SET);
             out.append(generateChoiceIsEmpty(encoding.primitiveType()));
@@ -1930,6 +1931,18 @@ public class JavaGenerator implements CodeGenerator
             generateFixedFlyweightHeader(
                 out, token, encoderName, implementsString, mutableBuffer, fqMutableBuffer, PACKAGES_EMPTY_SET);
             generateChoiceClear(out, encoderName, token);
+
+            new Formatter(out).format(
+                    "\n" +
+                            "    public %s setRaw(final %s value)\n" +
+                            "    {\n" +
+                            "        %s;\n" +
+                            "        return this;\n" +
+                            "    }\n",
+                    encoderName,
+                    primitiveTypeName(token),
+                    generatePut(encoding.primitiveType(), "offset", "value", byteOrderString(encoding)));
+
             generateChoiceEncoders(out, encoderName, choiceList);
             out.append("}\n");
         }

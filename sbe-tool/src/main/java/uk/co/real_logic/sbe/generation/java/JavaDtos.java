@@ -30,6 +30,7 @@ public class JavaDtos implements TargetCodeGenerator
     /**
      * {@inheritDoc}
      */
+    @Override
     public CodeGenerator newInstance(final Ir ir, final String outputDir)
     {
         return new JavaDtoGenerator(

@@ -94,6 +94,7 @@ public class CppDtoGenerator implements CodeGenerator
     /**
      * {@inheritDoc}
      */
+    @Override
     public void generate() throws IOException
     {
         namespaceByType.clear();

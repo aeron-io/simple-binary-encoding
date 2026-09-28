@@ -178,7 +178,20 @@ public class CppUtil
                 break;
 
             case FLOAT:
-                literal = value.endsWith("NaN") ? "SBE_FLOAT_NAN" : value + "f";
+                if (value.endsWith("NaN"))
+                {
+                    literal = "SBE_FLOAT_NAN";
+                }
+                else if (value.endsWith("Infinity"))
+                {
+                    literal = value.startsWith("-") ?
+                            "-SBE_FLOAT_INFINITY" :
+                            "SBE_FLOAT_INFINITY";
+                }
+                else
+                {
+                    literal = value + "f";
+                }
                 break;
 
             case INT64:
@@ -198,7 +211,20 @@ public class CppUtil
                 break;
 
             case DOUBLE:
-                literal = value.endsWith("NaN") ? "SBE_DOUBLE_NAN" : value;
+                if (value.endsWith("NaN"))
+                {
+                    literal = "SBE_DOUBLE_NAN";
+                }
+                else if (value.endsWith("Infinity"))
+                {
+                    literal = value.startsWith("-") ?
+                            "-SBE_DOUBLE_INFINITY" :
+                            "SBE_DOUBLE_INFINITY";
+                }
+                else
+                {
+                    literal = value;
+                }
                 break;
         }
 

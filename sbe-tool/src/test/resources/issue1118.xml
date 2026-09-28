@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbe:messageSchema
+    xmlns:sbe="http://fixprotocol.io/2016/sbe"
+    package="issue1118"
+    id="1118"
+    version="0"
+    semanticVersion="1.0.0"
+    byteOrder="littleEndian">
+  <types>
+    <composite name="messageHeader">
+      <type name="blockLength" primitiveType="uint16"/>
+      <type name="templateId" primitiveType="uint16"/>
+      <type name="schemaId" primitiveType="uint16"/>
+      <type name="version" primitiveType="uint16"/>
+    </composite>
+    <set name="Flags" encodingType="uint8">
+      <choice name="Type">0</choice>
+      <choice name="Match">1</choice>
+      <choice name="ordinary">2</choice>
+    </set>
+  </types>
+  <sbe:message name="issue1118" id="1">
+    <field name="flags" id="1" type="Flags"/>
+  </sbe:message>
+</sbe:messageSchema>

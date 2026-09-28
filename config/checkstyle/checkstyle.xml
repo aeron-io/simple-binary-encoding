@@ -25,7 +25,7 @@
 
     <module name="LineLength">
         <property name="max" value="120"/>
-        <property name="ignorePattern" value="^[ \t]*\*.*@.*$"/>
+        <property name="ignorePattern" value="^([ \t]*\*.*@.*|package .*|import .*)$"/>
     </module>
 
     <module name="RegexpHeader">
@@ -33,11 +33,15 @@
         <property name="fileExtensions" value="java"/>
     </module>
 
+    <module name="NewlineAtEndOfFile"/>
+
     <module name="TreeWalker">
         <property name="tabWidth" value="4"/>
         <property name="severity" value="error"/>
 
         <module name="SuppressWarningsHolder"/>
+
+        <module name="MissingOverride"/>
 
         <module name="JavadocStyle"/>
         <module name="JavadocType"/>
@@ -193,6 +197,11 @@
             <property name="format" value="[ \t]+$"/>
             <property name="illegalPattern" value="true"/>
             <property name="message" value="Trailing whitespace"/>
+        </module>
+
+        <module name="RegexpSinglelineJava">
+            <property name="format" value="^\s*\*\s*\*/$"/>
+            <property name="message" value="Invalid JavaDoc end delimiter"/>
         </module>
     </module>
 </module>

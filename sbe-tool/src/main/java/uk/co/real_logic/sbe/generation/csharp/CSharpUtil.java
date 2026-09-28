@@ -59,6 +59,12 @@ public class CSharpUtil
                 {
                     literal = "float.NaN";
                 }
+                else if (value.endsWith("Infinity"))
+                {
+                    literal = value.startsWith("-") ?
+                            "float.NegativeInfinity" :
+                            "float.PositiveInfinity";
+                }
                 else
                 {
                     literal = value + "f";
@@ -77,6 +83,12 @@ public class CSharpUtil
                 if (value.endsWith("NaN"))
                 {
                     literal = "double.NaN";
+                }
+                else if (value.endsWith("Infinity"))
+                {
+                    literal = value.startsWith("-") ?
+                            "double.NegativeInfinity" :
+                            "double.PositiveInfinity";
                 }
                 else
                 {

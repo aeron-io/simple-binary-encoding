@@ -135,6 +135,7 @@ public class ErrorHandler
     /**
      * {@inheritDoc}
      */
+    @Override
     public String toString()
     {
         return "ErrorHandler{" +

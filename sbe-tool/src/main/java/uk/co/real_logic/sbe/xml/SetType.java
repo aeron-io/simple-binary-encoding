@@ -180,6 +180,7 @@ public class SetType extends Type
      * <p>
      * {@inheritDoc}
      */
+    @Override
     public boolean isVariableLength()
     {
         return false;
@@ -188,6 +189,7 @@ public class SetType extends Type
     /**
      * {@inheritDoc}
      */
+    @Override
     public String toString()
     {
         return "SetType{" +
@@ -223,7 +225,7 @@ public class SetType extends Type
             deprecated = Integer.parseInt(getAttributeValue(node, "deprecated", "0"));
 
             // choice values are bit positions (0, 1, 2, 3, 4, etc.) from LSB to MSB
-            if (value.longValue() >= (encodingType.size() * 8L))
+            if (value.longValue() < 0 || value.longValue() >= (encodingType.size() * 8L))
             {
                 throw new IllegalArgumentException("Choice value out of bounds: " + value.longValue());
             }
@@ -284,6 +286,7 @@ public class SetType extends Type
         /**
          * {@inheritDoc}
          */
+        @Override
         public String toString()
         {
             return "Choice{" +

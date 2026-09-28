@@ -422,6 +422,7 @@ public class EncodedDataType extends Type
     /**
      * {@inheritDoc}
      */
+    @Override
     public String toString()
     {
         return "EncodedDataType{" +

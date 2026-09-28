@@ -1096,7 +1096,10 @@ public class RustGenerator implements CodeGenerator
             indent(sb, level, "pub fn %s(&self) -> %s {\n",
                 formatFunctionName(name),
                 rustPrimitiveType);
-            indent(sb, level + 1, "%s\n", rawConstValue);
+            final String constValue = (primitiveType == PrimitiveType.FLOAT || primitiveType == PrimitiveType.DOUBLE) &&
+                rawConstValue.endsWith("Infinity") ?
+                generateRustLiteral(primitiveType, rawConstValue) : rawConstValue;
+            indent(sb, level + 1, "%s\n", constValue);
             indent(sb, level, "}\n\n");
         }
     }
@@ -1441,7 +1444,7 @@ public class RustGenerator implements CodeGenerator
                 continue;
             }
 
-            final String choiceName = formatFunctionName(token.name());
+            final String choiceName = bitSetChoiceName(token);
             final Encoding encoding = token.encoding();
             final String choiceBitIndex = encoding.constValue().toString();
 
@@ -1479,7 +1482,7 @@ public class RustGenerator implements CodeGenerator
                 continue;
             }
 
-            final String choiceName = formatFunctionName(token.name());
+            final String choiceName = bitSetChoiceName(token);
             final String choiceBitIndex = token.encoding().constValue().toString();
 
             if (comma)
@@ -1496,6 +1499,14 @@ public class RustGenerator implements CodeGenerator
         indent(writer, 3, arguments + ")\n");
         indent(writer, 1, "}\n");
         indent(writer, 0, "}\n");
+    }
+
+    // A choice is only ever reached through a get_ or set_ prefixed accessor, so its name cannot
+    // shadow a Rust keyword on its own and must not be escaped as a raw identifier. Escaping it
+    // would place the r# in the middle of the accessor name, where it does not parse.
+    private static String bitSetChoiceName(final Token token)
+    {
+        return toLowerSnakeCase(token.name());
     }
 
     static void appendImplEncoderTrait(
@@ -1615,10 +1626,13 @@ public class RustGenerator implements CodeGenerator
             indent(writer, 1, "%s = %s, \n", token.name(), literal);
         }
 
+        // The null value is declared on the enum itself, or on the type it encodes to, so it
+        // has to be read from the enum token. A valid value token never carries one, which makes
+        // applicableNullValue() fall back to the primitive type default instead of the schema one.
+        final CharSequence nullVal = rustNullLiteral(enumTokens.get(0).encoding());
+
         // null value
         {
-            final Encoding encoding = messageBody.get(0).encoding();
-            final CharSequence nullVal = rustNullLiteral(encoding);
             indent(writer, 1, "#[default]\n");
             indent(writer, 1, "NullVal = %s, \n", nullVal);
         }
@@ -1628,7 +1642,7 @@ public class RustGenerator implements CodeGenerator
         generateFromPrimitiveForEnum(enumRustName, primitiveType, messageBody, writer);
 
         // Into impl
-        generateFromEnumForPrimitive(enumRustName, primitiveType, messageBody, writer);
+        generateFromEnumForPrimitive(enumRustName, primitiveType, messageBody, nullVal, writer);
 
         // FromStr impl
         generateFromStrImplForEnum(enumRustName, messageBody, writer);
@@ -1666,6 +1680,7 @@ public class RustGenerator implements CodeGenerator
         final String enumRustName,
         final String primitiveType,
         final List<Token> messageBody,
+        final CharSequence nullVal,
         final Appendable writer) throws IOException
     {
         indent(writer, 0, "impl From<%s> for %s {\n", enumRustName, primitiveType);
@@ -1680,11 +1695,7 @@ public class RustGenerator implements CodeGenerator
             indent(writer, 3, "%s::%s => %s, \n", enumRustName, token.name(), literal);
         }
 
-        {
-            final Encoding encoding = messageBody.get(0).encoding();
-            final CharSequence nullVal = rustNullLiteral(encoding);
-            indent(writer, 3, "%s::NullVal => %s,\n", enumRustName, nullVal);
-        }
+        indent(writer, 3, "%s::NullVal => %s,\n", enumRustName, nullVal);
         indent(writer, 2, "}\n");
         indent(writer, 1, "}\n");
         indent(writer, 0, "}\n");

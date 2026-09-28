@@ -173,6 +173,12 @@ class EncodedIrTest
     }
 
     @Test
+    void shouldRoundTripFloatingPointInfinityValues() throws Exception
+    {
+        testDecodeTypes("floating-point-infinity-schema.xml");
+    }
+
+    @Test
     void shouldPreservePackageNames() throws Exception
     {
         testDecodeTypes("explicit-package-test-schema.xml");

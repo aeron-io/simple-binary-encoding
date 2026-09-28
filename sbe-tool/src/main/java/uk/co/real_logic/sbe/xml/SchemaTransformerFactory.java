@@ -41,6 +41,7 @@ public class SchemaTransformerFactory implements SchemaTransformer
     /**
      * {@inheritDoc}
      */
+    @Override
     public MessageSchema transform(final MessageSchema originalSchema)
     {
         return transformer.transform(originalSchema);
