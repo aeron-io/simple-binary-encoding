@@ -26,12 +26,11 @@ import uk.co.real_logic.sbe.xml.MessageSchema;
 import uk.co.real_logic.sbe.xml.ParserOptions;
 
 import java.io.InputStream;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static uk.co.real_logic.sbe.SbeTool.KEYWORD_APPEND_TOKEN;
 import static uk.co.real_logic.sbe.xml.XmlSchemaParser.parse;
 
 /**
@@ -45,14 +44,7 @@ class CppEnumParseGeneratorTest
     // return the source of the "Model" enum.
     private String generateModelHeader(final String... properties) throws Exception
     {
-        final Map<String, String> toRestore = new LinkedHashMap<>();
-        // The GlobalKeywords message uses reserved words, so a keyword token is required.
-        setProperty(toRestore, "sbe.keyword.append.token", "X");
-        for (int i = 0; i < properties.length; i += 2)
-        {
-            setProperty(toRestore, properties[i], properties[i + 1]);
-        }
-
+        System.setProperty(KEYWORD_APPEND_TOKEN, "X");
         try (InputStream in = Tests.getLocalResource("code-generation-schema.xml"))
         {
             final ParserOptions options = ParserOptions.builder().stopOnError(true).build();
@@ -67,24 +59,8 @@ class CppEnumParseGeneratorTest
         }
         finally
         {
-            for (final Map.Entry<String, String> e : toRestore.entrySet())
-            {
-                if (null == e.getValue())
-                {
-                    System.clearProperty(e.getKey());
-                }
-                else
-                {
-                    System.setProperty(e.getKey(), e.getValue());
-                }
-            }
+            System.clearProperty(KEYWORD_APPEND_TOKEN);
         }
-    }
-
-    private static void setProperty(final Map<String, String> toRestore, final String key, final String value)
-    {
-        toRestore.putIfAbsent(key, System.getProperty(key));
-        System.setProperty(key, value);
     }
 
     @Test
@@ -99,14 +75,22 @@ class CppEnumParseGeneratorTest
     @Test
     void emitsFromStringAndInputOperatorWhenEnabled() throws Exception
     {
-        final String model = generateModelHeader("sbe.cpp.generate.enum.parse", "true");
+        System.setProperty("sbe.cpp.generate.enum.parse", "true");
+        try
+        {
+            final String model = generateModelHeader("sbe.cpp.generate.enum.parse", "true");
 
-        assertThat(model, containsString("static Model::Value fromString(const char *str)"));
-        assertThat(model, containsString("operator >> ("));
-        // fromString() pulls in <unordered_map> for the inline reverse-lookup map
-        assertThat(model, containsString("#include <unordered_map>"));
-        // the reverse map covers the same names c_str()/operator<< emit
-        assertThat(model, containsString("map[\"A\"] = A;"));
-        assertThat(model, containsString("map[\"NULL_VALUE\"] = NULL_VALUE;"));
+            assertThat(model, containsString("static Model::Value fromString(const char *str)"));
+            assertThat(model, containsString("operator >> ("));
+            // fromString() pulls in <unordered_map> for the inline reverse-lookup map
+            assertThat(model, containsString("#include <unordered_map>"));
+            // the reverse map covers the same names c_str()/operator<< emit
+            assertThat(model, containsString("map[\"A\"] = A;"));
+            assertThat(model, containsString("map[\"NULL_VALUE\"] = NULL_VALUE;"));
+        }
+        finally
+        {
+            System.clearProperty("sbe.cpp.generate.enum.parse");
+        }
     }
 }
