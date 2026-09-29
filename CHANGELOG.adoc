@@ -2,6 +2,11 @@
 
 == 1.41.0 (unreleased)
 
+* **[C{plus}{plus}]** Add `OtfMessageEncoder`. (https://github.com/aeron-io/simple-binary-encoding/pull/1114[#1114])
+* **[C{plus}{plus}]** Emit `fromString()/operator>>` for enum types. (https://github.com/aeron-io/simple-binary-encoding/pull/1115[#1115])
+* **[Java]** Upgrade to `Mockito` 5.24.0.
+* **[Java]** Upgrade to `Gradle` 9.8.0.
+
 == 1.40.2 (2026-09-17)
 
 * **[Java/C/C{plus}{plus}/C#/Go/Rust/]** Fix floating-point infinity literal generation. (https://github.com/aeron-io/simple-binary-encoding/pull/1123[#1123])
