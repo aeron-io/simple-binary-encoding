@@ -1909,6 +1909,19 @@ public class JavaGenerator implements CodeGenerator
         {
             generateFixedFlyweightHeader(
                 out, token, decoderName, implementsString, readOnlyBuffer, fqReadOnlyBuffer, PACKAGES_EMPTY_SET);
+
+            new Formatter(out).format(
+                "\n" +
+                "    private int actingVersion = SCHEMA_VERSION;\n\n" +
+                "    public %s wrap(final %s buffer, final int offset, final int actingVersion)\n" +
+                "    {\n" +
+                "        wrap(buffer, offset);\n" +
+                "        this.actingVersion = actingVersion;\n\n" +
+                "        return this;\n" +
+                "    }\n",
+                decoderName,
+                readOnlyBuffer);
+
             out.append(generateChoiceIsEmpty(encoding.primitiveType()));
 
             new Formatter(out).format(
@@ -2180,6 +2193,7 @@ public class JavaGenerator implements CodeGenerator
                 out.append("\n")
                     .append("    public boolean ").append(choiceName).append("()\n")
                     .append("    {\n")
+                    .append(generateChoiceNotPresentCondition(token.version()))
                     .append("        return ").append(choiceGet).append(";\n")
                     .append("    }\n\n")
                     .append("    public static boolean ").append(choiceName)
@@ -2188,6 +2202,20 @@ public class JavaGenerator implements CodeGenerator
                     .append("    }\n");
             }
         }
+    }
+
+    private static CharSequence generateChoiceNotPresentCondition(final int sinceVersion)
+    {
+        if (0 == sinceVersion)
+        {
+            return "";
+        }
+
+        return
+            "        if (actingVersion < " + sinceVersion + ")\n" +
+            "        {\n" +
+            "            return false;\n" +
+            "        }\n\n";
     }
 
     private void generateChoiceEncoders(final Appendable out, final String bitSetClassName, final List<Token> tokens)
@@ -3970,13 +3998,15 @@ public class JavaGenerator implements CodeGenerator
             propertyName,
             bitSetName);
 
+        final String actingVersionArg = !inComposite && DECODER == codecType ? ", parentMessage.actingVersion" : "";
+
         generateFlyweightPropertyJavadoc(sb, indent + INDENT, propertyToken, bitSetName);
         new Formatter(sb).format("\n" +
             indent + "    public %s %s()\n" +
             indent + "    {\n" +
             "%s" +
             "%s" +
-            indent + "        %s.wrap(buffer, offset + %d);\n" +
+            indent + "        %s.wrap(buffer, offset + %d%s);\n" +
             indent + "        return %s;\n" +
             indent + "    }\n",
             bitSetName,
@@ -3985,6 +4015,7 @@ public class JavaGenerator implements CodeGenerator
             accessOrderListenerCall,
             propertyName,
             bitsetToken.offset(),
+            actingVersionArg,
             propertyName);
     }
 
