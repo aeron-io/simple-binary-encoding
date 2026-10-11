@@ -19,6 +19,8 @@ import uk.co.real_logic.sbe.ir.Signal;
 import uk.co.real_logic.sbe.ir.Token;
 
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.BiConsumer;
 
 /**
@@ -103,5 +105,44 @@ public class Generators
         }
 
         throw new IllegalStateException("name not found: " + name);
+    }
+
+    /**
+     * Generate a C-family expression for the minimum block length a decoder must accept for a given acting version,
+     * i.e. the extent of the fixed fields present at that version. Fields are only appended in later schema versions,
+     * so a block encoded by an older version can be shorter than the current block but never shorter than the fields
+     * which existed in that version. Fields newer than the acting version are not read by the generated accessors.
+     *
+     * @param fields            of the message or group block.
+     * @param actingVersionName the name of the variable holding the acting version.
+     * @return the expression or null if no fixed fields occupy the block.
+     */
+    public static String minBlockLengthExpression(final List<Token> fields, final String actingVersionName)
+    {
+        final TreeMap<Integer, Integer> extentByVersion = new TreeMap<>();
+        forEachField(fields, (fieldToken, typeToken) ->
+        {
+            if (!fieldToken.isConstantEncoding() && !typeToken.isConstantEncoding())
+            {
+                extentByVersion.merge(
+                    fieldToken.version(), typeToken.offset() + typeToken.encodedLength(), Math::max);
+            }
+        });
+
+        int extent = 0;
+        String expression = "0";
+        for (final Map.Entry<Integer, Integer> entry : extentByVersion.entrySet())
+        {
+            final int version = entry.getKey();
+            if (entry.getValue() > extent)
+            {
+                extent = entry.getValue();
+                expression = 0 == version ?
+                    Integer.toString(extent) :
+                    "(" + actingVersionName + " >= " + version + "u ? " + extent + "u : " + expression + ")";
+            }
+        }
+
+        return 0 == extent ? null : expression;
     }
 }

@@ -44,6 +44,7 @@ set(FLOATING_POINT_INFINITY_SCHEMA ${CODEC_SCHEMA_DIR}/floating-point-infinity-s
 set(ACCESS_ORDER_SCHEMA ${CODEC_SCHEMA_DIR}/field-order-check-schema.xml)
 set(VERSIONED_MESSAGE_V1_SCHEMA ${CODEC_SCHEMA_DIR}/versioned-message-v1.xml)
 set(VERSIONED_MESSAGE_V2_SCHEMA ${CODEC_SCHEMA_DIR}/versioned-message-v2.xml)
+set(WIRE_BOUNDS_SCHEMA ${CODEC_SCHEMA_DIR}/wire-bounds-test-schema.xml)
 
 set(GENERATED_CODECS
     ${CXX_CODEC_TARGET_DIR}
@@ -63,6 +64,7 @@ add_custom_command(
         ${ACCESS_ORDER_SCHEMA}
         ${VERSIONED_MESSAGE_V1_SCHEMA}
         ${VERSIONED_MESSAGE_V2_SCHEMA}
+        ${WIRE_BOUNDS_SCHEMA}
     sbe-jar ${SBE_JAR}
     COMMAND
         ${Java_JAVA_EXECUTABLE} --add-opens java.base/jdk.internal.misc=ALL-UNNAMED
@@ -87,6 +89,7 @@ add_custom_command(
             ${ACCESS_ORDER_SCHEMA}
             ${VERSIONED_MESSAGE_V1_SCHEMA}
             ${VERSIONED_MESSAGE_V2_SCHEMA}
+            ${WIRE_BOUNDS_SCHEMA}
 )
 
 add_custom_target(codecs DEPENDS ${GENERATED_CODECS})
@@ -109,7 +112,6 @@ sbe_test(VersionedMessageTest codecs)
 sbe_test(WireBoundsTest codecs)
 # the uint64 var data length in wire-bounds-test-schema.xml generates an E109 range check against a negative literal
 target_compile_options(WireBoundsTest PRIVATE $<$<CXX_COMPILER_ID:AppleClang,Clang,GNU>:-Wno-sign-compare>)
-sbe_test(OtfWireBoundsTest codecs)
 
 # OtfMessageEncoderTest lives in the otf/ subdirectory and provides its own main() that takes the
 # IR file path as argv[1]; it is handed the generated code-generation-schema IR.

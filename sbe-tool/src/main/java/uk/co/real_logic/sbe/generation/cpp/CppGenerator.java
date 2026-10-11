@@ -238,7 +238,7 @@ public class CppGenerator implements CodeGenerator
                 final String[] namespaces = fetchTypesPackageName(msgToken, ir);
                 out.append(generateFileHeader(namespaces, className, typesToInclude));
                 out.append(generateClassDeclaration(className));
-                out.append(generateMessageFlyweightCode(className, msgToken, fieldPrecedenceModel));
+                out.append(generateMessageFlyweightCode(className, msgToken, fields, fieldPrecedenceModel));
                 out.append(generateFullyEncodedCheck(fieldPrecedenceModel));
 
                 final StringBuilder sb = new StringBuilder();
@@ -644,14 +644,16 @@ public class CppGenerator implements CodeGenerator
             final Token numInGroupToken = Generators.findFirst("numInGroup", tokens, i);
             final String cppTypeForNumInGroup = cppTypeName(numInGroupToken.encoding().primitiveType());
 
-            generateGroupClassHeader(sb, groupName, groupToken, tokens, fieldPrecedenceModel, i, indent + INDENT);
-
+            final int groupIndex = i;
             ++i;
             final int groupHeaderTokenCount = tokens.get(i).componentTokenCount();
             i += groupHeaderTokenCount;
 
             final List<Token> fields = new ArrayList<>();
             i = collectFields(tokens, i, fields);
+
+            generateGroupClassHeader(
+                sb, groupName, groupToken, tokens, fields, fieldPrecedenceModel, groupIndex, indent + INDENT);
             generateFields(sb, formatClassName(groupName), fields, fieldPrecedenceModel, indent + INDENT);
 
             final List<Token> groups = new ArrayList<>();
@@ -675,6 +677,7 @@ public class CppGenerator implements CodeGenerator
         final String groupName,
         final Token groupToken,
         final List<Token> tokens,
+        final List<Token> fields,
         final FieldPrecedenceModel fieldPrecedenceModel,
         final int index,
         final String indent)
@@ -761,6 +764,15 @@ public class CppGenerator implements CodeGenerator
             indent + "        m_codecStatePtr = codecState;\n" +
             "#endif\n";
 
+        final String minBlockLength = Generators.minBlockLengthExpression(fields, "actingVersion");
+        final String blockLengthCheck = null == minBlockLength ?
+            "" :
+            indent + "        if (SBE_BOUNDS_CHECK_EXPECT(\n" +
+            indent + "            ((m_blockLength < " + minBlockLength + ") && (m_count > 0)), false))\n" +
+            indent + "        {\n" +
+            indent + "            throw std::runtime_error(\"blockLength too short for group [E108]\");\n" +
+            indent + "        }\n";
+
         new Formatter(sb).format(
             indent + "public:\n" +
             indent + "    %5$s() = default;\n\n" +
@@ -776,6 +788,7 @@ public class CppGenerator implements CodeGenerator
             indent + "        m_bufferLength = bufferLength;\n" +
             indent + "        m_blockLength = dimensions.blockLength();\n" +
             indent + "        m_count = dimensions.numInGroup();\n" +
+            "%6$s" +
             indent + "        m_index = 0;\n" +
             indent + "        m_actingVersion = actingVersion;\n" +
             indent + "        m_initialPosition = *pos;\n" +
@@ -787,7 +800,8 @@ public class CppGenerator implements CodeGenerator
             dimensionsClassName,
             codecStateParameter,
             codecStateAssignment,
-            groupClassName);
+            groupClassName,
+            blockLengthCheck);
 
         final long minCount = numInGroupToken.encoding().applicableMinValue().longValue();
         final String minCheck = minCount > 0 ? "count < " + minCount + " || " : "";
@@ -1116,6 +1130,10 @@ public class CppGenerator implements CodeGenerator
                 indent + "    {\n" +
                 "%2$s" +
                 "%5$s" +
+                indent + "        if (SBE_BOUNDS_CHECK_EXPECT(((sbePosition() + %6$d) > m_bufferLength), false))\n" +
+                indent + "        {\n" +
+                indent + "            throw std::runtime_error(\"buffer too short [E100]\");\n" +
+                indent + "        }\n" +
                 indent + "        %4$s length;\n" +
                 indent + "        std::memcpy(&length, m_buffer + sbePosition(), sizeof(%4$s));\n" +
                 indent + "        return %3$s(length);\n" +
@@ -1124,7 +1142,8 @@ public class CppGenerator implements CodeGenerator
                 generateArrayFieldNotPresentCondition(token.version(), BASE_INDENT),
                 formatByteOrderEncoding(lengthToken.encoding().byteOrder(), lengthToken.encoding().primitiveType()),
                 lengthCppType,
-                lengthAccessListenerCall);
+                lengthAccessListenerCall,
+                lengthOfLengthField);
 
             generateAccessOrderListenerMethod(sb, fieldPrecedenceModel, indent, token);
 
@@ -1138,10 +1157,12 @@ public class CppGenerator implements CodeGenerator
                 "%6$s" +
                 indent + "        std::uint64_t lengthOfLengthField = %3$d;\n" +
                 indent + "        std::uint64_t lengthPosition = sbePosition();\n" +
+                indent + "        sbePosition(lengthPosition + lengthOfLengthField);\n" +
                 indent + "        %5$s lengthFieldValue;\n" +
                 indent + "        std::memcpy(&lengthFieldValue, m_buffer + lengthPosition, sizeof(%5$s));\n" +
                 indent + "        std::uint64_t dataLength = %4$s(lengthFieldValue);\n" +
-                indent + "        sbePosition(lengthPosition + lengthOfLengthField + dataLength);\n" +
+                indent + "        std::uint64_t pos = sbePosition();\n" +
+                generateDataPositionAdvance(indent) +
                 indent + "        return dataLength;\n" +
                 indent + "    }\n",
                 propertyName,
@@ -1156,10 +1177,14 @@ public class CppGenerator implements CodeGenerator
                 indent + "    {\n" +
                 "%2$s" +
                 "%6$s" +
+                indent + "        std::uint64_t lengthPosition = sbePosition();\n" +
+                indent + "        sbePosition(lengthPosition + %3$d);\n" +
                 indent + "        %4$s lengthFieldValue;\n" +
-                indent + "        std::memcpy(&lengthFieldValue, m_buffer + sbePosition(), sizeof(%4$s));\n" +
-                indent + "        const char *fieldPtr = m_buffer + sbePosition() + %3$d;\n" +
-                indent + "        sbePosition(sbePosition() + %3$d + %5$s(lengthFieldValue));\n" +
+                indent + "        std::memcpy(&lengthFieldValue, m_buffer + lengthPosition, sizeof(%4$s));\n" +
+                indent + "        std::uint64_t dataLength = %5$s(lengthFieldValue);\n" +
+                indent + "        std::uint64_t pos = sbePosition();\n" +
+                indent + "        const char *fieldPtr = m_buffer + pos;\n" +
+                generateDataPositionAdvance(indent) +
                 indent + "        return fieldPtr;\n" +
                 indent + "    }\n",
                 formatPropertyName(propertyName),
@@ -1182,7 +1207,7 @@ public class CppGenerator implements CodeGenerator
                 indent + "        std::uint64_t dataLength = %4$s(lengthFieldValue);\n" +
                 indent + "        std::uint64_t bytesToCopy = length < dataLength ? length : dataLength;\n" +
                 indent + "        std::uint64_t pos = sbePosition();\n" +
-                indent + "        sbePosition(pos + dataLength);\n" +
+                generateDataPositionAdvance(indent) +
                 indent + "        std::memcpy(dst, m_buffer + pos, static_cast<std::size_t>(bytesToCopy));\n" +
                 indent + "        return bytesToCopy;\n" +
                 indent + "    }\n",
@@ -1229,8 +1254,8 @@ public class CppGenerator implements CodeGenerator
                 indent + "        std::memcpy(&lengthFieldValue, m_buffer + lengthPosition, sizeof(%5$s));\n" +
                 indent + "        std::uint64_t dataLength = %4$s(lengthFieldValue);\n" +
                 indent + "        std::uint64_t pos = sbePosition();\n" +
+                generateDataPositionAdvance(indent) +
                 indent + "        const std::string result(m_buffer + pos, dataLength);\n" +
-                indent + "        sbePosition(pos + dataLength);\n" +
                 indent + "        return result;\n" +
                 indent + "    }\n",
                 propertyName,
@@ -1255,8 +1280,8 @@ public class CppGenerator implements CodeGenerator
                 indent + "        std::memcpy(&lengthFieldValue, m_buffer + lengthPosition, sizeof(%5$s));\n" +
                 indent + "        std::uint64_t dataLength = %4$s(lengthFieldValue);\n" +
                 indent + "        std::uint64_t pos = sbePosition();\n" +
+                generateDataPositionAdvance(indent) +
                 indent + "        const std::string_view result(m_buffer + pos, dataLength);\n" +
-                indent + "        sbePosition(pos + dataLength);\n" +
                 indent + "        return result;\n" +
                 indent + "    }\n" +
                 indent + "    #endif\n",
@@ -1299,6 +1324,21 @@ public class CppGenerator implements CodeGenerator
 
             i += token.componentTokenCount();
         }
+    }
+
+    /*
+     * Advance the position past var data of dataLength bytes starting at pos. pos must already have been checked
+     * against m_bufferLength, so the check is written as a subtraction which, unlike pos + dataLength, cannot wrap
+     * for a 64-bit length.
+     */
+    private static String generateDataPositionAdvance(final String indent)
+    {
+        return
+            indent + "        if (SBE_BOUNDS_CHECK_EXPECT((dataLength > (m_bufferLength - pos)), false))\n" +
+            indent + "        {\n" +
+            indent + "            throw std::runtime_error(\"buffer too short for data [E100]\");\n" +
+            indent + "        }\n" +
+            indent + "        *sbePositionPtr() = pos + dataLength;\n";
     }
 
     private void generateVarDataDescriptors(
@@ -2842,6 +2882,7 @@ public class CppGenerator implements CodeGenerator
 
     private CharSequence generateConstructorsAndOperators(
         final String className,
+        final CharSequence actingBlockLengthCheck,
         final FieldPrecedenceModel fieldPrecedenceModel)
     {
         return String.format(
@@ -2860,6 +2901,7 @@ public class CppGenerator implements CodeGenerator
             "        m_actingBlockLength(actingBlockLength),\n" +
             "        m_actingVersion(actingVersion)\n" +
             "    {\n" +
+            "%3$s" +
             "%2$s" +
             "    }\n\n" +
 
@@ -2877,14 +2919,17 @@ public class CppGenerator implements CodeGenerator
             "    {\n" +
             "    }\n\n",
             className,
-            generateCodecStateTransitionForWrapping(fieldPrecedenceModel));
+            generateCodecStateTransitionForWrapping(fieldPrecedenceModel),
+            actingBlockLengthCheck);
     }
 
     private CharSequence generateMessageFlyweightCode(
         final String className,
         final Token token,
+        final List<Token> fields,
         final FieldPrecedenceModel fieldPrecedenceModel)
     {
+        final CharSequence actingBlockLengthCheck = generateActingBlockLengthCheck(fields);
         final String blockLengthType = cppTypeName(ir.headerStructure().blockLengthType());
         final String templateIdType = cppTypeName(ir.headerStructure().templateIdType());
         final String schemaIdType = cppTypeName(ir.headerStructure().schemaIdType());
@@ -3026,6 +3071,7 @@ public class CppGenerator implements CodeGenerator
             "        m_buffer = buffer;\n" +
             "        m_bufferLength = bufferLength;\n" +
             "        m_offset = offset;\n" +
+            "%23$s" +
             "        m_actingBlockLength = actingBlockLength;\n" +
             "        m_actingVersion = actingVersion;\n" +
             "        m_position = sbeCheckPosition(m_offset + m_actingBlockLength);\n" +
@@ -3101,7 +3147,7 @@ public class CppGenerator implements CodeGenerator
             generateLiteral(ir.headerStructure().schemaVersionType(), Integer.toString(ir.version())),
             semanticType,
             className,
-            generateConstructorsAndOperators(className, fieldPrecedenceModel),
+            generateConstructorsAndOperators(className, actingBlockLengthCheck, fieldPrecedenceModel),
             formatClassName(headerType),
             semanticVersion,
             generateFieldOrderStateEnum(fieldPrecedenceModel),
@@ -3112,7 +3158,23 @@ public class CppGenerator implements CodeGenerator
             generateOnWrappedListener(fieldPrecedenceModel),
             generateCodecStateTransitionForWrapping(fieldPrecedenceModel),
             generateHiddenCopyConstructor("    ", className),
-            generateCheckForNotWrappedState("decodeLength", fieldPrecedenceModel));
+            generateCheckForNotWrappedState("decodeLength", fieldPrecedenceModel),
+            actingBlockLengthCheck);
+    }
+
+    private static CharSequence generateActingBlockLengthCheck(final List<Token> fields)
+    {
+        final String minBlockLength = Generators.minBlockLengthExpression(fields, "actingVersion");
+        if (null == minBlockLength)
+        {
+            return "";
+        }
+
+        return
+            "        if (SBE_BOUNDS_CHECK_EXPECT((actingBlockLength < " + minBlockLength + "), false))\n" +
+            "        {\n" +
+            "            throw std::runtime_error(\"actingBlockLength too short [E100]\");\n" +
+            "        }\n";
     }
 
     private CharSequence generateAccessOrderErrorType(final FieldPrecedenceModel fieldPrecedenceModel)
@@ -3989,9 +4051,15 @@ public class CppGenerator implements CodeGenerator
                     if (typeToken.encoding().primitiveType() == PrimitiveType.CHAR)
                     {
                         sb.append(
-                            indent + "if (std::isprint(" + fieldName + "()))\n" +
+                            indent + "if (std::isprint(static_cast<unsigned char>(" + fieldName + "())))\n" +
                             indent + "{\n" +
-                            indent + "    builder << '\"' << (char)" + fieldName + "() << '\"';\n" +
+                            indent + "    const char c = " + fieldName + "();\n" +
+                            indent + "    builder << '\"';\n" +
+                            indent + "    if ('\"' == c || '\\\\' == c)\n" +
+                            indent + "    {\n" +
+                            indent + "        builder << '\\\\';\n" +
+                            indent + "    }\n" +
+                            indent + "    builder << c << '\"';\n" +
                             indent + "}\n" +
                             indent + "else\n" +
                             indent + "{\n" +
