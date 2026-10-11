@@ -17,6 +17,7 @@ package uk.co.real_logic.sbe.generation.golang;
 
 import org.agrona.generation.StringWriterOutputManager;
 import org.junit.jupiter.api.Test;
+import uk.co.real_logic.sbe.SbeTool;
 import uk.co.real_logic.sbe.Tests;
 import uk.co.real_logic.sbe.generation.golang.struct.GolangGenerator;
 import uk.co.real_logic.sbe.ir.Ir;
@@ -492,6 +493,10 @@ class GolangGeneratorTest
     @SuppressWarnings("MethodLength")
     void shouldHandleLowerCaseEnumValueReference() throws Exception
     {
+        // The schema has a field named `_`, a Go keyword, so the generator needs the append token.
+        final String keywordAppendToken = System.getProperty(SbeTool.KEYWORD_APPEND_TOKEN);
+        System.setProperty(SbeTool.KEYWORD_APPEND_TOKEN, "_");
+
         try (InputStream in = Tests.getLocalResource("code-generation-schema.xml"))
         {
             final ParserOptions options = ParserOptions.builder().stopOnError(true).build();
@@ -512,6 +517,17 @@ class GolangGeneratorTest
                 \treturn
                 }
                 """));
+        }
+        finally
+        {
+            if (null == keywordAppendToken)
+            {
+                System.clearProperty(SbeTool.KEYWORD_APPEND_TOKEN);
+            }
+            else
+            {
+                System.setProperty(SbeTool.KEYWORD_APPEND_TOKEN, keywordAppendToken);
+            }
         }
     }
 
