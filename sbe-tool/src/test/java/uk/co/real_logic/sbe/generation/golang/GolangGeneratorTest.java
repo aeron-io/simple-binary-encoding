@@ -28,6 +28,7 @@ import java.io.InputStream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.co.real_logic.sbe.xml.XmlSchemaParser.parse;
 
@@ -544,6 +545,26 @@ class GolangGeneratorTest
                 .orElseThrow();
             assertThat(floatConstantsSource, containsString("\"math\""));
             assertThat(floatConstantsSource, containsString("math.Inf"));
+        }
+    }
+
+    @Test
+    void shouldNotShadowReceiverWithGroupLoopVariable() throws Exception
+    {
+        try (InputStream in = Tests.getLocalResource("group-in-message-named-with-i.xml"))
+        {
+            final ParserOptions options = ParserOptions.builder().stopOnError(true).build();
+            final MessageSchema schema = parse(in, options);
+            final Ir ir = new IrGenerator().generate(schema);
+            final StringWriterOutputManager outputManager = new StringWriterOutputManager();
+            outputManager.setPackageName(ir.applicableNamespace());
+
+            new GolangGenerator(ir, outputManager).generate();
+
+            final String source = outputManager.getSource("group_in_message_named_with_i.Item").toString();
+            assertThat(source, containsString("for idx := range i.Parts {"));
+            assertThat(source, containsString("i.Parts[idx].Encode(_m, _w)"));
+            assertThat(source, not(containsString("for i := range i.Parts")));
         }
     }
 }
