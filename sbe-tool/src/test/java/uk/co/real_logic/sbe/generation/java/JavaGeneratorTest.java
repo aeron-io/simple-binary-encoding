@@ -287,6 +287,39 @@ class JavaGeneratorTest
     }
 
     @Test
+    void shouldNotDecodeSetChoiceAddedAfterActingVersion() throws Exception
+    {
+        try (InputStream in = Tests.getLocalResource("issue1035.xml"))
+        {
+            final ParserOptions options = ParserOptions.builder().stopOnError(true).build();
+            final MessageSchema schema = parse(in, options);
+            ir = new IrGenerator().generate(schema);
+
+            outputManager.clear();
+            outputManager.setPackageName(ir.applicableNamespace());
+
+            generator().generate();
+
+            final Class<?> decoderClass = compile(ir.applicableNamespace() + ".Issue1035Decoder");
+            final Object decoder = decoderClass.getConstructor().newInstance();
+            final Method wrapMethod = decoderClass.getMethod(
+                "wrap", READ_ONLY_BUFFER_CLASS, int.class, int.class, int.class);
+            final UnsafeBuffer buffer = new UnsafeBuffer(new byte[1]);
+            buffer.putByte(0, (byte)0b11);
+
+            wrapMethod.invoke(decoder, buffer, 0, 1, 0);
+            final Object flagsVersion0 = get(decoder, "flags");
+            assertEquals(true, get(flagsVersion0, "oldChoice"));
+            assertEquals(false, get(flagsVersion0, "newChoice"));
+
+            wrapMethod.invoke(decoder, buffer, 0, 1, 1);
+            final Object flagsVersion1 = get(decoder, "flags");
+            assertEquals(true, get(flagsVersion1, "oldChoice"));
+            assertEquals(true, get(flagsVersion1, "newChoice"));
+        }
+    }
+
+    @Test
     void shouldGenerateWithoutPrecedenceChecksByDefault() throws Exception
     {
         final PrecedenceChecks.Context context = new PrecedenceChecks.Context();
