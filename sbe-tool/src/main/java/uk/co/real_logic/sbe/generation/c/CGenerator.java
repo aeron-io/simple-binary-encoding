@@ -181,7 +181,7 @@ public class CGenerator implements CodeGenerator
                     "};\n",
                     structName));
 
-                out.append(generateMessageFlyweightFunctions(structName, msgToken, ir.namespaces()));
+                out.append(generateMessageFlyweightFunctions(structName, msgToken, fields, ir.namespaces()));
 
                 out.append(generateFieldFunctions(ir.namespaces(), structName, structName, fields));
 
@@ -213,15 +213,16 @@ public class CGenerator implements CodeGenerator
             final Token numInGroupToken = Generators.findFirst("numInGroup", tokens, i);
             final String cTypeForNumInGroup = cTypeName(numInGroupToken.encoding().primitiveType());
 
-            generateGroupStruct(sb, groupName);
-            generateGroupHeaderFunctions(sb, scope, groupName, tokens, i);
-
+            final int groupIndex = i;
             ++i;
             final int groupHeaderTokenCount = tokens.get(i).componentTokenCount();
             i += groupHeaderTokenCount;
 
             final List<Token> fields = new ArrayList<>();
             i = collectFields(tokens, i, fields);
+
+            generateGroupStruct(sb, groupName);
+            generateGroupHeaderFunctions(sb, scope, groupName, tokens, fields, groupIndex);
             sb.append(generateFieldFunctions(scope, groupName, outermostStruct, fields));
 
             final List<Token> groups = new ArrayList<>();
@@ -258,6 +259,7 @@ public class CGenerator implements CodeGenerator
         final CharSequence[] scope,
         final String groupName,
         final List<Token> tokens,
+        final List<Token> fields,
         final int index)
     {
         final String dimensionsStructName = formatScopedName(scope, tokens.get(index + 1).name());
@@ -291,13 +293,15 @@ public class CGenerator implements CodeGenerator
             "    }\n\n" +
             "    codec->block_length = %2$s_blockLength(&dimensions);\n" +
             "    codec->count = %2$s_numInGroup(&dimensions);\n" +
+            "%4$s" +
             "    codec->index = -1;\n" +
             "    codec->acting_version = acting_version;\n" +
             "    codec->position_ptr = pos;\n" +
             "    *codec->position_ptr = *codec->position_ptr + %3$d;\n\n" +
             "    return codec;\n" +
             "}\n",
-            groupName, dimensionsStructName, dimensionHeaderLength));
+            groupName, dimensionsStructName, dimensionHeaderLength,
+            generateBlockLengthCheck(fields, "codec->block_length", "codec->count > 0", "E108")));
 
         final long minCount = numInGroupToken.encoding().applicableMinValue().longValue();
         final String minCheck = minCount > 0 ? "count < " + minCount + " || " : "";
@@ -548,14 +552,17 @@ public class CGenerator implements CodeGenerator
                 "    struct %6$s *const codec)\n" +
                 "{\n" +
                 "%2$s" +
-                "    %4$s length_field_value;\n" +
-                "    memcpy(&length_field_value, codec->buffer + %6$s_sbe_position(codec), sizeof(%4$s));\n" +
-                "    const char *field_ptr = (codec->buffer + %6$s_sbe_position(codec) + %3$d);\n\n" +
-                "    if (!%6$s_set_sbe_position(\n" +
-                "        codec, %6$s_sbe_position(codec) + %3$d + %5$s(length_field_value)))\n" +
+                "    uint64_t length_position = %6$s_sbe_position(codec);\n" +
+                "    if (!%6$s_set_sbe_position(codec, length_position + %3$d))\n" +
                 "    {\n" +
                 "        return NULL;\n" +
                 "    }\n\n" +
+                "    %4$s length_field_value;\n" +
+                "    memcpy(&length_field_value, codec->buffer + length_position, sizeof(%4$s));\n" +
+                "    uint64_t data_length = %5$s(length_field_value);\n" +
+                "    uint64_t pos = %6$s_sbe_position(codec);\n" +
+                "    const char *field_ptr = codec->buffer + pos;\n\n" +
+                generateDataPositionAdvance("%6$s", "NULL") +
                 "    return field_ptr;\n" +
                 "}\n",
                 propertyName,
@@ -583,10 +590,7 @@ public class CGenerator implements CodeGenerator
                 "    uint64_t data_length = %4$s(length_field_value);\n" +
                 "    uint64_t bytes_to_copy = length < data_length ? length : data_length;\n" +
                 "    uint64_t pos = %6$s_sbe_position(codec);\n\n" +
-                "    if (!%6$s_set_sbe_position(codec, pos + data_length))\n" +
-                "    {\n" +
-                "        return 0;\n" +
-                "    }\n\n" +
+                generateDataPositionAdvance("%6$s", "0") +
                 "    memcpy(dst, codec->buffer + pos, bytes_to_copy);\n\n" +
                 "    return bytes_to_copy;\n" +
                 "}\n",
@@ -602,15 +606,25 @@ public class CGenerator implements CodeGenerator
                 "    struct %5$s *const codec)\n" +
                 "{\n" +
                 "%2$s" +
-                "    %4$s length_field_value = %5$s_%1$s_length(codec);\n" +
-                "    const char *field_ptr = codec->buffer + %5$s_sbe_position(codec) + %3$d;\n" +
-                "    if (!%5$s_set_sbe_position(\n" +
-                "        codec, %5$s_sbe_position(codec) + %3$d + length_field_value))\n" +
+                "    uint64_t length_position = %5$s_sbe_position(codec);\n" +
+                "    if (!%5$s_set_sbe_position(codec, length_position + %3$d))\n" +
                 "    {\n" +
                 "        struct %6$s_string_view ret = {NULL, 0};\n" +
                 "        return ret;\n" +
                 "    }\n\n" +
-                "    struct %6$s_string_view ret = {field_ptr, length_field_value};\n\n" +
+                "    %4$s length_field_value;\n" +
+                "    memcpy(&length_field_value, codec->buffer + length_position, sizeof(%4$s));\n" +
+                "    uint64_t data_length = %7$s(length_field_value);\n" +
+                "    uint64_t pos = %5$s_sbe_position(codec);\n" +
+                "    const char *field_ptr = codec->buffer + pos;\n" +
+                "    if (SBE_BOUNDS_CHECK_EXPECT((data_length > (codec->buffer_length - pos)), false))\n" +
+                "    {\n" +
+                "        errno = E100;\n" +
+                "        struct %6$s_string_view ret = {NULL, 0};\n" +
+                "        return ret;\n" +
+                "    }\n" +
+                "    *%5$s_sbe_position_ptr(codec) = pos + data_length;\n\n" +
+                "    struct %6$s_string_view ret = {field_ptr, data_length};\n\n" +
                 "    return ret;\n" +
                 "}\n",
                 propertyName,
@@ -618,7 +632,8 @@ public class CGenerator implements CodeGenerator
                 lengthOfLengthField,
                 lengthCType,
                 structName,
-                outermostStruct));
+                outermostStruct,
+                lengthByteOrderStr));
 
             sb.append(String.format("\n" +
                 "SBE_ONE_DEF struct %5$s *%5$s_put_%1$s(\n" +
@@ -652,6 +667,22 @@ public class CGenerator implements CodeGenerator
         }
 
         return sb;
+    }
+
+    /*
+     * Advance the position past var data of data_length bytes starting at pos. pos must already have been checked
+     * against buffer_length, so the check is written as a subtraction which, unlike pos + data_length, cannot wrap
+     * for a 64-bit length.
+     */
+    private static String generateDataPositionAdvance(final String structName, final String failureValue)
+    {
+        return
+            "    if (SBE_BOUNDS_CHECK_EXPECT((data_length > (codec->buffer_length - pos)), false))\n" +
+            "    {\n" +
+            "        errno = E100;\n" +
+            "        return " + failureValue + ";\n" +
+            "    }\n" +
+            "    *" + structName + "_sbe_position_ptr(codec) = pos + data_length;\n\n";
     }
 
     private void generateVarDataDescriptors(
@@ -715,6 +746,11 @@ public class CGenerator implements CodeGenerator
             "    const struct %5$s *const codec)\n" +
             "{\n" +
             "%2$s" +
+            "    if (SBE_BOUNDS_CHECK_EXPECT(((%5$s_sbe_position(codec) + %6$d) > codec->buffer_length), false))\n" +
+            "    {\n" +
+            "        errno = E100;\n" +
+            "        return 0;\n" +
+            "    }\n\n" +
             "    %4$s length;\n" +
             "    memcpy(&length, codec->buffer + %5$s_sbe_position(codec), sizeof(%4$s));\n\n" +
             "    return %3$s(length);\n" +
@@ -723,7 +759,8 @@ public class CGenerator implements CodeGenerator
             generateArrayFieldNotPresentCondition(token.version()),
             formatByteOrderEncoding(lengthToken.encoding().byteOrder(), lengthToken.encoding().primitiveType()),
             lengthCType,
-            structName));
+            structName,
+            sizeOfLengthField));
     }
 
     private void generateChoiceSet(final CharSequence[] scope, final List<Token> tokens) throws IOException
@@ -1893,7 +1930,7 @@ public class CGenerator implements CodeGenerator
     }
 
     private CharSequence generateMessageFlyweightFunctions(
-        final String structName, final Token token, final CharSequence[] scope)
+        final String structName, final Token token, final List<Token> fields, final CharSequence[] scope)
     {
         final String blockLengthType = cTypeName(ir.headerStructure().blockLengthType());
         final String templateIdType = cTypeName(ir.headerStructure().templateIdType());
@@ -2048,6 +2085,7 @@ public class CGenerator implements CodeGenerator
             "    const uint64_t acting_version,\n" +
             "    const uint64_t buffer_length)\n" +
             "{\n" +
+            "%14$s" +
             "    return %10$s_reset(\n" +
             "        codec,\n" +
             "        buffer,\n" +
@@ -2110,7 +2148,27 @@ public class CGenerator implements CodeGenerator
             structName,
             messageHeaderStruct,
             semanticVersion,
-            toUppercaseWithUnderscores(structName));
+            toUppercaseWithUnderscores(structName),
+            generateBlockLengthCheck(fields, "acting_block_length", null, "E100"));
+    }
+
+    private static String generateBlockLengthCheck(
+        final List<Token> fields, final String blockLengthName, final String condition, final String errorCode)
+    {
+        final String minBlockLength = Generators.minBlockLengthExpression(fields, "acting_version");
+        if (null == minBlockLength)
+        {
+            return "";
+        }
+
+        final String tooShort = "(" + blockLengthName + " < " + minBlockLength + ")";
+        return
+            "    if (SBE_BOUNDS_CHECK_EXPECT(" +
+            (null == condition ? tooShort : "(" + tooShort + " && (" + condition + "))") + ", false))\n" +
+            "    {\n" +
+            "        errno = " + errorCode + ";\n" +
+            "        return NULL;\n" +
+            "    }\n";
     }
 
     private String toUppercaseWithUnderscores(final String camelCaseString)
