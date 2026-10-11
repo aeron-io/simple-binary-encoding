@@ -204,6 +204,38 @@ static void decodeComposite(
     listener.onEndComposite(fieldToken, *tokens, tokenIndex, toIndex);
 }
 
+/*
+ * Extent of the fixed fields present at the acting version, i.e. the smallest block length from which they can be
+ * read. Fields are only appended in later schema versions, so an older block may be shorter than the schema block
+ * but never shorter than this.
+ */
+inline std::uint64_t minBlockLength(
+    const std::vector<Token> &tokens, std::size_t tokenIndex, const std::size_t numTokens, std::uint64_t actingVersion)
+{
+    std::uint64_t minLength = 0;
+
+    while (tokenIndex < numTokens)
+    {
+        const Token &fieldToken = tokens.at(tokenIndex);
+        if (Signal::BEGIN_FIELD != fieldToken.signal())
+        {
+            break;
+        }
+
+        const Token &typeToken = tokens.at(tokenIndex + 1);
+        if (fieldToken.tokenVersion() <= static_cast<std::int32_t>(actingVersion) &&
+            !typeToken.isConstantEncoding())
+        {
+            const auto fieldEnd = static_cast<std::uint64_t>(typeToken.offset() + typeToken.encodedLength());
+            minLength = fieldEnd > minLength ? fieldEnd : minLength;
+        }
+
+        tokenIndex += fieldToken.componentTokenCount();
+    }
+
+    return minLength;
+}
+
 template<typename TokenListener>
 static size_t decodeFields(
     const char *buffer,
@@ -303,7 +335,8 @@ std::size_t decodeData(
             bufferIndex += dataToken.offset();
         }
 
-        if ((bufferIndex + dataLength) > length)
+        // bufferIndex <= length is established above, the subtraction cannot wrap whereas an addition can
+        if (dataLength > static_cast<std::uint64_t>(length - bufferIndex))
         {
             throw std::runtime_error("length too short for data field");
         }
@@ -361,13 +394,26 @@ std::pair<size_t, size_t> decodeGroups(
 
         size_t beginFieldsIndex = tokenIndex + dimensionsTypeComposite.componentTokenCount() + 1;
 
+        if (numInGroup > 0)
+        {
+            if (blockLength < minBlockLength(*tokens, beginFieldsIndex, numTokens, actingVersion))
+            {
+                throw std::runtime_error("group blockLength too short for fields");
+            }
+
+            if (blockLength > 0 && numInGroup > static_cast<std::uint64_t>(length - bufferIndex) / blockLength)
+            {
+                throw std::runtime_error("length too short for group entries");
+            }
+        }
+
         listener.onGroupHeader(token, numInGroup);
 
         for (std::uint64_t i = 0; i < numInGroup; i++)
         {
             listener.onBeginGroup(token, i, numInGroup);
 
-            if ((bufferIndex + blockLength) > length)
+            if (blockLength > static_cast<std::uint64_t>(length - bufferIndex))
             {
                 throw std::runtime_error("length too short for group blockLength");
             }
@@ -411,6 +457,12 @@ std::size_t decode(
     }
 
     size_t numTokens = msgTokens->size();
+
+    if (blockLength < minBlockLength(*msgTokens, 1, numTokens, actingVersion))
+    {
+        throw std::runtime_error("message blockLength too short for fields");
+    }
+
     const size_t tokenIndex = decodeFields(buffer, 0, length, actingVersion, msgTokens, 1, numTokens, listener);
 
     size_t bufferIndex = blockLength;

@@ -70,6 +70,36 @@ public:
     virtual void onVarData(Token &, char *, std::uint64_t, Token &) {}
 };
 
+/*
+ * Largest count or length that a numInGroup or var-data length field can carry: the schema maxValue when set,
+ * otherwise the range of its primitive type. putAsUInt narrows to the field width, so a larger value would put a
+ * different count or length on the wire than the number of entries or bytes that follow it.
+ */
+inline std::uint64_t maxUIntValue(const Encoding &encoding)
+{
+    std::uint64_t typeMax = UINT64_MAX;
+    bool isUnsigned = true;
+    switch (encoding.primitiveType())
+    {
+        case PrimitiveType::UINT8: typeMax = UINT8_MAX; break;
+        case PrimitiveType::UINT16: typeMax = UINT16_MAX; break;
+        case PrimitiveType::UINT32: typeMax = UINT32_MAX; break;
+        case PrimitiveType::INT8: typeMax = INT8_MAX; isUnsigned = false; break;
+        case PrimitiveType::INT16: typeMax = INT16_MAX; isUnsigned = false; break;
+        case PrimitiveType::INT32: typeMax = INT32_MAX; isUnsigned = false; break;
+        case PrimitiveType::INT64: typeMax = INT64_MAX; isUnsigned = false; break;
+        default: break;
+    }
+
+    const PrimitiveValue &maxValue = encoding.maxValue();
+    if (isUnsigned && 0 != maxValue.size() && maxValue.getAsUInt() < typeMax)
+    {
+        return maxValue.getAsUInt();
+    }
+
+    return typeMax;
+}
+
 template<typename TokenEncoder>
 static void encodeComposite(
     char *buffer,
@@ -223,11 +253,16 @@ static std::size_t encodeData(
             }
 
             const std::uint64_t dataLength = encoder.varDataLength(token);
+            if (dataLength > maxUIntValue(lengthToken.encoding()))
+            {
+                throw std::runtime_error("var data length too large for length type");
+            }
+
             lengthToken.encoding().putAsUInt(buffer + bufferIndex + lengthToken.offset(), dataLength);
 
             bufferIndex += dataToken.offset();
 
-            if ((bufferIndex + dataLength) > length)
+            if (dataLength > static_cast<std::uint64_t>(length - bufferIndex))
             {
                 throw std::runtime_error("length too short for data field");
             }
@@ -271,6 +306,11 @@ static std::pair<std::size_t, std::size_t> encodeGroups(
         // a BEGIN_GROUP token's encodedLength is the group's per-entry block length
         auto blockLength = static_cast<std::size_t>(token.encodedLength());
         const std::uint64_t numInGroup = isPresent ? encoder.numInGroup(token) : 0;
+
+        if (numInGroup > maxUIntValue(numInGroupToken.encoding()))
+        {
+            throw std::runtime_error("numInGroup too large for numInGroup type");
+        }
 
         if (isPresent)
         {

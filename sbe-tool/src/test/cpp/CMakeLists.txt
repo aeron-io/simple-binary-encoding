@@ -106,6 +106,10 @@ sbe_test(InfinityTest codecs)
 sbe_test(FieldAccessOrderCheckTest codecs)
 target_compile_definitions(FieldAccessOrderCheckTest PRIVATE SBE_ENABLE_PRECEDENCE_CHECKS_IN_TESTS)
 sbe_test(VersionedMessageTest codecs)
+sbe_test(WireBoundsTest codecs)
+# the uint64 var data length in wire-bounds-test-schema.xml generates an E109 range check against a negative literal
+target_compile_options(WireBoundsTest PRIVATE $<$<CXX_COMPILER_ID:AppleClang,Clang,GNU>:-Wno-sign-compare>)
+sbe_test(OtfWireBoundsTest codecs)
 
 # OtfMessageEncoderTest lives in the otf/ subdirectory and provides its own main() that takes the
 # IR file path as argv[1]; it is handed the generated code-generation-schema IR.
