@@ -1201,9 +1201,16 @@ public class GolangGenerator implements CodeGenerator
         final String golangTypeForLengthMarshal = golangMarshalType(tokens.get(2).encoding().primitiveType());
         final String golangTypeForData = golangTypeName(tokens.get(3).encoding().primitiveType());
 
-        generateCharacterEncodingRangeCheck(rc, varName + "." + propertyName, tokens.get(3));
+        final String maxLength = Long.toUnsignedString(tokens.get(2).encoding().applicableMaxValue().longValue());
 
+        generateCharacterEncodingRangeCheck(rc, varName + "." + propertyName, tokens.get(3));
+        imports.peek().add("fmt");
+
+        // The length is checked before it is written so the wire prefix always matches the bytes that follow.
         encode.append(String.format(
+            "\tif uint64(len(%3$s.%4$s)) > %5$s {\n" +
+            "\t\treturn fmt.Errorf(\"%4$s length %%d exceeds maximum %5$s\", len(%3$s.%4$s))\n" +
+            "\t}\n" +
             "\tif err := _m.Write%1$s(_w, %2$s(len(%3$s.%4$s))); err != nil {\n" +
             "\t\treturn err\n" +
             "\t}\n" +
@@ -1213,8 +1220,11 @@ public class GolangGenerator implements CodeGenerator
             golangTypeForLengthMarshal,
             golangTypeForLength,
             varName,
-            propertyName));
+            propertyName,
+            maxLength));
 
+        // A wire length is untrusted: reject it above maxValue and, for large values, grow the slice only as
+        // bytes arrive rather than allocating the full declared length up front.
         decode.append(String.format(
             "\n" +
             "\tif %1$c.%2$sInActingVersion(actingVersion) {\n" +
@@ -1222,19 +1232,39 @@ public class GolangGenerator implements CodeGenerator
             "\t\tif err := _m.Read%3$s(_r, &%2$sLength); err != nil {\n" +
             "\t\t\treturn err\n" +
             "\t\t}\n" +
-            "\t\tif cap(%1$c.%2$s) < int(%2$sLength) {\n" +
-            "\t\t\t%1$s.%2$s = make([]%5$s, %2$sLength)\n" +
+            "\t\tif uint64(%2$sLength) > %6$s {\n" +
+            "\t\t\treturn fmt.Errorf(\"%2$s length %%d exceeds maximum %6$s\", %2$sLength)\n" +
             "\t\t}\n" +
-            "\t\t%1$c.%2$s = %1$c.%2$s[:%2$sLength]\n" +
-            "\t\tif err := _m.ReadBytes(_r, %1$c.%2$s); err != nil {\n" +
-            "\t\t\treturn err\n" +
+            "\t\tif cap(%1$c.%2$s) >= int(%2$sLength) || uint64(%2$sLength) <= 65536 {\n" +
+            "\t\t\tif cap(%1$c.%2$s) < int(%2$sLength) {\n" +
+            "\t\t\t\t%1$s.%2$s = make([]%5$s, %2$sLength)\n" +
+            "\t\t\t}\n" +
+            "\t\t\t%1$c.%2$s = %1$c.%2$s[:%2$sLength]\n" +
+            "\t\t\tif err := _m.ReadBytes(_r, %1$c.%2$s); err != nil {\n" +
+            "\t\t\t\treturn err\n" +
+            "\t\t\t}\n" +
+            "\t\t} else {\n" +
+            "\t\t\t%1$c.%2$s = %1$c.%2$s[:0]\n" +
+            "\t\t\tfor remaining := int(%2$sLength); remaining > 0; {\n" +
+            "\t\t\t\tchunk := remaining\n" +
+            "\t\t\t\tif chunk > 65536 {\n" +
+            "\t\t\t\t\tchunk = 65536\n" +
+            "\t\t\t\t}\n" +
+            "\t\t\t\tstart := len(%1$c.%2$s)\n" +
+            "\t\t\t\t%1$c.%2$s = append(%1$c.%2$s, make([]%5$s, chunk)...)\n" +
+            "\t\t\t\tif err := _m.ReadBytes(_r, %1$c.%2$s[start:]); err != nil {\n" +
+            "\t\t\t\t\treturn err\n" +
+            "\t\t\t\t}\n" +
+            "\t\t\t\tremaining -= chunk\n" +
+            "\t\t\t}\n" +
             "\t\t}\n" +
             "\t}\n",
             varName,
             propertyName,
             golangTypeForLengthMarshal,
             golangTypeForLength,
-            golangTypeForData));
+            golangTypeForData,
+            maxLength));
 
         return gap;
     }
@@ -1259,6 +1289,7 @@ public class GolangGenerator implements CodeGenerator
         final int numInGroupOffset = numInGroupToken.offset();
         final String numInGroupType = golangTypeName(numInGroupToken.encoding().primitiveType());
         final String numInGroupMarshalType = golangMarshalType(numInGroupToken.encoding().primitiveType());
+        final String maxNumInGroup = Long.toUnsignedString(numInGroupToken.encoding().applicableMaxValue().longValue());
 
         // Offset handling
         final int gap = Math.max(signalToken.offset() - currentOffset, 0);
@@ -1271,7 +1302,12 @@ public class GolangGenerator implements CodeGenerator
             "\t\treturn err\n" +
             "\t}\n";
 
+        // The count is checked before it is written so the wire numInGroup always matches the entries that follow.
+        imports.peek().add("fmt");
         final String encNumInGroupTmpl =
+            "\tif uint64(len(%4$s.%5$s)) > " + maxNumInGroup + " {\n" +
+            "\t\treturn fmt.Errorf(\"%5$s count %%d exceeds maximum " + maxNumInGroup + "\", len(%4$s.%5$s))\n" +
+            "\t}\n" +
             "\tvar %7$sNumInGroup %3$s = %3$s(len(%4$s.%5$s))\n" +
             "\tif err := _m.Write%8$s(_w, %7$sNumInGroup); err != nil {\n" +
             "\t\treturn err\n" +
