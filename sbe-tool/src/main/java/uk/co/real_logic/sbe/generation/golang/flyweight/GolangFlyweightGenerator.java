@@ -42,7 +42,7 @@ import static uk.co.real_logic.sbe.ir.GenerationUtil.*;
 public class GolangFlyweightGenerator implements CodeGenerator
 {
     private static final String BASE_INDENT = "";
-    private static final String INDENT = "    ";
+    private static final String INDENT = "\t";
 
     private final Ir ir;
     private final OutputManager outputManager;
@@ -87,18 +87,16 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final String golangTypeBlockLength = goTypeName(blockLengthToken.encoding().primitiveType());
         final String golangTypeNumInGroup = goTypeName(numInGroupToken.encoding().primitiveType());
 
-        new Formatter(sb).format("\n" +
-            indent + "type %1$s struct {\n" +
-            indent + "    buffer         []byte\n" +
-            indent + "    bufferLength   uint64\n" +
-            indent + "    initialPosition uint64\n" +
-            indent + "    positionPtr    *uint64\n" +
-            indent + "    blockLength    uint64\n" +
-            indent + "    count          uint64\n" +
-            indent + "    index          uint64\n" +
-            indent + "    offset         uint64\n" +
-            indent + "    actingVersion  uint64\n",
-            groupClassName);
+        final List<String[]> structFields = new ArrayList<>();
+        structFields.add(new String[]{"buffer", "[]byte"});
+        structFields.add(new String[]{"bufferLength", "uint64"});
+        structFields.add(new String[]{"initialPosition", "uint64"});
+        structFields.add(new String[]{"positionPtr", "*uint64"});
+        structFields.add(new String[]{"blockLength", "uint64"});
+        structFields.add(new String[]{"count", "uint64"});
+        structFields.add(new String[]{"index", "uint64"});
+        structFields.add(new String[]{"offset", "uint64"});
+        structFields.add(new String[]{"actingVersion", "uint64"});
 
         for (int i = 0, size = fields.size(); i < size; i++)
         {
@@ -113,9 +111,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 {
                     case BEGIN_SET:
                     case BEGIN_COMPOSITE:
-                        new Formatter(sb).format(indent + "    _%1$s %2$s\n",
-                            propertyName,
-                            typeName);
+                        structFields.add(new String[]{"_" + propertyName, typeName});
                         break;
 
                     default:
@@ -132,37 +128,38 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 final String propertyName = formatPropertyName(token.name());
                 final String groupName = groupClassName + formatClassName(token.name());
 
-                new Formatter(sb).format(indent + "    _%1$s %2$s\n",
-                    propertyName,
-                    groupName);
+                structFields.add(new String[]{"_" + propertyName, groupName});
                 i += token.componentTokenCount();
             }
         }
 
+        sb.append("\n").append(indent).append("type ").append(groupClassName).append(" struct {\n")
+            .append(alignColumns(structFields));
+
         new Formatter(sb).format(
             indent + "}\n\n" +
             indent + "func (g *%1$s) sbePositionPtr() *uint64 {\n" +
-            indent + "    return g.positionPtr\n" +
+            indent + "\treturn g.positionPtr\n" +
             indent + "}\n\n",
             groupClassName);
 
         new Formatter(sb).format(
             indent + "func (g *%3$s) WrapForDecode(\n" +
-            indent + "    buffer []byte,\n" +
-            indent + "    pos *uint64,\n" +
-            indent + "    actingVersion uint64,\n" +
-            indent + "    bufferLength uint64) {\n" +
-            indent + "    dimensions := %2$s{}\n" +
-            indent + "    dimensions.Wrap(buffer, *pos, actingVersion, bufferLength)\n" +
-            indent + "    g.buffer = buffer\n" +
-            indent + "    g.bufferLength = bufferLength\n" +
-            indent + "    g.blockLength = uint64(dimensions.BlockLength())\n" +
-            indent + "    g.count = uint64(dimensions.NumInGroup())\n" +
-            indent + "    g.index = 0\n" +
-            indent + "    g.actingVersion = actingVersion\n" +
-            indent + "    g.initialPosition = *pos\n" +
-            indent + "    g.positionPtr = pos\n" +
-            indent + "    *g.positionPtr = *g.positionPtr + %1$d\n" +
+            indent + "\tbuffer []byte,\n" +
+            indent + "\tpos *uint64,\n" +
+            indent + "\tactingVersion uint64,\n" +
+            indent + "\tbufferLength uint64) {\n" +
+            indent + "\tdimensions := %2$s{}\n" +
+            indent + "\tdimensions.Wrap(buffer, *pos, actingVersion, bufferLength)\n" +
+            indent + "\tg.buffer = buffer\n" +
+            indent + "\tg.bufferLength = bufferLength\n" +
+            indent + "\tg.blockLength = uint64(dimensions.BlockLength())\n" +
+            indent + "\tg.count = uint64(dimensions.NumInGroup())\n" +
+            indent + "\tg.index = 0\n" +
+            indent + "\tg.actingVersion = actingVersion\n" +
+            indent + "\tg.initialPosition = *pos\n" +
+            indent + "\tg.positionPtr = pos\n" +
+            indent + "\t*g.positionPtr = *g.positionPtr + %1$d\n" +
             indent + "}\n",
             dimensionHeaderLength, dimensionsClassName, groupClassName);
 
@@ -171,27 +168,27 @@ public class GolangFlyweightGenerator implements CodeGenerator
 
         new Formatter(sb).format("\n" +
             indent + "func (g *%8$s) WrapForEncode(\n" +
-            indent + "    buffer []byte,\n" +
-            indent + "    count %3$s,\n" +
-            indent + "    pos *uint64,\n" +
-            indent + "    actingVersion uint64,\n" +
-            indent + "    bufferLength uint64) {\n" +
-            indent + "    if %5$scount > %6$d {\n" +
-            indent + "        panic(\"count outside of allowed range [E110]\")\n" +
-            indent + "    }\n" +
-            indent + "    g.buffer = buffer\n" +
-            indent + "    g.bufferLength = bufferLength\n" +
-            indent + "    dimensions := %7$s{}\n" +
-            indent + "    dimensions.Wrap(buffer, *pos, actingVersion, bufferLength)\n" +
-            indent + "    dimensions.SetBlockLength(%2$d)\n" +
-            indent + "    dimensions.SetNumInGroup(count)\n" +
-            indent + "    g.index = 0\n" +
-            indent + "    g.count = uint64(count)\n" +
-            indent + "    g.blockLength = %2$d\n" +
-            indent + "    g.actingVersion = actingVersion\n" +
-            indent + "    g.initialPosition = *pos\n" +
-            indent + "    g.positionPtr = pos\n" +
-            indent + "    *g.positionPtr = *g.positionPtr + %4$d\n" +
+            indent + "\tbuffer []byte,\n" +
+            indent + "\tcount %3$s,\n" +
+            indent + "\tpos *uint64,\n" +
+            indent + "\tactingVersion uint64,\n" +
+            indent + "\tbufferLength uint64) {\n" +
+            indent + "\tif %5$scount > %6$d {\n" +
+            indent + "\t\tpanic(\"count outside of allowed range [E110]\")\n" +
+            indent + "\t}\n" +
+            indent + "\tg.buffer = buffer\n" +
+            indent + "\tg.bufferLength = bufferLength\n" +
+            indent + "\tdimensions := %7$s{}\n" +
+            indent + "\tdimensions.Wrap(buffer, *pos, actingVersion, bufferLength)\n" +
+            indent + "\tdimensions.SetBlockLength(%2$d)\n" +
+            indent + "\tdimensions.SetNumInGroup(count)\n" +
+            indent + "\tg.index = 0\n" +
+            indent + "\tg.count = uint64(count)\n" +
+            indent + "\tg.blockLength = %2$d\n" +
+            indent + "\tg.actingVersion = actingVersion\n" +
+            indent + "\tg.initialPosition = *pos\n" +
+            indent + "\tg.positionPtr = pos\n" +
+            indent + "\t*g.positionPtr = *g.positionPtr + %4$d\n" +
             indent + "}\n",
             golangTypeBlockLength,
             blockLength,
@@ -204,48 +201,48 @@ public class GolangFlyweightGenerator implements CodeGenerator
 
         new Formatter(sb).format("\n" +
             indent + "func (g *%3$s) SbeHeaderSize() uint64 {\n" +
-            indent + "    return %1$d\n" +
+            indent + "\treturn %1$d\n" +
             indent + "}\n\n" +
 
             indent + "func (g *%3$s) SbeBlockLength() uint64 {\n" +
-            indent + "    return %2$d\n" +
+            indent + "\treturn %2$d\n" +
             indent + "}\n\n" +
 
             indent + "func (g *%3$s) SbePosition() uint64 {\n" +
-            indent + "    return *g.positionPtr\n" +
+            indent + "\treturn *g.positionPtr\n" +
             indent + "}\n\n" +
 
             indent + "func (g *%3$s) SbeCheckPosition(position uint64) uint64 {\n" +
-            indent + "    if position > g.bufferLength {\n" +
-            indent + "        panic(\"buffer too short [E100]\")\n" +
-            indent + "    }\n" +
-            indent + "    return position\n" +
+            indent + "\tif position > g.bufferLength {\n" +
+            indent + "\t\tpanic(\"buffer too short [E100]\")\n" +
+            indent + "\t}\n" +
+            indent + "\treturn position\n" +
             indent + "}\n\n" +
 
             indent + "func (g *%3$s) SetSbePosition(position uint64) {\n" +
-            indent + "    *g.positionPtr = g.SbeCheckPosition(position)\n" +
+            indent + "\t*g.positionPtr = g.SbeCheckPosition(position)\n" +
             indent + "}\n\n" +
 
             indent + "func (g *%3$s) Count() uint64 {\n" +
-            indent + "    return g.count\n" +
+            indent + "\treturn g.count\n" +
             indent + "}\n\n" +
 
             indent + "func (g *%3$s) HasNext() bool {\n" +
-            indent + "    return g.index < g.count\n" +
+            indent + "\treturn g.index < g.count\n" +
             indent + "}\n\n" +
 
             indent + "func (g *%3$s) Next() *%3$s {\n" +
-            indent + "    if g.index >= g.count {\n" +
-            indent + "        panic(\"index >= count [E108]\")\n" +
-            indent + "    }\n" +
-            indent + "    g.offset = *g.positionPtr\n" +
-            indent + "    if g.offset+g.blockLength > g.bufferLength {\n" +
-            indent + "        panic(\"buffer too short for next group index [E108]\")\n" +
-            indent + "    }\n" +
-            indent + "    *g.positionPtr = g.offset + g.blockLength\n" +
-            indent + "    g.index++\n\n" +
+            indent + "\tif g.index >= g.count {\n" +
+            indent + "\t\tpanic(\"index >= count [E108]\")\n" +
+            indent + "\t}\n" +
+            indent + "\tg.offset = *g.positionPtr\n" +
+            indent + "\tif g.offset+g.blockLength > g.bufferLength {\n" +
+            indent + "\t\tpanic(\"buffer too short for next group index [E108]\")\n" +
+            indent + "\t}\n" +
+            indent + "\t*g.positionPtr = g.offset + g.blockLength\n" +
+            indent + "\tg.index++\n\n" +
 
-            indent + "    return g\n" +
+            indent + "\treturn g\n" +
             indent + "}\n",
             dimensionHeaderLength,
             blockLength,
@@ -253,23 +250,23 @@ public class GolangFlyweightGenerator implements CodeGenerator
         sb.append("\n")
             .append(indent).append("func (g *").append(groupClassName)
             .append(") ResetCountToIndex() uint64 {\n")
-            .append(indent).append("    g.count = g.index\n")
-            .append(indent).append("    dimensions := ").append(dimensionsClassName).append("{}\n")
-            .append(indent).append("    dimensions.Wrap")
+            .append(indent).append("\tg.count = g.index\n")
+            .append(indent).append("\tdimensions := ").append(dimensionsClassName).append("{}\n")
+            .append(indent).append("\tdimensions.Wrap")
             .append("(g.buffer, g.initialPosition, g.actingVersion, g.bufferLength)\n")
             .append(indent)
-            .append("    dimensions.SetNumInGroup(").append(golangTypeNumInGroup).append("(g.count))\n")
-            .append(indent).append("    return g.count\n")
-            .append(indent).append("}\n\n");
+            .append("\tdimensions.SetNumInGroup(").append(golangTypeNumInGroup).append("(g.count))\n")
+            .append(indent).append("\treturn g.count\n")
+            .append(indent).append("}\n");
 
         sb.append("\n")
             .append(indent).append("func (g *").append(groupClassName)
             .append(") ForEach(fn func(group *").append(groupClassName).append(")) {\n")
-            .append(indent).append("    for g.HasNext() {\n")
-            .append(indent).append("        g.Next()\n")
-            .append(indent).append("        fn(g)\n")
-            .append(indent).append("    }\n")
-            .append(indent).append("}\n\n");
+            .append(indent).append("\tfor g.HasNext() {\n")
+            .append(indent).append("\t\tg.Next()\n")
+            .append(indent).append("\t\tfn(g)\n")
+            .append(indent).append("\t}\n")
+            .append(indent).append("}\n");
     }
 
     private static void generateGroupProperty(
@@ -284,9 +281,9 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final String propertyName = formatPropertyName(groupName);
 
         new Formatter(sb).format(
-            indent + "    func (m *%3$s) %1$sId() int {\n" +
-            indent + "        return %2$d\n" +
-            indent + "    }\n",
+            indent + "func (m *%3$s) %1$sId() int {\n" +
+            indent + "\treturn %2$d\n" +
+            indent + "}\n",
             propertyName,
             token.id(),
             outerClassName);
@@ -294,8 +291,8 @@ public class GolangFlyweightGenerator implements CodeGenerator
 
         new Formatter(sb).format("\n" +
             indent + "func (m *%1$s) %2$s() *%3$s {\n" +
-            indent + "    m._%2$s.WrapForDecode(m.buffer, m.sbePositionPtr(), m.actingVersion, m.bufferLength)\n" +
-            indent + "    return &m._%2$s\n" +
+            indent + "\tm._%2$s.WrapForDecode(m.buffer, m.sbePositionPtr(), m.actingVersion, m.bufferLength)\n" +
+            indent + "\treturn &m._%2$s\n" +
             indent + "}\n",
             outerClassName,
             propertyName,
@@ -304,8 +301,8 @@ public class GolangFlyweightGenerator implements CodeGenerator
         new Formatter(sb).format("\n" +
             indent + "func (m *%1$s) %2$sCount(count %3$s) *%4$s {\n" +
             indent +
-            "    m._%2$s.WrapForEncode(m.buffer, count, m.sbePositionPtr(), m.actingVersion, m.bufferLength)\n" +
-            indent + "    return &m._%2$s\n" +
+            "\tm._%2$s.WrapForEncode(m.buffer, count, m.sbePositionPtr(), m.actingVersion, m.bufferLength)\n" +
+            indent + "\treturn &m._%2$s\n" +
             indent + "}\n",
             outerClassName,
             propertyName,
@@ -314,10 +311,10 @@ public class GolangFlyweightGenerator implements CodeGenerator
 
         final int version = token.version();
         final String versionCheck = 0 == version ?
-            "    return true\n" : "    return m.actingVersion >= m.%1$sSinceVersion()\n";
+            "\treturn true\n" : "\treturn m.actingVersion >= m.%1$sSinceVersion()\n";
         new Formatter(sb).format("\n" +
             indent + "func (m *%3$s) %1$sSinceVersion() uint64 {\n" +
-            indent + "    return %2$d\n" +
+            indent + "\treturn %2$d\n" +
             indent + "}\n\n" +
 
             indent + "func (m *%3$s) %1$sInActingVersion() bool {\n" +
@@ -336,9 +333,9 @@ public class GolangFlyweightGenerator implements CodeGenerator
         }
 
         return String.format(
-            "        if m.actingVersion < %1$d {\n" +
-                "            return false\n" +
-                "        }\n\n",
+            "\tif m.actingVersion < %1$d {\n" +
+                "\t\treturn false\n" +
+                "\t}\n\n",
             sinceVersion);
     }
 
@@ -351,9 +348,9 @@ public class GolangFlyweightGenerator implements CodeGenerator
         }
 
         return String.format(
-            indent + "        if m.actingVersion < %1$d {\n" +
-                indent + "            return nil\n" +
-                indent + "        }\n\n",
+            indent + "\tif m.actingVersion < %1$d {\n" +
+                indent + "\t\treturn nil\n" +
+                indent + "\t}\n\n",
             sinceVersion);
     }
 
@@ -366,9 +363,9 @@ public class GolangFlyweightGenerator implements CodeGenerator
         }
 
         return String.format(
-            indent + "        if m.actingVersion < %1$d {\n" +
-                indent + "            return 0\n" +
-                indent + "        }\n\n",
+            indent + "\tif m.actingVersion < %1$d {\n" +
+                indent + "\t\treturn 0\n" +
+                indent + "\t}\n\n",
             sinceVersion);
     }
 
@@ -381,9 +378,9 @@ public class GolangFlyweightGenerator implements CodeGenerator
         }
 
         return String.format(
-            indent + "        if m.actingVersion < %1$d {\n" +
-                indent + "            return 0, nil\n" +
-                indent + "        }\n\n",
+            indent + "\tif m.actingVersion < %1$d {\n" +
+                indent + "\t\treturn 0, nil\n" +
+                indent + "\t}\n\n",
             sinceVersion);
     }
 
@@ -396,9 +393,9 @@ public class GolangFlyweightGenerator implements CodeGenerator
         }
 
         return String.format(
-            indent + "        if m.actingVersion < %1$d {\n" +
-                indent + "            return \"\"\n" +
-                indent + "        }\n\n",
+            indent + "\tif m.actingVersion < %1$d {\n" +
+                indent + "\t\treturn \"\"\n" +
+                indent + "\t}\n\n",
             sinceVersion);
     }
 
@@ -411,9 +408,9 @@ public class GolangFlyweightGenerator implements CodeGenerator
         }
 
         return String.format(
-            indent + "        if m.actingVersion < %1$d {\n" +
-                indent + "            return \"\"\n" +
-                indent + "        }\n\n",
+            indent + "\tif m.actingVersion < %1$d {\n" +
+                indent + "\t\treturn \"\"\n" +
+                indent + "\t}\n\n",
             sinceVersion);
     }
 
@@ -426,27 +423,27 @@ public class GolangFlyweightGenerator implements CodeGenerator
     private static CharSequence generateEnumDeclaration(final String name, final Token encodingToken)
     {
         final Encoding encoding = encodingToken.encoding();
-        return "type " + name + " " + goTypeName(encoding.primitiveType()) + "\n";
+        return "type " + name + " " + goTypeName(encoding.primitiveType()) + "\n\n";
     }
 
     private static CharSequence generateConstructorsAndOperators(final String className)
     {
         return String.format(
-            "    func %1$s() {\n\n" +
+            "func %1$s() {\n\n" +
 
-                "    func %1$s(\n" +
-                "        buffer []byte,\n" +
-                "        offset uint64,\n" +
-                "        bufferLength uint64,\n" +
-                "        actingBlockLength uint64,\n" +
-                "        actingVersion uint64) {\n" +
-                "        m.buffer := buffer\n" +
-                "        m.bufferLength := bufferLength\n" +
-                "        m.offset := offset\n" +
-                "        m.position := sbeCheckPosition(offset + actingBlockLength)\n" +
-                "        m.actingBlockLength := actingBlockLength\n" +
-                "        m.actingVersion := actingVersion\n" +
-                "    }\n\n",
+                "\tfunc %1$s(\n" +
+                "\t\tbuffer []byte,\n" +
+                "\t\toffset uint64,\n" +
+                "\t\tbufferLength uint64,\n" +
+                "\t\tactingBlockLength uint64,\n" +
+                "\t\tactingVersion uint64) {\n" +
+                "\t\tm.buffer := buffer\n" +
+                "\t\tm.bufferLength := bufferLength\n" +
+                "\t\tm.offset := offset\n" +
+                "\t\tm.position := sbeCheckPosition(offset + actingBlockLength)\n" +
+                "\t\tm.actingBlockLength := actingBlockLength\n" +
+                "\t\tm.actingVersion := actingVersion\n" +
+                "\t}\n\n",
             className);
     }
 
@@ -462,32 +459,33 @@ public class GolangFlyweightGenerator implements CodeGenerator
         sb.append("\n")
             .append(indent).append("func (m *").append(className)
             .append(") ").append(propertyName).append("MetaAttribute(metaAttribute string) string {\n")
-            .append(indent).append("    switch metaAttribute {\n");
+            .append(indent).append("\tswitch metaAttribute {\n");
 
         if (!Strings.isEmpty(epoch))
         {
-            sb.append(indent)
-                .append("        case \"EPOCH\": return \"").append(epoch).append("\"\n");
+            sb.append(indent).append("\tcase \"EPOCH\":\n")
+                .append(indent).append("\t\treturn \"").append(epoch).append("\"\n");
         }
 
         if (!Strings.isEmpty(timeUnit))
         {
-            sb.append(indent)
-                .append("        case \"TIME_UNIT\": return \"").append(timeUnit).append("\"\n");
+            sb.append(indent).append("\tcase \"TIME_UNIT\":\n")
+                .append(indent).append("\t\treturn \"").append(timeUnit).append("\"\n");
         }
 
         if (!Strings.isEmpty(semanticType))
         {
-            sb.append(indent)
-                .append("        case \"SEMANTIC_TYPE\": return \"").append(semanticType)
-                .append("\"\n");
+            sb.append(indent).append("\tcase \"SEMANTIC_TYPE\":\n")
+                .append(indent).append("\t\treturn \"").append(semanticType).append("\"\n");
         }
 
         sb
-            .append(indent).append("        case \"PRESENCE\": return \"")
+            .append(indent).append("\tcase \"PRESENCE\":\n")
+            .append(indent).append("\t\treturn \"")
             .append(encoding.presence().toString().toLowerCase()).append("\"\n")
-            .append(indent).append("        default: return \"\"\n")
-            .append(indent).append("    }\n")
+            .append(indent).append("\tdefault:\n")
+            .append(indent).append("\t\treturn \"\"\n")
+            .append(indent).append("\t}\n")
             .append(indent).append("}\n");
     }
 
@@ -500,9 +498,9 @@ public class GolangFlyweightGenerator implements CodeGenerator
         }
 
         return String.format(
-            indent + "        if m.actingVersion < %1$d {\n" +
-                indent + "            return %2$s_NULL_VALUE\n" +
-                indent + "        }\n\n",
+            indent + "\tif m.actingVersion < %1$d {\n" +
+                indent + "\t\treturn %2$s_NULL_VALUE\n" +
+                indent + "\t}\n\n",
             sinceVersion,
             enumName);
     }
@@ -518,19 +516,19 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final int offset = token.offset();
 
         new Formatter(sb).format(
-            indent + "    func (m *%4$s) %2$s() *%1$s {\n" +
-            indent + "        m._%2$s.Wrap(m.buffer, m.offset + %3$d, m.actingVersion, m.bufferLength)\n" +
-            indent + "        return &m._%2$s\n" +
-            indent + "    }\n",
+            indent + "func (m *%4$s) %2$s() *%1$s {\n" +
+            indent + "\tm._%2$s.Wrap(m.buffer, m.offset+%3$d, m.actingVersion, m.bufferLength)\n" +
+            indent + "\treturn &m._%2$s\n" +
+            indent + "}\n",
             bitsetName,
             propertyName,
             offset,
             className);
 
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%3$s) %1$sEncodingLength() int {\n" +
-            indent + "        return %2$d\n" +
-            indent + "    }\n",
+            indent + "func (m *%3$s) %1$sEncodingLength() int {\n" +
+            indent + "\treturn %2$d\n" +
+            indent + "}\n",
             propertyName,
             token.encoding().primitiveType().size(),
             className);
@@ -546,10 +544,10 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final String compositeName = formatClassName(token.applicableTypeName());
 
         new Formatter(sb).format(
-            indent + "    func (m *%4$s) %2$s() *%1$s {\n" +
-            indent + "        m._%2$s.Wrap(m.buffer, m.offset + %3$d, m.actingVersion, m.bufferLength)\n" +
-            indent + "        return &m._%2$s\n" +
-            indent + "    }\n",
+            indent + "func (m *%4$s) %2$s() *%1$s {\n" +
+            indent + "\tm._%2$s.Wrap(m.buffer, m.offset+%3$d, m.actingVersion, m.bufferLength)\n" +
+            indent + "\treturn &m._%2$s\n" +
+            indent + "}\n",
             compositeName,
             propertyName,
             token.offset(),
@@ -743,12 +741,12 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 "\treturn math.MaxUint64\n" +
                 "}\n\n" +
 
-                "type MetaAttribute int\n" +
+                "type MetaAttribute int\n\n" +
                 "const (\n" +
-                "    EPOCH MetaAttribute = iota\n" +
-                "    TIME_UNIT\n" +
-                "    SEMANTIC_TYPE\n" +
-                "    PRESENCE\n" +
+                "\tEPOCH MetaAttribute = iota\n" +
+                "\tTIME_UNIT\n" +
+                "\tSEMANTIC_TYPE\n" +
+                "\tPRESENCE\n" +
                 ")\n\n" +
 
                 "var SbeNoBoundsCheck = false\n\n" +
@@ -983,7 +981,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
             {
                 sb.append("\n");
             }
-            sb.append('"').append(s).append('"');
+            sb.append("\t\"").append(s).append('"');
             first = false;
         }
         return sb.toString();
@@ -1020,18 +1018,17 @@ public class GolangFlyweightGenerator implements CodeGenerator
             final List<Token> groups = new ArrayList<>();
             i = collectGroups(tokens, i, groups);
 
-            generateGroupClassHeader(sb, groupClassName, tokens, groupStart,
-                indent + INDENT, fields, groups);
+            generateGroupClassHeader(sb, groupClassName, tokens, groupStart, indent, fields, groups);
 
-            generateFields(sb, groupClassName, fields, indent + INDENT);
-            generateGroups(sb, groups, indent + INDENT, groupClassName);
+            generateFields(sb, groupClassName, fields, indent);
+            generateGroups(sb, groups, indent, groupClassName);
 
             final List<Token> varData = new ArrayList<>();
             i = collectVarData(tokens, i, varData);
-            generateVarData(sb, groupClassName, varData, indent + INDENT);
+            generateVarData(sb, groupClassName, varData, indent);
 
-            sb.append(generateGroupDisplay(groupClassName, fields, groups, varData, indent + INDENT + INDENT));
-            sb.append(generateMessageLength(groups, varData, indent + INDENT + INDENT, groupClassName));
+            sb.append(generateGroupDisplay(groupClassName, fields, groups, varData, indent));
+            sb.append(generateMessageLength(groups, varData, indent, groupClassName));
 
             generateGroupProperty(sb, groupName, groupClassName, outerClassName, groupToken, goTypeForNumInGroup,
                 indent);
@@ -1068,15 +1065,15 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 lengthOfLengthField, lengthGoType, indent, className);
 
             new Formatter(sb).format("\n" +
-                indent + "    func (m *%5$s) Skip%1$s() uint64 {\n" +
+                indent + "func (m *%5$s) Skip%1$s() uint64 {\n" +
                 "%2$s" +
-                indent + "        lengthOfLengthField := uint64(%3$d)\n" +
-                indent + "        lengthPosition := m.SbePosition()\n" +
+                indent + "\tlengthOfLengthField := uint64(%3$d)\n" +
+                indent + "\tlengthPosition := m.SbePosition()\n" +
                 indent +
-                "        dataLength := uint64(%4$s(m.buffer[lengthPosition : lengthPosition+lengthOfLengthField]))\n" +
-                indent + "        m.SetSbePosition(lengthPosition + lengthOfLengthField + dataLength)\n" +
-                indent + "        return dataLength\n" +
-                indent + "    }\n",
+                "\tdataLength := uint64(%4$s(m.buffer[lengthPosition : lengthPosition+lengthOfLengthField]))\n" +
+                indent + "\tm.SetSbePosition(lengthPosition + lengthOfLengthField + dataLength)\n" +
+                indent + "\treturn dataLength\n" +
+                indent + "}\n",
                 propertyName,
                 generateArrayLengthNotPresentCondition(token.version(), indent),
                 lengthOfLengthField,
@@ -1087,11 +1084,11 @@ public class GolangFlyweightGenerator implements CodeGenerator
             new Formatter(sb).format("\n" +
                 indent + "func (m *%6$s) %1$s() string {\n" +
                 "%2$s" +
-                indent + "    lengthFieldValue := uint64(%4$s(m.buffer[m.SbePosition():m.SbePosition()+%3$d]))\n" +
-                indent + "    m.SetSbePosition(m.SbePosition() + uint64(%3$d))\n" +
-                indent + "    pos := m.SbePosition()\n" +
-                indent + "    m.SetSbePosition(pos + lengthFieldValue)\n" +
-                indent + "    return string(m.buffer[pos:pos+lengthFieldValue])\n" +
+                indent + "\tlengthFieldValue := uint64(%4$s(m.buffer[m.SbePosition() : m.SbePosition()+%3$d]))\n" +
+                indent + "\tm.SetSbePosition(m.SbePosition() + uint64(%3$d))\n" +
+                indent + "\tpos := m.SbePosition()\n" +
+                indent + "\tm.SetSbePosition(pos + lengthFieldValue)\n" +
+                indent + "\treturn string(m.buffer[pos : pos+lengthFieldValue])\n" +
                 indent + "}\n",
                 formatPropertyName(propertyName),
                 generateTypeFieldNotPresentCondition(token.version(), indent),
@@ -1103,19 +1100,19 @@ public class GolangFlyweightGenerator implements CodeGenerator
             new Formatter(sb).format("\n" +
                 indent + "func (m *%5$s) Get%1$s(dst []byte) int {\n" +
                 "%2$s" +
-                indent + "    lengthOfLengthField := uint64(%3$d)\n" +
-                indent + "    lengthPosition := m.SbePosition()\n" +
-                indent + "    m.SetSbePosition(m.SbePosition() + lengthOfLengthField)\n" +
+                indent + "\tlengthOfLengthField := uint64(%3$d)\n" +
+                indent + "\tlengthPosition := m.SbePosition()\n" +
+                indent + "\tm.SetSbePosition(m.SbePosition() + lengthOfLengthField)\n" +
                 indent +
-                "    dataLength := uint64(%4$s(m.buffer[lengthPosition:lengthPosition+lengthOfLengthField]))\n" +
-                indent + "    bytesToCopy := dataLength\n" +
-                indent + "    if uint64(len(dst)) < dataLength {\n" +
-                indent + "        bytesToCopy = uint64(len(dst))\n" +
-                indent + "    }\n" +
-                indent + "    pos := m.SbePosition()\n" +
-                indent + "    m.SetSbePosition(pos + dataLength)\n" +
-                indent + "    copy(dst, m.buffer[pos:pos+bytesToCopy])\n" +
-                indent + "    return int(bytesToCopy)\n" +
+                "\tdataLength := uint64(%4$s(m.buffer[lengthPosition : lengthPosition+lengthOfLengthField]))\n" +
+                indent + "\tbytesToCopy := dataLength\n" +
+                indent + "\tif uint64(len(dst)) < dataLength {\n" +
+                indent + "\t\tbytesToCopy = uint64(len(dst))\n" +
+                indent + "\t}\n" +
+                indent + "\tpos := m.SbePosition()\n" +
+                indent + "\tm.SetSbePosition(pos + dataLength)\n" +
+                indent + "\tcopy(dst, m.buffer[pos:pos+bytesToCopy])\n" +
+                indent + "\treturn int(bytesToCopy)\n" +
                 indent + "}\n",
                 propertyName,
                 generateArrayLengthNotPresentCondition(token.version(), indent),
@@ -1127,16 +1124,16 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 lengthToken.encoding().byteOrder(), lengthToken.encoding().primitiveType());
             new Formatter(sb).format("\n" +
                 indent + "func (m *%5$s) Put%1$sLen(src string, length %3$s) *%5$s {\n" +
-                indent + "    lengthOfLengthField := uint64(%2$d)\n" +
-                indent + "    lengthPosition := m.SbePosition()\n" +
-                indent + "    m.SetSbePosition(lengthPosition + lengthOfLengthField)\n" +
-                indent + "    %4$s(m.buffer[lengthPosition:], length)\n" +
-                indent + "    if length != %3$s(0) {\n" +
-                indent + "        pos := m.SbePosition()\n" +
-                indent + "        m.SetSbePosition(pos + uint64(length))\n" +
-                indent + "        copy(m.buffer[pos:], src)\n" +
-                indent + "    }\n" +
-                indent + "    return m\n" +
+                indent + "\tlengthOfLengthField := uint64(%2$d)\n" +
+                indent + "\tlengthPosition := m.SbePosition()\n" +
+                indent + "\tm.SetSbePosition(lengthPosition + lengthOfLengthField)\n" +
+                indent + "\t%4$s(m.buffer[lengthPosition:], length)\n" +
+                indent + "\tif length != %3$s(0) {\n" +
+                indent + "\t\tpos := m.SbePosition()\n" +
+                indent + "\t\tm.SetSbePosition(pos + uint64(length))\n" +
+                indent + "\t\tcopy(m.buffer[pos:], src)\n" +
+                indent + "\t}\n" +
+                indent + "\treturn m\n" +
                 indent + "}\n",
                 propertyName,
                 lengthOfLengthField,
@@ -1148,14 +1145,14 @@ public class GolangFlyweightGenerator implements CodeGenerator
             new Formatter(sb).format("\n" +
                 indent + "func (m *%6$s) Get%1$sAsString() string {\n" +
                 "%2$s" +
-                indent + "    lengthOfLengthField := uint64(%3$d)\n" +
-                indent + "    lengthPosition := m.SbePosition()\n" +
+                indent + "\tlengthOfLengthField := uint64(%3$d)\n" +
+                indent + "\tlengthPosition := m.SbePosition()\n" +
                 indent +
-                "    dataLength := uint64(%4$s(m.buffer[lengthPosition:lengthPosition+lengthOfLengthField]))\n" +
-                indent + "    m.SetSbePosition(lengthPosition + lengthOfLengthField)\n" +
-                indent + "    pos := m.SbePosition()\n" +
-                indent + "    m.SetSbePosition(pos + dataLength)\n" +
-                indent + "    return string(m.buffer[pos:pos+dataLength])\n" +
+                "\tdataLength := uint64(%4$s(m.buffer[lengthPosition : lengthPosition+lengthOfLengthField]))\n" +
+                indent + "\tm.SetSbePosition(lengthPosition + lengthOfLengthField)\n" +
+                indent + "\tpos := m.SbePosition()\n" +
+                indent + "\tm.SetSbePosition(pos + dataLength)\n" +
+                indent + "\treturn string(m.buffer[pos : pos+dataLength])\n" +
                 indent + "}\n",
                 propertyName,
                 generateStringNotPresentCondition(token.version(), indent),
@@ -1168,10 +1165,10 @@ public class GolangFlyweightGenerator implements CodeGenerator
 
             new Formatter(sb).format("\n" +
                 indent + "func (m *%1$s) Put%2$s(str string) *%1$s {\n" +
-                indent + "    if len(str) > %4$d {\n" +
-                indent + "        panic(\"string too long for length type [E109]\")\n" +
-                indent + "    }\n" +
-                indent + "    return m.Put%2$sLen(str, %3$s(len(str)))\n" +
+                indent + "\tif len(str) > %4$d {\n" +
+                indent + "\t\tpanic(\"string too long for length type [E109]\")\n" +
+                indent + "\t}\n" +
+                indent + "\treturn m.Put%2$sLen(str, %3$s(len(str)))\n" +
                 indent + "}\n",
                 className,
                 propertyName,
@@ -1195,27 +1192,27 @@ public class GolangFlyweightGenerator implements CodeGenerator
     {
         new Formatter(sb).format("\n" +
             indent + "func (m *%3$s) %1$sCharacterEncoding() string {\n" +
-            indent + "        return \"%2$s\"\n" +
-            indent + "    }\n",
+            indent + "\treturn \"%2$s\"\n" +
+            indent + "}\n",
             formatPropertyName(propertyName),
             characterEncoding,
             className);
 
         final int version = token.version();
         final String versionCheck = 0 == version ?
-            "        return true\n" : "        return m.actingVersion >= m.%1$sSinceVersion()\n";
+            "\treturn true\n" : "\treturn m.actingVersion >= m.%1$sSinceVersion()\n";
         new Formatter(sb).format("\n" +
             indent + "func (m *%4$s) %1$sSinceVersion() uint64 {\n" +
-            indent + "        return %2$d\n" +
-            indent + "    }\n\n" +
+            indent + "\treturn %2$d\n" +
+            indent + "}\n\n" +
 
             indent + "func (m *%4$s) %1$sInActingVersion() bool {\n" +
             indent + versionCheck +
-            indent + "    }\n\n" +
+            indent + "}\n\n" +
 
             indent + "func (m *%4$s) %1$sId() uint16 {\n" +
-            indent + "        return %3$d\n" +
-            indent + "    }\n",
+            indent + "\treturn %3$d\n" +
+            indent + "}\n",
             formatPropertyName(propertyName),
             version,
             token.id(),
@@ -1224,7 +1221,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
 
         new Formatter(sb).format("\n" +
             indent + "func (m *%3$s) %1$sHeaderLength() uint64 {\n" +
-            indent + "        return %2$d\n" +
+            indent + "\treturn %2$d\n" +
             indent + "}\n",
             formatPropertyName(propertyName),
             sizeOfLengthField,
@@ -1233,7 +1230,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
         new Formatter(sb).format("\n" +
             indent + "func (m *%5$s) %1$sLength() %4$s {\n" +
             "%2$s" +
-            indent + "        return %3$s(m.buffer[m.SbePosition():])\n" +
+            indent + "\treturn %3$s(m.buffer[m.SbePosition():])\n" +
             indent + "}\n",
             formatPropertyName(propertyName),
             generateArrayLengthNotPresentCondition(version, BASE_INDENT),
@@ -1257,30 +1254,29 @@ public class GolangFlyweightGenerator implements CodeGenerator
 
             final Encoding encoding = token.encoding();
             new Formatter(out).format("\n" +
-                "    func (bs *%1$s) Clear() *%1$s {\n" +
-                "        %2$s(bs.buffer[bs.offset:], 0)\n" +
-                "        return bs\n" +
-                "    }\n",
+                "func (bs *%1$s) Clear() *%1$s {\n" +
+                "\t%2$s(bs.buffer[bs.offset:], 0)\n" +
+                "\treturn bs\n" +
+                "}\n",
                 bitSetName,
                 formatWriteBytes(token.encoding().byteOrder(), encoding.primitiveType()));
 
             new Formatter(out).format("\n" +
-                "    func (bs *%1$s) IsEmpty() bool {\n" +
-                "        return %2$s(bs.buffer[bs.offset:]) == 0\n" +
-                "    }\n",
+                "func (bs *%1$s) IsEmpty() bool {\n" +
+                "\treturn %2$s(bs.buffer[bs.offset:]) == 0\n" +
+                "}\n",
                 bitSetName,
                 formatReadBytes(token.encoding().byteOrder(), encoding.primitiveType()));
 
             new Formatter(out).format("\n" +
-                "    func (bs *%1$s) RawValue() %2$s {\n" +
-                "        return %2$s(bs.buffer[bs.offset])\n" +
-                "    }\n",
+                "func (bs *%1$s) RawValue() %2$s {\n" +
+                "\treturn %2$s(bs.buffer[bs.offset])\n" +
+                "}\n",
                 bitSetName,
                 goTypeName(encoding.primitiveType()));
 
             out.append(generateChoices(bitSetName, tokens.subList(1, tokens.size() - 1)));
             out.append(generateChoicesDisplay(bitSetName, tokens.subList(1, tokens.size() - 1)));
-            out.append("\n");
 
             fileOut.append(generateFileHeader(ir.namespaces()));
             fileOut.append(out);
@@ -1304,8 +1300,6 @@ public class GolangFlyweightGenerator implements CodeGenerator
             out.append(generateEnumLookupMethod(tokens.subList(1, tokens.size() - 1), enumToken));
 
             out.append(generateEnumDisplay(tokens.subList(1, tokens.size() - 1), enumToken));
-
-            out.append("\n");
 
             fileOut.append(generateEnumFileHeader(ir.namespaces()));
             fileOut.append(out);
@@ -1351,9 +1345,9 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 final CharSequence constantOne = generateLiteral(type, "1");
 
                 new Formatter(sb).format("\n" +
-                    "    func (m *%5$s) %1$sValue(bits %2$s) bool {\n" +
-                    "        return (bits & (%4$s << %3$s)) != 0\n" +
-                    "    }\n",
+                    "func (m *%5$s) %1$sValue(bits %2$s) bool {\n" +
+                    "\treturn (bits & (%4$s << %3$s)) != 0\n" +
+                    "}\n",
                     choiceName,
                     typeName,
                     choiceBitPosition,
@@ -1361,12 +1355,12 @@ public class GolangFlyweightGenerator implements CodeGenerator
                     bitsetClassName);
 
                 new Formatter(sb).format("\n" +
-                    "    func (m *%5$s) Set%1$sValue(bits %2$s, value bool) %2$s {\n" +
-                    "        if value {\n" +
-                    "            return bits | (%4$s << %3$s)\n" +
-                    "        }\n" +
-                    "        return bits & ^(%4$s << %3$s)\n" +
-                    "    }\n",
+                    "func (m *%5$s) Set%1$sValue(bits %2$s, value bool) %2$s {\n" +
+                    "\tif value {\n" +
+                    "\t\treturn bits | (%4$s << %3$s)\n" +
+                    "\t}\n" +
+                    "\treturn bits & ^(%4$s << %3$s)\n" +
+                    "}\n",
                     choiceName,
                     typeName,
                     choiceBitPosition,
@@ -1377,7 +1371,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 new Formatter(sb).format("\n" +
                     "func (m *%1$s) %2$s() bool {\n" +
                     "%3$s" +
-                    "    return m.%2$sValue(%4$s(m.buffer[m.offset:]))\n" +
+                    "\treturn m.%2$sValue(%4$s(m.buffer[m.offset:]))\n" +
                     "}\n",
                     bitsetClassName,
                     choiceName,
@@ -1385,15 +1379,15 @@ public class GolangFlyweightGenerator implements CodeGenerator
                     formatReadBytes(token.encoding().byteOrder(), type));
 
                 new Formatter(sb).format("\n" +
-                    "func (m *%1$s) Set%2$s(value bool) *%1$s{\n" +
-                    "    bits := %7$s(m.buffer[m.offset:])\n" +
-                    "    if value {\n" +
-                    "        bits = %3$s(%3$s(bits) | (%6$s << %5$s))\n" +
-                    "    } else {\n" +
-                    "        bits = %3$s(%3$s(bits) & ^(%6$s << %5$s))\n" +
-                    "    }\n" +
-                    "    %4$s(m.buffer[m.offset:], bits)\n" +
-                    "    return m\n" +
+                    "func (m *%1$s) Set%2$s(value bool) *%1$s {\n" +
+                    "\tbits := %7$s(m.buffer[m.offset:])\n" +
+                    "\tif value {\n" +
+                    "\t\tbits = %3$s(%3$s(bits) | (%6$s << %5$s))\n" +
+                    "\t} else {\n" +
+                    "\t\tbits = %3$s(%3$s(bits) & ^(%6$s << %5$s))\n" +
+                    "\t}\n" +
+                    "\t%4$s(m.buffer[m.offset:], bits)\n" +
+                    "\treturn m\n" +
                     "}\n",
                     bitsetClassName,
                     choiceName,
@@ -1415,34 +1409,28 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final StringBuilder sb = new StringBuilder();
         final Encoding encoding = encodingToken.encoding();
 
-        sb.append("    const (\n");
-
+        final List<String[]> rows = new ArrayList<>();
         for (final Token token : tokens)
         {
             final CharSequence constVal = generateLiteral(
                 token.encoding().primitiveType(), token.encoding().constValue().toString());
-            sb.append("    ").append(enumName).append("_").append(token.name()).append(" ").append(enumName)
-            .append(" = ").append(enumName).append("(").append(constVal).append(")\n");
+            rows.add(new String[]{
+                enumName + "_" + token.name(), enumName, "= " + enumName + "(" + constVal + ")"});
         }
 
         final CharSequence nullLiteral = generateLiteral(
             encoding.primitiveType(), encoding.applicableNullValue().toString());
         if (shouldDecodeUnknownEnumValues)
         {
-            sb.append("    ").append(enumName).append("_").append("UNKNOWN")
-                .append(" ").append(enumName).append(" = ").append(enumName)
-                .append("(").append(nullLiteral).append(")\n");
+            rows.add(new String[]{enumName + "_UNKNOWN", enumName, "= " + enumName + "(" + nullLiteral + ")"});
         }
 
-        sb.append("    ").append(enumName).append("_").append("NULL_VALUE")
-            .append(" ").append(enumName)
-            .append(" = ").append(enumName).append("(")
-            .append(nullLiteral).append(")\n");
-        sb.append("\n    )\n\n");
+        rows.add(new String[]{enumName + "_NULL_VALUE", enumName, "= " + enumName + "(" + nullLiteral + ")"});
+
+        sb.append("const (\n").append(alignColumns(rows)).append(")\n\n");
 
         return sb;
     }
-
 
     private CharSequence generateEnumLookupMethod(final List<Token> tokens, final Token encodingToken)
     {
@@ -1452,9 +1440,9 @@ public class GolangFlyweightGenerator implements CodeGenerator
 
         addInclude("errors");
         new Formatter(sb).format(
-            "    var %1$sLookupErr = errors.New(\"unknown value for enum %1$s [E103]\")\n" +
-            "    func Lookup%1$s(value %2$s) (%1$s, error) {\n" +
-            "        switch value {\n",
+            "var %1$sLookupErr = errors.New(\"unknown value for enum %1$s [E103]\")\n\n" +
+            "func Lookup%1$s(value %2$s) (%1$s, error) {\n" +
+            "\tswitch value {\n",
             enumName,
             goTypeName);
 
@@ -1463,32 +1451,29 @@ public class GolangFlyweightGenerator implements CodeGenerator
             final CharSequence constVal = generateLiteral(
                 token.encoding().primitiveType(), token.encoding().constValue().toString());
 
-            sb.append("            case ").append(constVal)
-                .append(": return ").append(enumName).append("_")
+            sb.append("\tcase ").append(constVal).append(":\n")
+                .append("\t\treturn ").append(enumName).append("_")
                 .append(token.name()).append(", nil\n");
         }
 
         final CharSequence nullVal = generateLiteral(
             encodingToken.encoding().primitiveType(), encodingToken.encoding().applicableNullValue().toString());
 
-        sb.append("            case ").append(nullVal).append(": return ")
-            .append(enumName).append("_").append("NULL_VALUE, nil\n")
-            .append("        }\n\n");
+        sb.append("\tcase ").append(nullVal).append(":\n")
+            .append("\t\treturn ").append(enumName).append("_").append("NULL_VALUE, nil\n")
+            .append("\t}\n\n");
 
         if (shouldDecodeUnknownEnumValues)
         {
-
-            sb.append("    return ").append(enumName).append("_").append("UNKNOWN").append(", nil\n}\n");
+            sb.append("\treturn ").append(enumName).append("_").append("UNKNOWN").append(", nil\n}\n");
         }
         else
         {
-            new Formatter(sb).format("        return 0, %1$sLookupErr\n}\n",
-                enumName);
+            new Formatter(sb).format("\treturn 0, %1$sLookupErr\n}\n", enumName);
         }
 
         return sb;
     }
-
 
     private CharSequence generateFieldNotPresentCondition(
         final int sinceVersion, final Encoding encoding, final String indent)
@@ -1499,9 +1484,9 @@ public class GolangFlyweightGenerator implements CodeGenerator
         }
 
         return String.format(
-            indent + "        if m.actingVersion < %1$d {\n" +
-                indent + "            return %2$s\n" +
-                indent + "        }\n\n",
+            indent + "\tif m.actingVersion < %1$d {\n" +
+                indent + "\t\treturn %2$s\n" +
+                indent + "\t}\n\n",
             sinceVersion,
             generateLiteral(encoding.primitiveType(), encoding.applicableNullValue().toString()));
     }
@@ -1647,36 +1632,36 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final CharSequence nullValueString = generateNullValueLiteral(primitiveType, encoding);
 
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%4$s) %1$sNullValue() %2$s {\n" +
-            indent + "        return %3$s\n" +
-            indent + "    }\n",
+            indent + "func (m *%4$s) %1$sNullValue() %2$s {\n" +
+            indent + "\treturn %3$s\n" +
+            indent + "}\n",
             propertyName,
             goTypeName,
             nullValueString,
             className);
 
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%4$s) %1$sMinValue() %2$s {\n" +
-            indent + "        return %3$s\n" +
-            indent + "    }\n",
+            indent + "func (m *%4$s) %1$sMinValue() %2$s {\n" +
+            indent + "\treturn %3$s\n" +
+            indent + "}\n",
             propertyName,
             goTypeName,
             generateLiteral(primitiveType, token.encoding().applicableMinValue().toString()),
             className);
 
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%4$s) %1$sMaxValue() %2$s {\n" +
-            indent + "        return %3$s\n" +
-            indent + "    }\n",
+            indent + "func (m *%4$s) %1$sMaxValue() %2$s {\n" +
+            indent + "\treturn %3$s\n" +
+            indent + "}\n",
             propertyName,
             goTypeName,
             generateLiteral(primitiveType, token.encoding().applicableMaxValue().toString()),
             className);
 
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%3$s) %1$sEncodingLength() int {\n" +
-            indent + "        return %2$d\n" +
-            indent + "    }\n",
+            indent + "func (m *%3$s) %1$sEncodingLength() int {\n" +
+            indent + "\treturn %2$d\n" +
+            indent + "}\n",
             propertyName,
             token.encoding().primitiveType().size() * token.arrayLength(),
             className);
@@ -1692,7 +1677,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final StringBuilder sb = new StringBuilder();
 
         new Formatter(sb).format(
-            indent + "        return %3$s(m.buffer[(m.offset + %1$s):])\n",
+            indent + "\treturn %3$s(m.buffer[(m.offset + %1$s):])\n",
             offsetStr,
             goTypeName,
             formatReadBytes(byteOrder, primitiveType));
@@ -1712,7 +1697,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final StringBuilder sb = new StringBuilder();
 
         new Formatter(sb).format(
-            indent + "        %3$s(m.buffer[(m.offset + %4$s):], value%2$s)\n",
+            indent + "\t%3$s(m.buffer[(m.offset+%4$s):], value%2$s)\n",
             goTypeName,
             valueSuffix,
             formatWriteBytes(byteOrder, primitiveType),
@@ -1735,10 +1720,10 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final int offset = encodingToken.offset();
 
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%1$s) %2$s() %3$s {\n" +
+            indent + "func (m *%1$s) %2$s() %3$s {\n" +
             "%4$s" +
             "%5$s" +
-            indent + "    }\n",
+            indent + "}\n",
             containingClassName,
             propertyName,
             goTypeName,
@@ -1749,10 +1734,10 @@ public class GolangFlyweightGenerator implements CodeGenerator
             primitiveType, "", Integer.toString(offset), encodingToken.encoding().byteOrder(), indent);
 
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%1$s) Set%2$s(value %3$s) *%1$s {\n" +
+            indent + "func (m *%1$s) Set%2$s(value %3$s) *%1$s {\n" +
             "%4$s" +
-            indent + "        return m\n" +
-            indent + "    }\n",
+            indent + "\treturn m\n" +
+            indent + "}\n",
             containingClassName,
             propertyName,
             goTypeName,
@@ -1773,9 +1758,9 @@ public class GolangFlyweightGenerator implements CodeGenerator
 
         final int arrayLength = encodingToken.arrayLength();
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%3$s) %1$sLength() int {\n" +
-            indent + "        return %2$d\n" +
-            indent + "    }\n",
+            indent + "func (m *%3$s) %1$sLength() int {\n" +
+            indent + "\treturn %2$d\n" +
+            indent + "}\n",
             propertyName,
             arrayLength,
             formatClassName(containingClassName));
@@ -1783,7 +1768,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
         new Formatter(sb).format("\n" +
             indent + "func (m *%6$s) %2$s() []byte {\n" +
             "%4$s" +
-            indent + "    return m.buffer[m.offset+%5$d:m.offset+%5$d+%3$d]\n" +
+            indent + "\treturn m.buffer[m.offset+%5$d : m.offset+%5$d+%3$d]\n" +
             indent + "}\n",
             goTypeName,
             toUpperFirstChar(propertyName),
@@ -1799,13 +1784,13 @@ public class GolangFlyweightGenerator implements CodeGenerator
             indent);
 
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%6$s) %2$sIndex(index uint64) %1$s {\n" +
-            indent + "        if (index >= %3$d) {\n" +
-            indent + "            panic(\"index out of range for %2$s [E104]\")\n" +
-            indent + "        }\n\n" +
+            indent + "func (m *%6$s) %2$sIndex(index uint64) %1$s {\n" +
+            indent + "\tif index >= %3$d {\n" +
+            indent + "\t\tpanic(\"index out of range for %2$s [E104]\")\n" +
+            indent + "\t}\n\n" +
             "%4$s" +
             "%5$s" +
-            indent + "    }\n",
+            indent + "}\n",
             goTypeName,
             propertyName,
             arrayLength,
@@ -1816,19 +1801,19 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final CharSequence storeValue = generateStoreValue(
             primitiveType,
             "",
-            String.format("%d + (index * %d)", offset, primitiveType.size()),
+            String.format("%d+(index*%d)", offset, primitiveType.size()),
             encodingToken.encoding().byteOrder(),
             indent);
 
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%6$s) Set%2$sIndex(index uint64, value %3$s) *%6$s {\n" +
-            indent + "        if (index >= %4$d) {\n" +
-            indent + "            panic(\"index out of range for %2$s [E105]\")\n" +
-            indent + "        }\n\n" +
+            indent + "func (m *%6$s) Set%2$sIndex(index uint64, value %3$s) *%6$s {\n" +
+            indent + "\tif index >= %4$d {\n" +
+            indent + "\t\tpanic(\"index out of range for %2$s [E105]\")\n" +
+            indent + "\t}\n\n" +
 
             "%5$s" +
-            indent + "        return m\n" +
-            indent + "    }\n",
+            indent + "\treturn m\n" +
+            indent + "}\n",
             containingClassName,
             propertyName,
             goTypeName,
@@ -1840,13 +1825,13 @@ public class GolangFlyweightGenerator implements CodeGenerator
         addInclude("fmt");
         new Formatter(sb).format("\n" +
             indent + "func (m *%6$s) Get%2$s(dst []byte) (uint64, error) {\n" +
-            indent + "    if len(dst) > %3$d {\n" +
-            indent + "        return 0, fmt.Errorf(\"length too large for get%2$s [E106]\")\n" +
-            indent + "    }\n\n" +
+            indent + "\tif len(dst) > %3$d {\n" +
+            indent + "\t\treturn 0, fmt.Errorf(\"length too large for get%2$s [E106]\")\n" +
+            indent + "\t}\n\n" +
 
             "%4$s" +
-            indent + "    copy(dst, m.buffer[m.offset+%5$d:])\n" +
-            indent + "    return %3$d, nil\n" +
+            indent + "\tcopy(dst, m.buffer[m.offset+%5$d:])\n" +
+            indent + "\treturn %3$d, nil\n" +
             indent + "}\n",
             goTypeName,
             toUpperFirstChar(propertyName),
@@ -1864,8 +1849,8 @@ public class GolangFlyweightGenerator implements CodeGenerator
         {
             new Formatter(sb).format("\n" +
                 indent + "func (m *%1$s) Put%2$s(src []byte) *%1$s {\n" +
-                indent + "    copy(m.buffer[(m.offset+%3$d):], src)\n" +
-                indent + "    return m\n" +
+                indent + "\tcopy(m.buffer[(m.offset+%3$d):], src)\n" +
+                indent + "\treturn m\n" +
                 indent + "}\n",
                 formatClassName(containingClassName),
                 formatPropertyName(propertyName),
@@ -1877,11 +1862,11 @@ public class GolangFlyweightGenerator implements CodeGenerator
             sb.append("\n").append(indent).append("func (m *")
                 .append(formatClassName(containingClassName)).append(") Put")
                 .append(formatPropertyName(propertyName))
-                .append("Values (\n");
+                .append("Values(\n");
 
             for (int i = 0; i < arrayLength; i++)
             {
-                sb.append(indent).append("    value").append(i)
+                sb.append(indent).append("\tvalue").append(i)
                     .append(" ")
                     .append(goTypeName);
 
@@ -1907,7 +1892,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
             }
 
             sb.append("\n");
-            sb.append(indent).append("    return m\n");
+            sb.append(indent).append("\treturn m\n");
             sb.append(indent).append("}\n");
         }
 
@@ -1915,14 +1900,14 @@ public class GolangFlyweightGenerator implements CodeGenerator
         if (encodingToken.encoding().primitiveType() == PrimitiveType.CHAR)
         {
             new Formatter(sb).format("\n" +
-                indent + "    func (m *%4$s) Get%1$sAsString() string {\n" +
-                indent + "        offset := m.offset + %2$d\n" +
-                indent + "        length := uint64(0)\n\n" +
-                indent + "        for length < %3$d && m.buffer[offset + length] != '\\x00' {\n" +
-                indent + "            length++\n" +
-                indent + "        }\n" +
-                indent + "        return string(m.buffer[offset:offset + length])\n" +
-                indent + "    }\n",
+                indent + "func (m *%4$s) Get%1$sAsString() string {\n" +
+                indent + "\toffset := m.offset + %2$d\n" +
+                indent + "\tlength := uint64(0)\n\n" +
+                indent + "\tfor length < %3$d && m.buffer[offset+length] != '\\x00' {\n" +
+                indent + "\t\tlength++\n" +
+                indent + "\t}\n" +
+                indent + "\treturn string(m.buffer[offset : offset+length])\n" +
+                indent + "}\n",
                 toUpperFirstChar(propertyName),
                 offset,
                 arrayLength,
@@ -1949,16 +1934,16 @@ public class GolangFlyweightGenerator implements CodeGenerator
         // matching the Java and C++ codecs
         new Formatter(sb).format("\n" +
             indent + "func (m *%1$s) %2$s%3$s(src %4$s) *%1$s {\n" +
-            indent + "    length := uint64(len(src))\n" +
-            indent + "    if length > %6$d {\n" +
-            indent + "        panic(\"src too large for %2$s%3$s [E106]\")\n" +
-            indent + "    }\n\n" +
-            indent + "    start := m.offset + %5$d\n" +
-            indent + "    copy(m.buffer[start:start+%6$d], src)\n" +
-            indent + "    for i := length; i < %6$d; i++ {\n" +
-            indent + "        m.buffer[start+i] = 0\n" +
-            indent + "    }\n\n" +
-            indent + "    return m\n" +
+            indent + "\tlength := uint64(len(src))\n" +
+            indent + "\tif length > %6$d {\n" +
+            indent + "\t\tpanic(\"src too large for %2$s%3$s [E106]\")\n" +
+            indent + "\t}\n\n" +
+            indent + "\tstart := m.offset + %5$d\n" +
+            indent + "\tcopy(m.buffer[start:start+%6$d], src)\n" +
+            indent + "\tfor i := length; i < %6$d; i++ {\n" +
+            indent + "\t\tm.buffer[start+i] = 0\n" +
+            indent + "\t}\n\n" +
+            indent + "\treturn m\n" +
             indent + "}\n",
             formatClassName(containingClassName),
             methodPrefix,
@@ -1980,26 +1965,33 @@ public class GolangFlyweightGenerator implements CodeGenerator
         new Formatter(sb).format("\n" +
             indent + "func (m *%3$s) Get%1$sAsJsonEscapedString() string {\n" +
             "%2$s" +
-            indent + "    oss := strings.Builder{}\n" +
-            indent + "    s := m.Get%1$sAsString()\n\n" +
-            indent + "    for _, c := range s {\n" +
-            indent + "        switch c {\n" +
-            indent + "            case '\"': oss.WriteString(\"\\\\\\\"\")\n" +
-            indent + "            case '\\\\': oss.WriteString(\"\\\\\\\\\")\n" +
-            indent + "            case '\\b': oss.WriteString(\"\\\\b\")\n" +
-            indent + "            case '\\f': oss.WriteString(\"\\\\f\")\n" +
-            indent + "            case '\\n': oss.WriteString(\"\\\\n\")\n" +
-            indent + "            case '\\r': oss.WriteString(\"\\\\r\")\n" +
-            indent + "            case '\\t': oss.WriteString(\"\\\\t\")\n\n" +
-            indent + "            default:\n" +
-            indent + "                if '\\x00' <= c && c <= '\\x1f' {\n" +
-            indent + "                    fmt.Fprintf(&oss, \"%%x\", c)\n" +
-            indent + "                } else {\n" +
-            indent + "                    oss.WriteString(string(c))\n" +
-            indent + "                }\n" +
-            indent + "        }\n" +
-            indent + "    }\n\n" +
-            indent + "    return oss.String()\n" +
+            indent + "\toss := strings.Builder{}\n" +
+            indent + "\ts := m.Get%1$sAsString()\n\n" +
+            indent + "\tfor _, c := range s {\n" +
+            indent + "\t\tswitch c {\n" +
+            indent + "\t\tcase '\"':\n" +
+            indent + "\t\t\toss.WriteString(\"\\\\\\\"\")\n" +
+            indent + "\t\tcase '\\\\':\n" +
+            indent + "\t\t\toss.WriteString(\"\\\\\\\\\")\n" +
+            indent + "\t\tcase '\\b':\n" +
+            indent + "\t\t\toss.WriteString(\"\\\\b\")\n" +
+            indent + "\t\tcase '\\f':\n" +
+            indent + "\t\t\toss.WriteString(\"\\\\f\")\n" +
+            indent + "\t\tcase '\\n':\n" +
+            indent + "\t\t\toss.WriteString(\"\\\\n\")\n" +
+            indent + "\t\tcase '\\r':\n" +
+            indent + "\t\t\toss.WriteString(\"\\\\r\")\n" +
+            indent + "\t\tcase '\\t':\n" +
+            indent + "\t\t\toss.WriteString(\"\\\\t\")\n\n" +
+            indent + "\t\tdefault:\n" +
+            indent + "\t\t\tif '\\x00' <= c && c <= '\\x1f' {\n" +
+            indent + "\t\t\t\tfmt.Fprintf(&oss, \"%%x\", c)\n" +
+            indent + "\t\t\t} else {\n" +
+            indent + "\t\t\t\toss.WriteString(string(c))\n" +
+            indent + "\t\t\t}\n" +
+            indent + "\t\t}\n" +
+            indent + "\t}\n\n" +
+            indent + "\treturn oss.String()\n" +
             indent + "}\n",
             toUpperFirstChar(propertyName),
             generateStringNotPresentCondition(token.version(), indent),
@@ -2018,9 +2010,9 @@ public class GolangFlyweightGenerator implements CodeGenerator
         if (token.encoding().primitiveType() != PrimitiveType.CHAR)
         {
             new Formatter(sb).format("\n" +
-                indent + "    func (m *%4$s) %2$s() %1$s {\n" +
-                indent + "        return %3$s\n" +
-                indent + "    }\n",
+                indent + "func (m *%4$s) %2$s() %1$s {\n" +
+                indent + "\treturn %3$s\n" +
+                indent + "}\n",
                 goTypeName,
                 propertyName,
                 generateLiteral(token.encoding().primitiveType(), token.encoding().constValue().toString()),
@@ -2042,52 +2034,52 @@ public class GolangFlyweightGenerator implements CodeGenerator
         }
 
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%3$s) %1$sLength() uint64 {\n" +
-            indent + "        return %2$d\n" +
-            indent + "    }\n",
+            indent + "func (m *%3$s) %1$sLength() uint64 {\n" +
+            indent + "\treturn %2$d\n" +
+            indent + "}\n",
             propertyName,
             constantValue.length,
             className);
 
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%3$s) %1$s() string {\n" +
-            indent + "        %1$sValues := []uint8{ %2$s, 0 }\n\n" +
-            indent + "        return string(%1$sValues)\n" +
-            indent + "    }\n",
+            indent + "func (m *%3$s) %1$s() string {\n" +
+            indent + "\t%1$sValues := []uint8{%2$s, 0}\n\n" +
+            indent + "\treturn string(%1$sValues)\n" +
+            indent + "}\n",
             propertyName,
             values,
             className);
 
         sb.append(String.format("\n" +
-            indent + "    func (m *%4$s) %2$sIndex(index uint64) %1$s {\n" +
-            indent + "        %2$sValues := []uint8{ %3$s, 0 }\n\n" +
-            indent + "        return byte(%2$sValues[index])\n" +
-            indent + "    }\n",
+            indent + "func (m *%4$s) %2$sIndex(index uint64) %1$s {\n" +
+            indent + "\t%2$sValues := []uint8{%3$s, 0}\n\n" +
+            indent + "\treturn byte(%2$sValues[index])\n" +
+            indent + "}\n",
             goTypeName,
             propertyName,
             values,
             className));
 
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%4$s) Get%1$s(dst []byte, length uint64) uint64 {\n" +
-            indent + "        %2$sValues := []uint8{ %3$s }\n" +
-            indent + "        bytesToCopy := uint64(len(%2$sValues))\n" +
-            indent + "        if length < uint64(len(%2$sValues)) {\n" +
-            indent + "            bytesToCopy = length\n" +
-            indent + "        }\n" +
-            indent + "        copy(dst, %2$sValues[:bytesToCopy])\n" +
-            indent + "        return bytesToCopy\n" +
-            indent + "    }\n",
+            indent + "func (m *%4$s) Get%1$s(dst []byte, length uint64) uint64 {\n" +
+            indent + "\t%2$sValues := []uint8{%3$s}\n" +
+            indent + "\tbytesToCopy := uint64(len(%2$sValues))\n" +
+            indent + "\tif length < uint64(len(%2$sValues)) {\n" +
+            indent + "\t\tbytesToCopy = length\n" +
+            indent + "\t}\n" +
+            indent + "\tcopy(dst, %2$sValues[:bytesToCopy])\n" +
+            indent + "\treturn bytesToCopy\n" +
+            indent + "}\n",
             toUpperFirstChar(propertyName),
             propertyName,
             values,
             className);
 
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%3$s) Get%1$sAsString() string {\n" +
-            indent + "        %1$sValues := []uint8{ %2$s, 0 }\n\n" +
-            indent + "        return string(%1$sValues)\n" +
-            indent + "    }\n",
+            indent + "func (m *%3$s) Get%1$sAsString() string {\n" +
+            indent + "\t%1$sValues := []uint8{%2$s, 0}\n\n" +
+            indent + "\treturn string(%1$sValues)\n" +
+            indent + "}\n",
             propertyName,
             values,
             className);
@@ -2103,7 +2095,11 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final String schemaIdType = goTypeName(ir.headerStructure().schemaIdType());
         final String schemaVersionType = goTypeName(ir.headerStructure().schemaVersionType());
 
-        final StringBuilder sb = new StringBuilder();
+        final List<String[]> structFields = new ArrayList<>();
+        structFields.add(new String[]{"buffer", "[]byte"});
+        structFields.add(new String[]{"bufferLength", "uint64"});
+        structFields.add(new String[]{"offset", "uint64"});
+        structFields.add(new String[]{"actingVersion", "uint64"});
         for (int i = 1, fieldSize = fields.size(); i < fieldSize; )
         {
             final Token signalToken = fields.get(i);
@@ -2114,9 +2110,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
             {
                 case BEGIN_SET:
                 case BEGIN_COMPOSITE:
-                    new Formatter(sb).format("    _%1$s %2$s\n",
-                        propertyName,
-                        typeName);
+                    structFields.add(new String[]{"_" + propertyName, typeName});
                     break;
 
                 default:
@@ -2133,61 +2127,66 @@ public class GolangFlyweightGenerator implements CodeGenerator
             sizeValue = "math.MaxUint64";
         }
 
+        final List<String[]> constants = new ArrayList<>();
+        constants.add(new String[]{className + "EncodedLength", "uint64", "= " + sizeValue});
+        constants.add(new String[]{
+            className + "SbeSchemaID",
+            schemaIdType,
+            "= " + generateLiteral(ir.headerStructure().schemaIdType(), Integer.toString(ir.id()))});
+        constants.add(new String[]{
+            className + "SbeSchemaVersion",
+            schemaVersionType,
+            "= " + generateLiteral(ir.headerStructure().schemaVersionType(), Integer.toString(ir.version()))});
+
         return String.format(
-            "    buffer []byte\n" +
-                "    bufferLength uint64\n" +
-                "    offset uint64\n" +
-                "    actingVersion uint64\n" +
-                "%7$s\n" +
+            "%7$s" +
                 "}\n\n" +
 
-                "    const (\n" +
-                "        %1$sEncodedLength    uint64 = %2$s\n" +
-                "        %1$sSbeSchemaID        %3$s = %4$s\n" +
-                "        %1$sSbeSchemaVersion   %5$s = %6$s\n" +
-                "    )\n\n" +
+                "const (\n" +
+                "%8$s" +
+                ")\n\n" +
 
-                "    func (m *%1$s) Wrap(\n" +
-                "        buffer []byte,\n" +
-                "        offset uint64,\n" +
-                "        actingVersion uint64,\n" +
-                "        bufferLength uint64) {\n" +
-                "        m.buffer = buffer\n" +
-                "        m.bufferLength = bufferLength\n" +
-                "        m.offset = offset\n" +
-                "        m.actingVersion = actingVersion\n" +
-                "        if !SbeNoBoundsCheck && ((m.offset + %2$s) > m.bufferLength) {\n" +
-                "            panic(\"buffer too short for flyweight [E107]\")\n" +
-                "        }\n" +
-                "    }\n\n" +
+                "func (m *%1$s) Wrap(\n" +
+                "\tbuffer []byte,\n" +
+                "\toffset uint64,\n" +
+                "\tactingVersion uint64,\n" +
+                "\tbufferLength uint64) {\n" +
+                "\tm.buffer = buffer\n" +
+                "\tm.bufferLength = bufferLength\n" +
+                "\tm.offset = offset\n" +
+                "\tm.actingVersion = actingVersion\n" +
+                "\tif !SbeNoBoundsCheck && ((m.offset + %2$s) > m.bufferLength) {\n" +
+                "\t\tpanic(\"buffer too short for flyweight [E107]\")\n" +
+                "\t}\n" +
+                "}\n\n" +
 
-                "    func (m *%1$s) EncodedLength() uint64 {\n" +
-                "        return %2$s\n" +
-                "    }\n\n" +
+                "func (m *%1$s) EncodedLength() uint64 {\n" +
+                "\treturn %2$s\n" +
+                "}\n\n" +
 
-                "    func (m *%1$s) Offset() uint64 {\n" +
-                "        return m.offset\n" +
-                "    }\n\n" +
+                "func (m *%1$s) Offset() uint64 {\n" +
+                "\treturn m.offset\n" +
+                "}\n\n" +
 
-                "    func (m *%1$s) Buffer() []byte {\n" +
-                "        return m.buffer\n" +
-                "    }\n\n" +
+                "func (m *%1$s) Buffer() []byte {\n" +
+                "\treturn m.buffer\n" +
+                "}\n\n" +
 
-                "    func (m *%1$s) BufferLength() uint64 {\n" +
-                "        return m.bufferLength\n" +
-                "    }\n\n" +
+                "func (m *%1$s) BufferLength() uint64 {\n" +
+                "\treturn m.bufferLength\n" +
+                "}\n\n" +
 
-                "    func (m *%1$s) ActingVersion() uint64 {\n" +
-                "        return m.actingVersion\n" +
-                "    }\n\n" +
+                "func (m *%1$s) ActingVersion() uint64 {\n" +
+                "\treturn m.actingVersion\n" +
+                "}\n\n" +
 
-                "    func (m *%1$s) SbeSchemaId() %3$s {\n" +
-                "        return %4$s\n" +
-                "    }\n\n" +
+                "func (m *%1$s) SbeSchemaId() %3$s {\n" +
+                "\treturn %4$s\n" +
+                "}\n\n" +
 
-                "    func (m *%1$s) SbeSchemaVersion() %5$s {\n" +
-                "        return %6$s\n" +
-                "    }\n",
+                "func (m *%1$s) SbeSchemaVersion() %5$s {\n" +
+                "\treturn %6$s\n" +
+                "}\n",
 
             className,
             sizeValue,
@@ -2195,7 +2194,8 @@ public class GolangFlyweightGenerator implements CodeGenerator
             generateLiteral(ir.headerStructure().schemaIdType(), Integer.toString(ir.id())),
             schemaVersionType,
             generateLiteral(ir.headerStructure().schemaVersionType(), Integer.toString(ir.version())),
-            sb);
+            alignColumns(structFields),
+            alignColumns(constants));
     }
 
     private CharSequence generateMessageFlyweightCode(
@@ -2212,12 +2212,13 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final String semanticType = token.encoding().semanticType() == null ? "" : token.encoding().semanticType();
         final String semanticVersion = ir.semanticVersion() == null ? "" : ir.semanticVersion();
 
-        sb.append("    buffer []byte\n" +
-            "    bufferLength uint64\n" +
-            "    offset uint64\n" +
-            "    position uint64\n" +
-            "    actingBlockLength uint64\n" +
-            "    actingVersion uint64\n");
+        final List<String[]> structFields = new ArrayList<>();
+        structFields.add(new String[]{"buffer", "[]byte"});
+        structFields.add(new String[]{"bufferLength", "uint64"});
+        structFields.add(new String[]{"offset", "uint64"});
+        structFields.add(new String[]{"position", "uint64"});
+        structFields.add(new String[]{"actingBlockLength", "uint64"});
+        structFields.add(new String[]{"actingVersion", "uint64"});
 
         for (int i = 0, size = fields.size(); i < size; i++)
         {
@@ -2232,9 +2233,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 {
                     case BEGIN_SET:
                     case BEGIN_COMPOSITE:
-                        new Formatter(sb).format("    _%1$s %2$s\n",
-                            propertyName,
-                            typeName);
+                        structFields.add(new String[]{"_" + propertyName, typeName});
                         break;
 
                     default:
@@ -2251,155 +2250,168 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 final String propertyName = formatPropertyName(groupToken.name());
                 final String groupName = className + formatClassName(groupToken.name());
 
-                new Formatter(sb).format("    _%1$s %2$s\n",
-                    propertyName,
-                    groupName);
+                structFields.add(new String[]{"_" + propertyName, groupName});
 
                 i += groupToken.componentTokenCount();
             }
         }
 
-        sb.append("}\n\n");
+        sb.append(alignColumns(structFields)).append("}\n\n");
+
+        final List<String[]> constants = new ArrayList<>();
+        constants.add(new String[]{
+            className + "SbeBlockLength",
+            blockLengthType,
+            "= " + generateLiteral(ir.headerStructure().blockLengthType(), Integer.toString(token.encodedLength()))});
+        constants.add(new String[]{
+            className + "SbeTemplateID",
+            templateIdType,
+            "= " + generateLiteral(ir.headerStructure().templateIdType(), Integer.toString(token.id()))});
+        constants.add(new String[]{
+            className + "SbeSchemaID",
+            schemaIdType,
+            "= " + generateLiteral(ir.headerStructure().schemaIdType(), Integer.toString(ir.id()))});
+        constants.add(new String[]{
+            className + "SbeSchemaVersion",
+            schemaVersionType,
+            "= " + generateLiteral(ir.headerStructure().schemaVersionType(), Integer.toString(ir.version()))});
+        constants.add(new String[]{className + "SbeSemanticVersion", "string", "= \"" + semanticVersion + "\""});
 
         sb.append(String.format(
-            "    func (m *%10$s) sbePositionPtr() *uint64 {\n" +
-            "        return &m.position\n" +
-            "    }\n\n" +
+            "func (m *%10$s) sbePositionPtr() *uint64 {\n" +
+            "\treturn &m.position\n" +
+            "}\n\n" +
 
-            "    const (\n" +
-            "        %10$sSbeBlockLength     %1$s = %2$s\n" +
-            "        %10$sSbeTemplateID      %3$s = %4$s\n" +
-            "        %10$sSbeSchemaID        %5$s = %6$s\n" +
-            "        %10$sSbeSchemaVersion   %7$s = %8$s\n" +
-            "        %10$sSbeSemanticVersion string = \"%11$s\"\n" +
-            "    )\n\n" +
+            "const (\n" +
+            "%12$s" +
+            ")\n\n" +
 
-            "    func (m *%10$s) SbeBlockLength() %1$s {\n" +
-            "        return %2$s\n" +
-            "    }\n\n" +
+            "func (m *%10$s) SbeBlockLength() %1$s {\n" +
+            "\treturn %2$s\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) SbeBlockAndHeaderLength() uint64 {\n" +
-            "        return MessageHeaderEncodedLength + uint64(m.SbeBlockLength())\n" +
-            "    }\n\n" +
+            "func (m *%10$s) SbeBlockAndHeaderLength() uint64 {\n" +
+            "\treturn MessageHeaderEncodedLength + uint64(m.SbeBlockLength())\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) SbeTemplateId() %3$s {\n" +
-            "        return %4$s\n" +
-            "    }\n\n" +
+            "func (m *%10$s) SbeTemplateId() %3$s {\n" +
+            "\treturn %4$s\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) SbeSchemaId() %5$s {\n" +
-            "        return %6$s\n" +
-            "    }\n\n" +
+            "func (m *%10$s) SbeSchemaId() %5$s {\n" +
+            "\treturn %6$s\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) SbeSchemaVersion() %7$s {\n" +
-            "        return %8$s\n" +
-            "    }\n\n" +
+            "func (m *%10$s) SbeSchemaVersion() %7$s {\n" +
+            "\treturn %8$s\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) SbeSemanticVersion() string {\n" +
-            "        return \"%11$s\"\n" +
-            "    }\n\n" +
+            "func (m *%10$s) SbeSemanticVersion() string {\n" +
+            "\treturn \"%11$s\"\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) SbeSemanticType() string {\n" +
-            "        return \"%9$s\"\n" +
-            "    }\n\n" +
+            "func (m *%10$s) SbeSemanticType() string {\n" +
+            "\treturn \"%9$s\"\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) Offset() uint64 {\n" +
-            "        return m.offset\n" +
-            "    }\n\n" +
+            "func (m *%10$s) Offset() uint64 {\n" +
+            "\treturn m.offset\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) Wrap(\n" +
-            "        buffer []byte,\n" +
-            "        offset uint64,\n" +
-            "        bufferLength uint64,\n" +
-            "        actingBlockLength uint64,\n" +
-            "        actingVersion uint64) *%10$s {\n" +
-            "        m.buffer = buffer\n" +
-            "        m.bufferLength = bufferLength\n" +
-            "        m.offset = offset\n" +
-            "        m.position = m.SbeCheckPosition(offset + actingBlockLength)\n" +
-            "        m.actingBlockLength = actingBlockLength\n" +
-            "        m.actingVersion = actingVersion\n" +
-            "        return m\n" +
-            "    }\n\n" +
+            "func (m *%10$s) Wrap(\n" +
+            "\tbuffer []byte,\n" +
+            "\toffset uint64,\n" +
+            "\tbufferLength uint64,\n" +
+            "\tactingBlockLength uint64,\n" +
+            "\tactingVersion uint64) *%10$s {\n" +
+            "\tm.buffer = buffer\n" +
+            "\tm.bufferLength = bufferLength\n" +
+            "\tm.offset = offset\n" +
+            "\tm.position = m.SbeCheckPosition(offset + actingBlockLength)\n" +
+            "\tm.actingBlockLength = actingBlockLength\n" +
+            "\tm.actingVersion = actingVersion\n" +
+            "\treturn m\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) WrapForEncode(buffer []byte, offset uint64, bufferLength uint64) *%10$s {\n" +
-            "        return m.Wrap(buffer, offset, bufferLength,\n" +
-            "            uint64(m.SbeBlockLength()), uint64(m.SbeSchemaVersion()))\n" +
-            "    }\n\n" +
+            "func (m *%10$s) WrapForEncode(buffer []byte, offset uint64, bufferLength uint64) *%10$s {\n" +
+            "\treturn m.Wrap(buffer, offset, bufferLength,\n" +
+            "\t\tuint64(m.SbeBlockLength()), uint64(m.SbeSchemaVersion()))\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) WrapAndApplyHeader(buffer []byte, offset uint64, bufferLength uint64) *%10$s {\n" +
-            "        var hdr MessageHeader\n" +
-            "        hdr.Wrap(buffer, offset, uint64(m.SbeSchemaVersion()), bufferLength)\n\n" +
+            "func (m *%10$s) WrapAndApplyHeader(buffer []byte, offset uint64, bufferLength uint64) *%10$s {\n" +
+            "\tvar hdr MessageHeader\n" +
+            "\thdr.Wrap(buffer, offset, uint64(m.SbeSchemaVersion()), bufferLength)\n\n" +
 
-            "        hdr.SetBlockLength(m.SbeBlockLength()).\n" +
-            "           SetTemplateId(m.SbeTemplateId()).\n" +
-            "           SetSchemaId(m.SbeSchemaId()).\n" +
-            "           SetVersion(m.SbeSchemaVersion())\n\n" +
+            "\thdr.SetBlockLength(m.SbeBlockLength()).\n" +
+            "\t\tSetTemplateId(m.SbeTemplateId()).\n" +
+            "\t\tSetSchemaId(m.SbeSchemaId()).\n" +
+            "\t\tSetVersion(m.SbeSchemaVersion())\n\n" +
 
-            "        return m.Wrap(\n" +
-            "            buffer,\n" +
-            "            offset + hdr.EncodedLength(),\n" +
-            "            bufferLength,\n" +
-            "            uint64(m.SbeBlockLength()),\n" +
-            "            uint64(m.SbeSchemaVersion()))\n" +
-            "    }\n\n" +
+            "\treturn m.Wrap(\n" +
+            "\t\tbuffer,\n" +
+            "\t\toffset+hdr.EncodedLength(),\n" +
+            "\t\tbufferLength,\n" +
+            "\t\tuint64(m.SbeBlockLength()),\n" +
+            "\t\tuint64(m.SbeSchemaVersion()))\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) WrapForDecode(\n" +
-            "        buffer []byte,\n" +
-            "        offset uint64,\n" +
-            "        actingBlockLength uint64,\n" +
-            "        actingVersion uint64,\n" +
-            "        bufferLength uint64) *%10$s {\n" +
-            "        return m.Wrap(\n" +
-            "            buffer,\n" +
-            "            offset,\n" +
-            "            bufferLength,\n" +
-            "            actingBlockLength,\n" +
-            "            actingVersion)\n" +
-            "    }\n\n" +
+            "func (m *%10$s) WrapForDecode(\n" +
+            "\tbuffer []byte,\n" +
+            "\toffset uint64,\n" +
+            "\tactingBlockLength uint64,\n" +
+            "\tactingVersion uint64,\n" +
+            "\tbufferLength uint64) *%10$s {\n" +
+            "\treturn m.Wrap(\n" +
+            "\t\tbuffer,\n" +
+            "\t\toffset,\n" +
+            "\t\tbufferLength,\n" +
+            "\t\tactingBlockLength,\n" +
+            "\t\tactingVersion)\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) sbeRewind() *%10$s {\n" +
-            "        return m.WrapForDecode(" +
+            "func (m *%10$s) sbeRewind() *%10$s {\n" +
+            "\treturn m.WrapForDecode(" +
             "m.buffer, m.offset, m.actingBlockLength, m.actingVersion, m.bufferLength)\n" +
-            "    }\n\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) SbePosition() uint64 {\n" +
-            "        return m.position\n" +
-            "    }\n\n" +
+            "func (m *%10$s) SbePosition() uint64 {\n" +
+            "\treturn m.position\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) SbeCheckPosition(position uint64) uint64 {\n" +
-            "        if !SbeNoBoundsCheck && (position > m.bufferLength) {\n" +
-            "            panic(\"buffer too short [E100]\")\n" +
-            "        }\n" +
-            "        return position\n" +
-            "    }\n\n" +
+            "func (m *%10$s) SbeCheckPosition(position uint64) uint64 {\n" +
+            "\tif !SbeNoBoundsCheck && (position > m.bufferLength) {\n" +
+            "\t\tpanic(\"buffer too short [E100]\")\n" +
+            "\t}\n" +
+            "\treturn position\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) SetSbePosition(position uint64) {\n" +
-            "        m.position = m.SbeCheckPosition(position)\n" +
-            "    }\n\n" +
+            "func (m *%10$s) SetSbePosition(position uint64) {\n" +
+            "\tm.position = m.SbeCheckPosition(position)\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) EncodedLength() uint64 {\n" +
-            "        return m.SbePosition() - m.offset\n" +
-            "    }\n\n" +
+            "func (m *%10$s) EncodedLength() uint64 {\n" +
+            "\treturn m.SbePosition() - m.offset\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) DecodeLength() uint64 {\n" +
-            "        var skipper %10$s\n" +
-            "        skipper.WrapForDecode(m.buffer, m.offset, uint64(m.SbeBlockLength()),\n" +
-            "            uint64(m.ActingVersion()), m.bufferLength)\n" +
-            "        skipper.Skip()\n" +
-            "        return skipper.EncodedLength()\n" +
-            "    }\n\n" +
+            "func (m *%10$s) DecodeLength() uint64 {\n" +
+            "\tvar skipper %10$s\n" +
+            "\tskipper.WrapForDecode(m.buffer, m.offset, uint64(m.SbeBlockLength()),\n" +
+            "\t\tuint64(m.ActingVersion()), m.bufferLength)\n" +
+            "\tskipper.Skip()\n" +
+            "\treturn skipper.EncodedLength()\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) Buffer() []byte {\n" +
-            "        return m.buffer\n" +
-            "    }\n\n" +
+            "func (m *%10$s) Buffer() []byte {\n" +
+            "\treturn m.buffer\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) BufferLength() uint64 {\n" +
-            "        return m.bufferLength\n" +
-            "    }\n\n" +
+            "func (m *%10$s) BufferLength() uint64 {\n" +
+            "\treturn m.bufferLength\n" +
+            "}\n\n" +
 
-            "    func (m *%10$s) ActingVersion() uint64 {\n" +
-            "        return m.actingVersion\n" +
-            "    }\n",
+            "func (m *%10$s) ActingVersion() uint64 {\n" +
+            "\treturn m.actingVersion\n" +
+            "}\n",
             blockLengthType,
             generateLiteral(ir.headerStructure().blockLengthType(), Integer.toString(token.encodedLength())),
             templateIdType,
@@ -2410,7 +2422,8 @@ public class GolangFlyweightGenerator implements CodeGenerator
             generateLiteral(ir.headerStructure().schemaVersionType(), Integer.toString(ir.version())),
             semanticType,
             className,
-            semanticVersion));
+            semanticVersion,
+            alignColumns(constants)));
 
         return sb.toString();
     }
@@ -2467,32 +2480,32 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final String className)
     {
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%3$s) %1$sId() int {\n" +
-            indent + "        return %2$d\n" +
-            indent + "    }\n",
+            indent + "func (m *%3$s) %1$sId() int {\n" +
+            indent + "\treturn %2$d\n" +
+            indent + "}\n",
             propertyName,
             fieldToken.id(),
             className);
 
         final int version = fieldToken.version();
         final String versionCheck = 0 == version ?
-            "        return true\n" : "        return m.actingVersion >= m.%1$sSinceVersion()\n";
+            "\treturn true\n" : "\treturn m.actingVersion >= m.%1$sSinceVersion()\n";
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%3$s) %1$sSinceVersion() uint64 {\n" +
-            indent + "        return %2$d\n" +
-            indent + "    }\n\n" +
+            indent + "func (m *%3$s) %1$sSinceVersion() uint64 {\n" +
+            indent + "\treturn %2$d\n" +
+            indent + "}\n\n" +
 
-            indent + "    func (m *%3$s) %1$sInActingVersion() bool {\n" +
+            indent + "func (m *%3$s) %1$sInActingVersion() bool {\n" +
             indent + versionCheck +
-            indent + "    }\n",
+            indent + "}\n",
             propertyName,
             version,
             className);
 
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%3$s) %1$sEncodingOffset() uint {\n" +
-            indent + "        return %2$d\n" +
-            indent + "    }\n",
+            indent + "func (m *%3$s) %1$sEncodingOffset() uint {\n" +
+            indent + "\treturn %2$d\n" +
+            indent + "}\n",
             propertyName,
             encodingToken.offset(),
             className);
@@ -2512,9 +2525,9 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final int offset = encodingToken.offset();
 
         new Formatter(sb).format("\n" +
-            indent + "    func (m *%1$s) %2$sEncodingLength() int {\n" +
-            indent + "        return %3$d\n" +
-            indent + "    }\n",
+            indent + "func (m *%1$s) %2$sEncodingLength() int {\n" +
+            indent + "\treturn %3$d\n" +
+            indent + "}\n",
             containingClassName,
             propertyName,
             fieldToken.encodedLength());
@@ -2524,19 +2537,19 @@ public class GolangFlyweightGenerator implements CodeGenerator
             final String constValue = fieldToken.encoding().constValue().toString();
 
             new Formatter(sb).format("\n" +
-                indent + "    func (m *%1$s) %2$sConstValue() %4$s {\n" +
-                indent + "        return %4$s_%3$s\n" +
-                indent + "    }\n",
+                indent + "func (m *%1$s) %2$sConstValue() %4$s {\n" +
+                indent + "\treturn %4$s_%3$s\n" +
+                indent + "}\n",
                 containingClassName,
                 propertyName,
                 constValue.substring(constValue.indexOf(".") + 1),
                 enumName);
 
             new Formatter(sb).format("\n" +
-                indent + "    func (m *%1$s) %2$s() %5$s {\n" +
+                indent + "func (m *%1$s) %2$s() %5$s {\n" +
                 "%3$s" +
-                indent + "        return %5$s_%4$s\n" +
-                indent + "    }\n",
+                indent + "\treturn %5$s_%4$s\n" +
+                indent + "}\n",
                 containingClassName,
                 propertyName,
                 generateEnumFieldNotPresentCondition(fieldToken.version(), enumName, indent),
@@ -2544,9 +2557,9 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 enumName);
 
             new Formatter(sb).format("\n" +
-                indent + "    func (m *%3$s) %2$sRaw() %1$s {\n" +
-                indent + "        return %1$s(%5$s_%4$s)\n" +
-                indent + "    }\n",
+                indent + "func (m *%3$s) %2$sRaw() %1$s {\n" +
+                indent + "\treturn %1$s(%5$s_%4$s)\n" +
+                indent + "}\n",
                 typeName,
                 propertyName,
                 containingClassName,
@@ -2558,10 +2571,10 @@ public class GolangFlyweightGenerator implements CodeGenerator
         {
             final String offsetStr = Integer.toString(offset);
             new Formatter(sb).format("\n" +
-                indent + "    func (m *%5$s) %2$sRaw() %1$s {\n" +
+                indent + "func (m *%5$s) %2$sRaw() %1$s {\n" +
                 "%3$s" +
                 "%4$s" +
-                indent + "    }\n",
+                indent + "}\n",
                 typeName,
                 propertyName,
                 generateFieldNotPresentCondition(fieldToken.version(), encodingToken.encoding(), indent),
@@ -2569,10 +2582,10 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 containingClassName);
 
             new Formatter(sb).format("\n" +
-                indent + "    func (m *%1$s) %2$s() %7$s {\n" +
+                indent + "func (m *%1$s) %2$s() %7$s {\n" +
                 "%3$s" +
-                indent + "        return %7$s(%4$s(m.buffer[(m.offset + %6$d):]))\n" +
-                indent + "    }\n",
+                indent + "\treturn %7$s(%4$s(m.buffer[(m.offset + %6$d):]))\n" +
+                indent + "}\n",
                 containingClassName,
                 propertyName,
                 generateEnumFieldNotPresentCondition(fieldToken.version(), enumName, indent),
@@ -2582,11 +2595,11 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 enumName);
 
             new Formatter(sb).format("\n" +
-                indent + "    func (m *%1$s) Set%2$s(value %3$s) *%1$s {\n" +
-                indent + "        val := %4$s(value)\n" +
-                indent + "        %6$s(m.buffer[(m.offset + %5$d):], val)\n" +
-                indent + "        return m\n" +
-                indent + "    }\n",
+                indent + "func (m *%1$s) Set%2$s(value %3$s) *%1$s {\n" +
+                indent + "\tval := %4$s(value)\n" +
+                indent + "\t%6$s(m.buffer[(m.offset+%5$d):], val)\n" +
+                indent + "\treturn m\n" +
+                indent + "}\n",
                 formatClassName(containingClassName),
                 propertyName,
                 enumName,
@@ -2687,7 +2700,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 }
                 else
                 {
-                    literal = value;
+                    literal = value.replace('E', 'e');
                 }
                 break;
 
@@ -2721,7 +2734,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 }
                 else
                 {
-                    literal = value;
+                    literal = value.replace('E', 'e');
                 }
                 break;
         }
@@ -2747,13 +2760,13 @@ public class GolangFlyweightGenerator implements CodeGenerator
         addInclude("fmt");
         new Formatter(sb).format("\n" +
             "func (writer *%1$s) String() string {\n" +
-            "    var builder strings.Builder\n" +
-            "    builder.WriteString(\"{\\\"Name\\\": \\\"%1$s\\\", \")\n" +
-            "    builder.WriteString(fmt.Sprintf(\"\\\"sbeTemplateId\\\": %%d\", writer.SbeTemplateId()))\n" +
-            "    builder.WriteString(\", \")\n\n" +
+            "\tvar builder strings.Builder\n" +
+            "\tbuilder.WriteString(\"{\\\"Name\\\": \\\"%1$s\\\", \")\n" +
+            "\tbuilder.WriteString(fmt.Sprintf(\"\\\"sbeTemplateId\\\": %%d\", writer.SbeTemplateId()))\n" +
+            "\tbuilder.WriteString(\", \")\n\n" +
             "%2$s" +
-            "    builder.WriteString(\"}\")\n\n" +
-            "    return builder.String()\n" +
+            "\tbuilder.WriteString(\"}\")\n\n" +
+            "\treturn builder.String()\n" +
             "}\n",
             formatClassName(name),
             appendDisplay(containingClassName, fields, groups, varData, INDENT));
@@ -2770,11 +2783,11 @@ public class GolangFlyweightGenerator implements CodeGenerator
         addInclude("strings");
         return String.format("\n" +
                 indent + "func (writer *%1$s) String() string {\n" +
-                indent + "    builder := strings.Builder{}\n" +
-                indent + "    builder.WriteString(\"{\")\n" +
+                indent + "\tbuilder := strings.Builder{}\n" +
+                indent + "\tbuilder.WriteString(\"{\")\n" +
                 "%2$s" +
-                indent + "    builder.WriteString(\"}\")\n\n" +
-                indent + "    return builder.String()\n" +
+                indent + "\tbuilder.WriteString(\"}\")\n\n" +
+                indent + "\treturn builder.String()\n" +
                 indent + "}\n",
             groupClassName,
             appendDisplay(groupClassName, fields, groups, varData, indent + INDENT));
@@ -2786,12 +2799,12 @@ public class GolangFlyweightGenerator implements CodeGenerator
         addInclude("strings");
         return String.format("\n" +
                 "func (writer *%1$s) String() string {\n" +
-                "    builder := strings.Builder{}\n" +
-                "    builder.WriteString(\"{\")\n" +
+                "\tbuilder := strings.Builder{}\n" +
+                "\tbuilder.WriteString(\"{\")\n" +
                 "%2$s" +
-                "    builder.WriteString(\"}\")\n\n" +
-                "    return builder.String()\n" +
-                "}\n\n",
+                "\tbuilder.WriteString(\"}\")\n\n" +
+                "\treturn builder.String()\n" +
+                "}\n",
             formatClassName(name),
             appendDisplay(formatClassName(name), tokens, new ArrayList<>(), new ArrayList<>(), INDENT));
     }
@@ -2832,17 +2845,17 @@ public class GolangFlyweightGenerator implements CodeGenerator
 
             new Formatter(sb).format(
                 indent + "{\n" +
-                indent + "    atLeastOne := false\n" +
-                indent + "    builder.WriteString(`\"%3$s\": [`)\n" +
-                indent + "    writer.%2$s().ForEach(\n" +
-                indent + "        func(value *%1$s) {\n" +
-                indent + "            if atLeastOne {\n" +
-                indent + "                builder.WriteString(\", \")\n" +
-                indent + "            }\n" +
-                indent + "            atLeastOne = true\n" +
-                indent + "            builder.WriteString(value.String())\n" +
-                indent + "        })\n" +
-                indent + "    builder.WriteString(\"]\")\n" +
+                indent + "\tatLeastOne := false\n" +
+                indent + "\tbuilder.WriteString(`\"%3$s\": [`)\n" +
+                indent + "\twriter.%2$s().ForEach(\n" +
+                indent + "\t\tfunc(value *%1$s) {\n" +
+                indent + "\t\t\tif atLeastOne {\n" +
+                indent + "\t\t\t\tbuilder.WriteString(\", \")\n" +
+                indent + "\t\t\t}\n" +
+                indent + "\t\t\tatLeastOne = true\n" +
+                indent + "\t\t\tbuilder.WriteString(value.String())\n" +
+                indent + "\t\t})\n" +
+                indent + "\tbuilder.WriteString(\"]\")\n" +
                 indent + "}\n\n",
                 containingClassName + formatClassName(groupToken.name()),
                 formatPropertyName(groupToken.name()),
@@ -2873,8 +2886,8 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 final String skipFunction = "writer.Skip" + toUpperFirstChar(varDataToken.name()) + "()";
 
                 sb.append(indent).append("builder.WriteString(`\"`)\n")
-                    .append(indent).append(INDENT).append(skipFunction).append("\n")
-                    .append(INDENT).append("builder.WriteString(\" bytes of raw data\")\n");
+                    .append(indent).append(skipFunction).append("\n")
+                    .append(indent).append("builder.WriteString(\" bytes of raw data\")\n");
             }
             else
             {
@@ -2882,7 +2895,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
                     "writer.Get" + toUpperFirstChar(varDataToken.name()) + "AsJsonEscapedString()";
 
                 sb.append(indent).append("builder.WriteString(`\"` + ")
-                    .append(getAsStringFunction).append(" + `\"`);\n\n");
+                    .append(getAsStringFunction).append(" + `\"`)\n\n");
             }
 
             i += varDataToken.componentTokenCount();
@@ -2934,10 +2947,10 @@ public class GolangFlyweightGenerator implements CodeGenerator
                         sb.append(
                             indent + "builder.WriteString(\"[\")\n" +
                             indent + "for i := 0; i < " + fieldName + "Length(); i++ {\n" +
-                            indent + "    if i > 0 {\n" +
-                            indent + "        builder.WriteString(\",\")\n" +
-                            indent + "    }\n" +
-                            indent + "    builder.WriteString(fmt.Sprintf(\"%v\", " + fieldName +
+                            indent + "\tif i > 0 {\n" +
+                            indent + "\t\tbuilder.WriteString(\",\")\n" +
+                            indent + "\t}\n" +
+                            indent + "\tbuilder.WriteString(fmt.Sprintf(\"%v\", " + fieldName +
                             "Index(uint64(i))))\n" +
                             indent + "}\n" +
                             indent + "builder.WriteString(\"]\")\n");
@@ -2975,10 +2988,10 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 else
                 {
                     new Formatter(sb).format(
-                        indent + "if (%1$sInActingVersion()) {\n" +
-                        indent + "    builder.WriteString(%1$s().String())\n" +
+                        indent + "if %1$sInActingVersion() {\n" +
+                        indent + "\tbuilder.WriteString(%1$s().String())\n" +
                         indent + "} else {\n" +
-                        indent + "    builder.WriteString(%2$s)\n" +
+                        indent + "\tbuilder.WriteString(%2$s)\n" +
                         indent + "}\n",
                         fieldName,
                         typeToken.signal() == Signal.BEGIN_SET ? "\"[]\"" : "\"{}\"");
@@ -2997,7 +3010,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final String name,
         final List<Token> tokens)
     {
-        final String indent = INDENT;
+        final String indent = BASE_INDENT;
         final StringBuilder sb = new StringBuilder();
         final List<Token> choiceTokens = new ArrayList<>();
 
@@ -3006,13 +3019,13 @@ public class GolangFlyweightGenerator implements CodeGenerator
         addInclude("strings");
         new Formatter(sb).format("\n" +
             indent + "func (writer %1$s) String() string {\n" +
-            indent + "    builder := strings.Builder{}\n" +
-            indent + "    builder.WriteString(\"[\")\n",
+            indent + "\tbuilder := strings.Builder{}\n" +
+            indent + "\tbuilder.WriteString(\"[\")\n",
             name);
 
         if (choiceTokens.size() > 1)
         {
-            sb.append(indent + "    atLeastOne := false\n");
+            sb.append(indent + "\tatLeastOne := false\n");
         }
 
         for (int i = 0, size = choiceTokens.size(); i < size; i++)
@@ -3020,29 +3033,29 @@ public class GolangFlyweightGenerator implements CodeGenerator
             final Token token = choiceTokens.get(i);
             final String choiceName = "writer." + formatPropertyName(token.name());
 
-            sb.append(indent + "    if ").append(choiceName).append("() {\n");
+            sb.append(indent + "\tif ").append(choiceName).append("() {\n");
 
             if (i > 0)
             {
                 sb.append(
-                    indent + "        if (atLeastOne) {\n" +
-                    indent + "            builder.WriteString(\",\")\n" +
-                    indent + "        }\n");
+                    indent + "\t\tif atLeastOne {\n" +
+                    indent + "\t\t\tbuilder.WriteString(\",\")\n" +
+                    indent + "\t\t}\n");
             }
-            sb.append(indent + "        builder.WriteString(`\"").append(formatPropertyName(token.name()))
+            sb.append(indent + "\t\tbuilder.WriteString(`\"").append(formatPropertyName(token.name()))
                 .append("\"`)\n");
 
             if (i < (size - 1))
             {
-                sb.append(indent + "        atLeastOne = true\n");
+                sb.append(indent + "\t\tatLeastOne = true\n");
             }
 
-            sb.append(indent + "    }\n");
+            sb.append(indent + "\t}\n");
         }
 
         sb.append(
-            indent + "    builder.WriteString(\"]\")\n" +
-            indent + "    return builder.String()\n" +
+            indent + "\tbuilder.WriteString(\"]\")\n" +
+            indent + "\treturn builder.String()\n" +
             indent + "}\n");
 
         return sb;
@@ -3057,45 +3070,58 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final StringBuilder sb = new StringBuilder();
 
         new Formatter(sb).format("\n" +
-            "    func (value %1$s) String() string {\n" +
-            "        switch value {\n",
+            "func (value %1$s) String() string {\n" +
+            "\tswitch value {\n",
             enumName);
 
         for (final Token token : tokens)
         {
             new Formatter(sb).format(
-                "            case %2$s_%1$s: return \"%1$s\"\n",
+                "\tcase %2$s_%1$s:\n" +
+                "\t\treturn \"%1$s\"\n",
                 token.name(),
                 enumName);
         }
 
-        sb.append("            case ").append(enumName)
-            .append("_NULL_VALUE: return \"NULL_VALUE\"\n").append("        }\n\n");
+        sb.append("\tcase ").append(enumName).append("_NULL_VALUE:\n")
+            .append("\t\treturn \"NULL_VALUE\"\n")
+            .append("\t}\n\n");
 
         if (shouldDecodeUnknownEnumValues)
         {
-            sb.append("        return \"SBE_UNKNOWN\"\n").append("    }\n\n");
+            sb.append("\treturn \"SBE_UNKNOWN\"\n").append("}\n");
         }
         else
         {
             addInclude("fmt");
             new Formatter(sb).format(
-                "        panic(fmt.Sprintf(\"unknown value for enum %1$s [E103]: %%d\", value))\n" +
-                "    }\n\n",
+                "\tpanic(fmt.Sprintf(\"unknown value for enum %1$s [E103]: %%d\", value))\n" +
+                "}\n",
                 enumName);
         }
 
         return sb;
     }
 
-    private Object[] generateMessageLengthArgs(
-        final List<Token> groups,
-        final List<Token> varData,
-        final String indent,
-        final boolean inStruct)
+    /**
+     * An argument of the generated ComputeLength method, which is either an int or a slice of structs of the
+     * arguments for a nested group.
+     */
+    private static final class LengthArg
     {
-        final StringBuilder sb = new StringBuilder();
-        int count = 0;
+        private final String name;
+        private final List<LengthArg> fields;
+
+        private LengthArg(final String name, final List<LengthArg> fields)
+        {
+            this.name = name;
+            this.fields = fields;
+        }
+    }
+
+    private List<LengthArg> generateMessageLengthArgs(final List<Token> groups, final List<Token> varData)
+    {
+        final List<LengthArg> args = new ArrayList<>();
 
         for (int i = 0, size = groups.size(); i < size; i++)
         {
@@ -3107,33 +3133,16 @@ public class GolangFlyweightGenerator implements CodeGenerator
 
             final int endSignal = findEndSignal(groups, i, Signal.END_GROUP, groupToken.name());
             final String groupName = formatPropertyName(groupToken.name());
-
-            if (count > 0)
-            {
-                if (inStruct)
-                {
-                    sb.append("; ").append(indent);
-                }
-                else
-                {
-                    sb.append(",\n").append(indent);
-                }
-            }
-
             final List<Token> thisGroup = groups.subList(i, endSignal + 1);
 
             if (isMessageConstLength(thisGroup))
             {
-                sb.append(" ").append(groupName).append("Length ").append("int");
+                args.add(new LengthArg(groupName + "Length", null));
             }
             else
             {
-                sb.append(groupName).append("ItemLengths ").append("[]struct{");
-                sb.append(generateMessageLengthArgs(thisGroup, indent + INDENT, true)[0]);
-                sb.append("}");
+                args.add(new LengthArg(groupName + "ItemLengths", generateMessageLengthArgs(thisGroup)));
             }
-
-            count += 1;
 
             i = endSignal;
         }
@@ -3146,36 +3155,15 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 throw new IllegalStateException("tokens must begin with BEGIN_VAR_DATA: token=" + varDataToken);
             }
 
-            if (count > 0)
-            {
-                if (inStruct)
-                {
-                    sb.append("; ").append(indent);
-                }
-                else
-                {
-                    sb.append(",\n").append(indent);
-                }
-            }
-
-            sb.append(" ").append(formatPropertyName(varDataToken.name())).append("Length").append(" int");
-
-            count += 1;
+            args.add(new LengthArg(formatPropertyName(varDataToken.name()) + "Length", null));
 
             i += varDataToken.componentTokenCount();
         }
 
-        CharSequence result = sb;
-        if (count > 1)
-        {
-            result = "\n" + indent + result;
-        }
-
-        return new Object[] {result, count};
+        return args;
     }
 
-
-    private Object[] generateMessageLengthArgs(final List<Token> tokens, final String indent, final boolean inStruct)
+    private List<LengthArg> generateMessageLengthArgs(final List<Token> tokens)
     {
         int i = 0;
 
@@ -3198,14 +3186,85 @@ public class GolangFlyweightGenerator implements CodeGenerator
         final List<Token> varData = new ArrayList<>();
         collectVarData(tokens, i, varData);
 
-        return generateMessageLengthArgs(groups, varData, indent, inStruct);
+        return generateMessageLengthArgs(groups, varData);
     }
 
     private boolean isMessageConstLength(final List<Token> tokens)
     {
-        final Integer count = (Integer)generateMessageLengthArgs(tokens, BASE_INDENT, false)[1];
+        return generateMessageLengthArgs(tokens).isEmpty();
+    }
 
-        return count == 0;
+    // The layout of the parameters and anonymous structs follows gofmt: a struct with a single field of a
+    // single line type stays on one line, otherwise a field per line with the names of consecutive fields lined up.
+    // A field with a multi-line type is the last of the fields that its name lines up with.
+    private static String formatLengthArgs(final List<LengthArg> args)
+    {
+        if (args.isEmpty())
+        {
+            return "";
+        }
+
+        if (1 == args.size())
+        {
+            final LengthArg arg = args.get(0);
+            return arg.name + " " + formatLengthType(arg, BASE_INDENT);
+        }
+
+        final StringBuilder sb = new StringBuilder();
+        for (final LengthArg arg : args)
+        {
+            sb.append(sb.length() == 0 ? "\n" : ",\n")
+                .append(INDENT).append(arg.name).append(" ").append(formatLengthType(arg, INDENT));
+        }
+
+        return sb.toString();
+    }
+
+    private static String formatLengthType(final LengthArg arg, final String indent)
+    {
+        if (null == arg.fields)
+        {
+            return "int";
+        }
+
+        if (1 == arg.fields.size())
+        {
+            final LengthArg field = arg.fields.get(0);
+            final String fieldType = formatLengthType(field, indent);
+            if (fieldType.indexOf('\n') < 0)
+            {
+                return "[]struct{ " + field.name + " " + fieldType + " }";
+            }
+        }
+
+        final String fieldIndent = indent + INDENT;
+        final StringBuilder sb = new StringBuilder("[]struct {\n");
+        for (int start = 0, size = arg.fields.size(); start < size; )
+        {
+            int end = start;
+            int width = 0;
+            final List<String> types = new ArrayList<>();
+            while (end < size)
+            {
+                final LengthArg field = arg.fields.get(end++);
+                final String fieldType = formatLengthType(field, fieldIndent);
+                types.add(fieldType);
+                width = Math.max(width, field.name.length());
+                if (fieldType.indexOf('\n') >= 0)
+                {
+                    break;
+                }
+            }
+
+            for (int i = start; i < end; i++)
+            {
+                sb.append(fieldIndent).append(String.format("%-" + width + "s", arg.fields.get(i).name)).append(' ')
+                    .append(types.get(i - start)).append('\n');
+            }
+            start = end;
+        }
+
+        return sb.append(indent).append('}').toString();
     }
 
     private String generateMessageLengthCallHelper(
@@ -3329,17 +3388,17 @@ public class GolangFlyweightGenerator implements CodeGenerator
             final String maxCheck = countName + " > " + maxCount;
 
             new Formatter(sbEncode).format("\n" +
-                indent + "    length += m.%1$s().SbeHeaderSize()\n",
+                indent + "\tlength += m.%1$s().SbeHeaderSize()\n",
                 formatPropertyName(groupToken.name()));
 
             if (isMessageConstLength(thisGroup))
             {
                 addInclude("fmt");
                 new Formatter(sbEncode).format(
-                    indent + "    if (%3$s%4$s) {\n" +
-                    indent + "        panic(fmt.Sprintf(\"%5$s outside of allowed range [E110]\"))\n" +
-                    indent + "    }\n" +
-                    indent + "    length += uint64(%1$sLength) * m.%1$s().SbeBlockLength()\n",
+                    indent + "\tif %3$s%4$s {\n" +
+                    indent + "\t\tpanic(fmt.Sprintf(\"%5$s outside of allowed range [E110]\"))\n" +
+                    indent + "\t}\n" +
+                    indent + "\tlength += uint64(%1$sLength) * m.%1$s().SbeBlockLength()\n",
                     formatPropertyName(groupToken.name()),
                     formatClassName(groupToken.name()),
                     minCheck,
@@ -3349,16 +3408,16 @@ public class GolangFlyweightGenerator implements CodeGenerator
             else
             {
                 new Formatter(sbEncode).format(
-                    indent + "    if (%3$s%4$s) {\n" +
-                    indent + "        panic(\"%5$s outside of allowed range [E110]\")\n" +
-                    indent + "    }\n\n" +
-                    indent + "    for _, e := range %1$sItemLengths {\n" +
-                    indent + "        l, err := m.%1$s().ComputeLength(%6$s)\n" +
-                    indent + "        if err != nil {\n" +
-                    indent + "            return 0, err\n" +
-                    indent + "        }\n" +
-                    indent + "        length += uint64(l)\n" +
-                    indent + "    }\n",
+                    indent + "\tif %3$s%4$s {\n" +
+                    indent + "\t\tpanic(\"%5$s outside of allowed range [E110]\")\n" +
+                    indent + "\t}\n\n" +
+                    indent + "\tfor _, e := range %1$sItemLengths {\n" +
+                    indent + "\t\tl, err := m.%1$s().ComputeLength(%6$s)\n" +
+                    indent + "\t\tif err != nil {\n" +
+                    indent + "\t\t\treturn 0, err\n" +
+                    indent + "\t\t}\n" +
+                    indent + "\t\tlength += uint64(l)\n" +
+                    indent + "\t}\n",
                     formatPropertyName(groupToken.name()),
                     formatClassName(groupToken.name()),
                     minCheck,
@@ -3368,9 +3427,9 @@ public class GolangFlyweightGenerator implements CodeGenerator
             }
 
             new Formatter(sbSkip).format(
-                indent + ("    for %1$sGroup := m.%1$s(); %1$sGroup.HasNext(); {\n") +
-                indent + ("        %1$sGroup.Next().Skip()\n") +
-                indent + ("    }\n"),
+                indent + ("\tfor %1$sGroup := m.%1$s(); %1$sGroup.HasNext(); {\n") +
+                indent + ("\t\t%1$sGroup.Next().Skip()\n") +
+                indent + ("\t}\n"),
                 formatPropertyName(groupToken.name()));
 
             i = endSignal;
@@ -3388,16 +3447,16 @@ public class GolangFlyweightGenerator implements CodeGenerator
 
             addInclude("fmt");
             new Formatter(sbEncode).format("\n" +
-                indent + "    length += m.%1$sHeaderLength()\n" +
-                indent + "    if m.%1$sLength() > %2$d {\n" +
-                indent + "        return 0, fmt.Errorf(\"%1$sLength too long for length type [E109]\")\n" +
-                indent + "    }\n" +
-                indent + "    length += uint64(m.%1$sLength())\n",
+                indent + "\tlength += m.%1$sHeaderLength()\n" +
+                indent + "\tif m.%1$sLength() > %2$d {\n" +
+                indent + "\t\treturn 0, fmt.Errorf(\"%1$sLength too long for length type [E109]\")\n" +
+                indent + "\t}\n" +
+                indent + "\tlength += uint64(m.%1$sLength())\n",
                 formatPropertyName(varDataToken.name()),
                 lengthToken.encoding().applicableMaxValue().longValue());
 
             new Formatter(sbSkip).format(
-                indent + "    m.Skip%1$s()\n",
+                indent + "\tm.Skip%1$s()\n",
                 toUpperFirstChar(varDataToken.name()));
 
             i += varDataToken.componentTokenCount();
@@ -3411,15 +3470,15 @@ public class GolangFlyweightGenerator implements CodeGenerator
             indent + "}\n\n" +
 
             indent + "func (m *%2$s) IsConstLength() bool {\n" +
-            indent + "    return " + (groups.isEmpty() && varData.isEmpty()) + "\n" +
+            indent + "\treturn " + (groups.isEmpty() && varData.isEmpty()) + "\n" +
             indent + "}\n\n" +
 
             indent + "func (m *%2$s) ComputeLength(%1$s) (int, error) {\n" +
-            indent + "    length := uint64(m.SbeBlockLength())\n" +
+            indent + "\tlength := uint64(m.SbeBlockLength())\n" +
             sbEncode + "\n" +
-            indent + "    return int(length), nil\n" +
+            indent + "\treturn int(length), nil\n" +
             indent + "}\n",
-            generateMessageLengthArgs(groups, varData, indent + INDENT, false)[0],
+            formatLengthArgs(generateMessageLengthArgs(groups, varData)),
             className);
 
         return sb;

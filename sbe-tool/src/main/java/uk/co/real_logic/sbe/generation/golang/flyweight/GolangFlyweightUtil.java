@@ -20,6 +20,7 @@ import uk.co.real_logic.sbe.generation.golang.struct.GolangUtil;
 
 import java.nio.ByteOrder;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
 import static uk.co.real_logic.sbe.generation.Generators.toUpperFirstChar;
@@ -200,5 +201,45 @@ public class GolangFlyweightUtil
                 return "PutUint64" + suffix;
         }
         return "";
+    }
+
+    /**
+     * Format consecutive struct fields or constants the way gofmt does, with one line per row indented by a tab and
+     * the cells of a column padded so that the next column lines up. The last cell of a row is not padded.
+     *
+     * @param rows of cells to be aligned, each row having the same number of cells.
+     * @return the aligned lines, each terminated by a newline.
+     */
+    public static String alignColumns(final List<String[]> rows)
+    {
+        final int columns = rows.isEmpty() ? 0 : rows.get(0).length;
+        final int[] widths = new int[columns];
+        for (final String[] row : rows)
+        {
+            for (int i = 0; i < columns; i++)
+            {
+                widths[i] = Math.max(widths[i], row[i].length());
+            }
+        }
+
+        final StringBuilder sb = new StringBuilder();
+        for (final String[] row : rows)
+        {
+            sb.append('\t');
+            for (int i = 0; i < columns; i++)
+            {
+                sb.append(row[i]);
+                if (i < columns - 1)
+                {
+                    for (int pad = row[i].length(); pad <= widths[i]; pad++)
+                    {
+                        sb.append(' ');
+                    }
+                }
+            }
+            sb.append('\n');
+        }
+
+        return sb.toString();
     }
 }
