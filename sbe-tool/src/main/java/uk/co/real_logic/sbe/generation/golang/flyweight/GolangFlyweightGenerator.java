@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1116,6 +1116,26 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 indent + "}\n",
                 propertyName,
                 generateArrayLengthNotPresentCondition(token.version(), indent),
+                lengthOfLengthField,
+                lengthByteOrderReadStr,
+                className);
+
+            new Formatter(sb).format("\n" +
+                indent + "// %1$sBytes returns the %1$s data as a slice of the message buffer, without\n" +
+                indent + "// copying or allocating, and moves past it. The slice is valid only while the\n" +
+                indent + "// buffer holds this message.\n" +
+                indent + "func (m *%5$s) %1$sBytes() []byte {\n" +
+                "%2$s" +
+                indent + "\tlengthOfLengthField := uint64(%3$d)\n" +
+                indent + "\tlengthPosition := m.SbePosition()\n" +
+                indent +
+                "\tdataLength := uint64(%4$s(m.buffer[lengthPosition : lengthPosition+lengthOfLengthField]))\n" +
+                indent + "\tpos := lengthPosition + lengthOfLengthField\n" +
+                indent + "\tm.SetSbePosition(pos + dataLength)\n" +
+                indent + "\treturn m.buffer[pos : pos+dataLength : pos+dataLength]\n" +
+                indent + "}\n",
+                propertyName,
+                generateArrayFieldNotPresentCondition(token.version(), indent),
                 lengthOfLengthField,
                 lengthByteOrderReadStr,
                 className);
