@@ -7,6 +7,7 @@
 * **[Java]** Upgrade to `Gradle` 9.8.1.
 * **[Java]** Upgrade to `Mockito` 5.24.0.
 * **[Java]** Upgrade to `Versions` 0.65.0.
+* **[Java]** Upgrade to `jqwik` 1.10.2.
 
 == 1.40.2 (2026-09-17)
 
