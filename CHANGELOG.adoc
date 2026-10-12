@@ -12,6 +12,7 @@
 * **[Java]** Upgrade to `Mockito` 5.24.0.
 * **[Java]** Upgrade to `Versions` 0.65.0.
 * **[Java]** Upgrade to `jqwik` 1.10.2.
+* **[C]** Upgrade to `CMake` 4.4.4.
 
 == 1.40.2 (2026-09-17)
 
