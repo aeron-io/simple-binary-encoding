@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -652,6 +652,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 "package %1$s\n\n" +
 
                 "import (\n" +
+                "\t\"encoding/binary\"\n" +
                 "\t\"math\"\n" +
                 "\t\"math/bits\"\n" +
                 ")\n\n" +
@@ -777,14 +778,11 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 "}\n" +
                 "\n" +
                 "func Uint16LittleEndian(b []byte) uint16 {\n" +
-                "\t_ = b[1] // bounds check hint to compiler; see golang.org/issue/14808\n" +
-                "\treturn uint16(b[0]) | uint16(b[1])<<8\n" +
+                "\treturn binary.LittleEndian.Uint16(b)\n" +
                 "}\n" +
                 "\n" +
                 "func PutUint16LittleEndian(b []byte, v uint16) {\n" +
-                "\t_ = b[1] // early bounds check to guarantee safety of writes below\n" +
-                "\tb[0] = byte(v)\n" +
-                "\tb[1] = byte(v >> 8)\n" +
+                "\tbinary.LittleEndian.PutUint16(b, v)\n" +
                 "}\n" +
                 "\n" +
                 "func Int16LittleEndian(b []byte) int16 {\n" +
@@ -796,16 +794,11 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 "}\n" +
                 "\n" +
                 "func Uint32LittleEndian(b []byte) uint32 {\n" +
-                "\t_ = b[3] // bounds check hint to compiler; see golang.org/issue/14808\n" +
-                "\treturn uint32(b[0]) | uint32(b[1])<<8 | uint32(b[2])<<16 | uint32(b[3])<<24\n" +
+                "\treturn binary.LittleEndian.Uint32(b)\n" +
                 "}\n" +
                 "\n" +
                 "func PutUint32LittleEndian(b []byte, v uint32) {\n" +
-                "\t_ = b[3] // early bounds check to guarantee safety of writes below\n" +
-                "\tb[0] = byte(v)\n" +
-                "\tb[1] = byte(v >> 8)\n" +
-                "\tb[2] = byte(v >> 16)\n" +
-                "\tb[3] = byte(v >> 24)\n" +
+                "\tbinary.LittleEndian.PutUint32(b, v)\n" +
                 "}\n" +
                 "\n" +
                 "func Int32LittleEndian(b []byte) int32 {\n" +
@@ -817,21 +810,11 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 "}\n" +
                 "\n" +
                 "func Uint64LittleEndian(b []byte) uint64 {\n" +
-                "\t_ = b[7] // bounds check hint to compiler; see golang.org/issue/14808\n" +
-                "\treturn uint64(b[0]) | uint64(b[1])<<8 | uint64(b[2])<<16 | uint64(b[3])<<24 |\n" +
-                "\t\tuint64(b[4])<<32 | uint64(b[5])<<40 | uint64(b[6])<<48 | uint64(b[7])<<56\n" +
+                "\treturn binary.LittleEndian.Uint64(b)\n" +
                 "}\n" +
                 "\n" +
                 "func PutUint64LittleEndian(b []byte, v uint64) {\n" +
-                "\t_ = b[7] // early bounds check to guarantee safety of writes below\n" +
-                "\tb[0] = byte(v)\n" +
-                "\tb[1] = byte(v >> 8)\n" +
-                "\tb[2] = byte(v >> 16)\n" +
-                "\tb[3] = byte(v >> 24)\n" +
-                "\tb[4] = byte(v >> 32)\n" +
-                "\tb[5] = byte(v >> 40)\n" +
-                "\tb[6] = byte(v >> 48)\n" +
-                "\tb[7] = byte(v >> 56)\n" +
+                "\tbinary.LittleEndian.PutUint64(b, v)\n" +
                 "}\n" +
                 "\n" +
                 "func Int64LittleEndian(b []byte) int64 {\n" +
@@ -885,14 +868,11 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 "}\n" +
                 "\n" +
                 "func Uint16BigEndian(b []byte) uint16 {\n" +
-                "\t_ = b[1] // bounds check hint to compiler; see golang.org/issue/14808\n" +
-                "\treturn uint16(b[1]) | uint16(b[0])<<8\n" +
+                "\treturn binary.BigEndian.Uint16(b)\n" +
                 "}\n" +
                 "\n" +
                 "func PutUint16BigEndian(b []byte, v uint16) {\n" +
-                "\t_ = b[1] // early bounds check to guarantee safety of writes below\n" +
-                "\tb[0] = byte(v >> 8)\n" +
-                "\tb[1] = byte(v)\n" +
+                "\tbinary.BigEndian.PutUint16(b, v)\n" +
                 "}\n" +
                 "\n" +
                 "func Int16BigEndian(b []byte) int16 {\n" +
@@ -904,16 +884,11 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 "}\n" +
                 "\n" +
                 "func Uint32BigEndian(b []byte) uint32 {\n" +
-                "\t_ = b[3] // bounds check hint to compiler; see golang.org/issue/14808\n" +
-                "\treturn uint32(b[3]) | uint32(b[2])<<8 | uint32(b[1])<<16 | uint32(b[0])<<24\n" +
+                "\treturn binary.BigEndian.Uint32(b)\n" +
                 "}\n" +
                 "\n" +
                 "func PutUint32BigEndian(b []byte, v uint32) {\n" +
-                "\t_ = b[3] // early bounds check to guarantee safety of writes below\n" +
-                "\tb[0] = byte(v >> 24)\n" +
-                "\tb[1] = byte(v >> 16)\n" +
-                "\tb[2] = byte(v >> 8)\n" +
-                "\tb[3] = byte(v)\n" +
+                "\tbinary.BigEndian.PutUint32(b, v)\n" +
                 "}\n" +
                 "\n" +
                 "func Int32BigEndian(b []byte) int32 {\n" +
@@ -925,21 +900,11 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 "}\n" +
                 "\n" +
                 "func Uint64BigEndian(b []byte) uint64 {\n" +
-                "\t_ = b[7] // bounds check hint to compiler; see golang.org/issue/14808\n" +
-                "\treturn uint64(b[7]) | uint64(b[6])<<8 | uint64(b[5])<<16 | uint64(b[4])<<24 |\n" +
-                "\t\tuint64(b[3])<<32 | uint64(b[2])<<40 | uint64(b[1])<<48 | uint64(b[0])<<56\n" +
+                "\treturn binary.BigEndian.Uint64(b)\n" +
                 "}\n" +
                 "\n" +
                 "func PutUint64BigEndian(b []byte, v uint64) {\n" +
-                "\t_ = b[7] // early bounds check to guarantee safety of writes below\n" +
-                "\tb[0] = byte(v >> 56)\n" +
-                "\tb[1] = byte(v >> 48)\n" +
-                "\tb[2] = byte(v >> 40)\n" +
-                "\tb[3] = byte(v >> 32)\n" +
-                "\tb[4] = byte(v >> 24)\n" +
-                "\tb[5] = byte(v >> 16)\n" +
-                "\tb[6] = byte(v >> 8)\n" +
-                "\tb[7] = byte(v)\n" +
+                "\tbinary.BigEndian.PutUint64(b, v)\n" +
                 "}\n" +
                 "\n" +
                 "func Int64BigEndian(b []byte) int64 {\n" +
