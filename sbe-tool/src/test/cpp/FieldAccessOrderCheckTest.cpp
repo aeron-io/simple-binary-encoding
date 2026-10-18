@@ -5088,3 +5088,51 @@ TEST_F(FieldAccessOrderCheckTest, shouldThrowExceptionWhenNotWrapped)
 
     decoder.decodeLength();
 }
+
+TEST_F(FieldAccessOrderCheckTest, shouldEncodeNoBlockUsingSbeSetAllFields)
+{
+    NoBlock encoder;
+    encoder.wrapForEncode(m_buffer, OFFSET, BUFFER_LEN)
+        .sbeSetAllFields()
+        .putA("hello")
+        .checkEncodingIsComplete();
+
+    NoBlock decoder;
+    decoder.wrapForDecode(
+        m_buffer,
+        OFFSET,
+        NoBlock::sbeBlockLength(),
+        NoBlock::sbeSchemaVersion(),
+        BUFFER_LEN);
+
+    EXPECT_EQ(std::string("hello"), decoder.getAAsString());
+}
+
+TEST_F(FieldAccessOrderCheckTest, shouldEncodeCompositeInsideGroupUsingSbeSetAllFields)
+{
+    CompositeInsideGroup encoder;
+    encoder.wrapForEncode(m_buffer, OFFSET, BUFFER_LEN)
+        .sbeSetAllFields([](Point &p) { p.sbeSetAllFields(10, 20); });
+
+    encoder.bCount(1)
+        .next().sbeSetAllFields([](Point &p) { p.sbeSetAllFields(30, 40); });
+
+    encoder.checkEncodingIsComplete();
+
+    CompositeInsideGroup decoder;
+    decoder.wrapForDecode(
+        m_buffer,
+        OFFSET,
+        CompositeInsideGroup::sbeBlockLength(),
+        CompositeInsideGroup::sbeSchemaVersion(),
+        BUFFER_LEN);
+
+    EXPECT_EQ(decoder.a().x(), 10);
+    EXPECT_EQ(decoder.a().y(), 20);
+
+    CompositeInsideGroup::B &b = decoder.b();
+    EXPECT_EQ(b.count(), 1u);
+    b.next();
+    EXPECT_EQ(b.c().x(), 30);
+    EXPECT_EQ(b.c().y(), 40);
+}
