@@ -1085,6 +1085,26 @@ public class GolangFlyweightGenerator implements CodeGenerator
                 lengthByteOrderReadStr,
                 className);
 
+            new Formatter(sb).format("\n" +
+                indent + "// %1$sBytes returns the %1$s data as a slice of the message buffer, without\n" +
+                indent + "// copying or allocating, and moves past it. The slice is valid only while the\n" +
+                indent + "// buffer holds this message.\n" +
+                indent + "func (m *%5$s) %1$sBytes() []byte {\n" +
+                "%2$s" +
+                indent + "\tlengthOfLengthField := uint64(%3$d)\n" +
+                indent + "\tlengthPosition := m.SbePosition()\n" +
+                indent +
+                "\tdataLength := uint64(%4$s(m.buffer[lengthPosition : lengthPosition+lengthOfLengthField]))\n" +
+                indent + "\tpos := lengthPosition + lengthOfLengthField\n" +
+                indent + "\tm.SetSbePosition(pos + dataLength)\n" +
+                indent + "\treturn m.buffer[pos : pos+dataLength : pos+dataLength]\n" +
+                indent + "}\n",
+                propertyName,
+                generateArrayFieldNotPresentCondition(token.version(), indent),
+                lengthOfLengthField,
+                lengthByteOrderReadStr,
+                className);
+
             final String lengthByteOrderWriteStr = formatWriteBytes(
                 lengthToken.encoding().byteOrder(), lengthToken.encoding().primitiveType());
             new Formatter(sb).format("\n" +
