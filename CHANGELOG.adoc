@@ -1,7 +1,11 @@
 = Changelog
 
-== 1.41.0 (unreleased)
+== 1.42.0 (unreleased)
 
+== 1.41.0 (2026-10-19)
+
+* **[Go]** Generate zero-copy byte accessors for flyweight var data. (https://github.com/aeron-io/simple-binary-encoding/pull/1134[#1134])
+* **[Go]** Use encoding/binary in the flyweight byte order helpers. (https://github.com/aeron-io/simple-binary-encoding/pull/1133[#1133])
 * **[Go]** Generate gofmt-formatted flyweight code. (https://github.com/aeron-io/simple-binary-encoding/pull/1130[#1130])
 * **[Go]** Don't shadow a message's receiver with the group loop variable. (https://github.com/aeron-io/simple-binary-encoding/pull/1128[#1128])
 * **[Java]** Check `sinceVersion` for set choices when decoding. (https://github.com/aeron-io/simple-binary-encoding/pull/1125[#1125])
