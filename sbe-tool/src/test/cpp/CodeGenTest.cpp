@@ -1224,3 +1224,102 @@ TEST_F(CodeGenTest, shouldComputeEncodedLengthCorrectlyForVarDataFields)
 
     EXPECT_EQ(337, keywords.encodedLength());
 }
+
+TEST_F(CodeGenTest, shouldBeAbleToEncodeCarUsingSbeSetAllFields)
+{
+    char buffer[BUFFER_LEN] = {};
+
+    MessageHeader hdr;
+    hdr.wrap(buffer, 0, 0, sizeof(buffer))
+        .sbeSetAllFields(
+            Car::sbeBlockLength(),
+            Car::sbeTemplateId(),
+            Car::sbeSchemaId(),
+            Car::sbeSchemaVersion());
+
+    std::int32_t someNumbers[5] = { 0, 1, 2, 3, 4 };
+
+    Car car;
+    car.wrapForEncode(buffer, hdr.encodedLength(), sizeof(buffer) - hdr.encodedLength())
+        .sbeSetAllFields(
+            SERIAL_NUMBER,
+            MODEL_YEAR,
+            AVAILABLE,
+            CODE,
+            someNumbers,
+            VEHICLE_CODE,
+            [](OptionalExtras &extras)
+            {
+                extras.clear()
+                    .cruiseControl(CRUISE_CONTROL)
+                    .sportsPack(SPORTS_PACK)
+                    .sunRoof(SUNROOF);
+            },
+            [](Engine &engine)
+            {
+                engine.sbeSetAllFields(
+                    engineCapacity,
+                    engineNumCylinders,
+                    MANUFACTURER_CODE,
+                    [](BoosterT &booster)
+                    {
+                        booster.sbeSetAllFields(BOOST_TYPE, BOOSTER_HORSEPOWER);
+                    });
+            })
+        .fuelFiguresCount(FUEL_FIGURES_COUNT)
+            .next().sbeSetAllFields(fuel1Speed, fuel1Mpg)
+            .putUsageDescription(
+                FUEL_FIGURES_1_USAGE_DESCRIPTION, static_cast<int>(strlen(FUEL_FIGURES_1_USAGE_DESCRIPTION)))
+            .next().sbeSetAllFields(fuel2Speed, fuel2Mpg)
+            .putUsageDescription(
+                FUEL_FIGURES_2_USAGE_DESCRIPTION, static_cast<int>(strlen(FUEL_FIGURES_2_USAGE_DESCRIPTION)))
+            .next().sbeSetAllFields(fuel3Speed, fuel3Mpg)
+            .putUsageDescription(
+                FUEL_FIGURES_3_USAGE_DESCRIPTION, static_cast<int>(strlen(FUEL_FIGURES_3_USAGE_DESCRIPTION)));
+
+    Car::PerformanceFigures &perfFigs = car.performanceFiguresCount(PERFORMANCE_FIGURES_COUNT);
+
+    perfFigs.next()
+        .sbeSetAllFields(perf1Octane)
+        .accelerationCount(ACCELERATION_COUNT)
+            .next().sbeSetAllFields(perf1aMph, perf1aSeconds)
+            .next().sbeSetAllFields(perf1bMph, perf1bSeconds)
+            .next().sbeSetAllFields(perf1cMph, perf1cSeconds);
+
+    perfFigs.next()
+        .sbeSetAllFields(perf2Octane)
+        .accelerationCount(ACCELERATION_COUNT)
+            .next().sbeSetAllFields(perf2aMph, perf2aSeconds)
+            .next().sbeSetAllFields(perf2bMph, perf2bSeconds)
+            .next().sbeSetAllFields(perf2cMph, perf2cSeconds);
+
+    car.putManufacturer(MANUFACTURER, static_cast<int>(strlen(MANUFACTURER)))
+        .putModel(MODEL, static_cast<int>(strlen(MODEL)))
+        .putActivationCode(ACTIVATION_CODE, static_cast<int>(strlen(ACTIVATION_CODE)))
+        .putColor(COLOR, static_cast<int>(strlen(COLOR)));
+
+    EXPECT_EQ(car.encodedLength(), expectedCarEncodedLength);
+
+    Car carDecoder(buffer + hdr.encodedLength(), car.encodedLength(), Car::sbeBlockLength(), Car::sbeSchemaVersion());
+    EXPECT_EQ(carDecoder.serialNumber(), SERIAL_NUMBER);
+    EXPECT_EQ(carDecoder.modelYear(), MODEL_YEAR);
+    EXPECT_EQ(carDecoder.available(), AVAILABLE);
+    EXPECT_EQ(carDecoder.code(), CODE);
+    for (std::uint64_t i = 0; i < Car::someNumbersLength(); i++)
+    {
+        EXPECT_EQ(carDecoder.someNumbers(i), static_cast<std::int32_t>(i));
+    }
+    EXPECT_EQ(
+        std::string(carDecoder.vehicleCode(), Car::vehicleCodeLength()),
+        std::string(VEHICLE_CODE, sizeof(VEHICLE_CODE)));
+    EXPECT_TRUE(carDecoder.extras().cruiseControl());
+    EXPECT_TRUE(carDecoder.extras().sportsPack());
+    EXPECT_FALSE(carDecoder.extras().sunRoof());
+    EXPECT_EQ(carDecoder.engine().capacity(), engineCapacity);
+    EXPECT_EQ(carDecoder.engine().numCylinders(), engineNumCylinders);
+    EXPECT_EQ(
+        std::string(carDecoder.engine().manufacturerCode(), Engine::manufacturerCodeLength()),
+        std::string(MANUFACTURER_CODE, sizeof(MANUFACTURER_CODE)));
+    EXPECT_EQ(carDecoder.engine().booster().boostType(), BOOST_TYPE);
+    EXPECT_EQ(carDecoder.engine().booster().horsePower(), BOOSTER_HORSEPOWER);
+}
