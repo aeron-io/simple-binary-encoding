@@ -2,6 +2,8 @@
 
 == 1.42.0 (unreleased)
 
+* **[Java]** Upgrade to `Gradle` 9.8.2.
+
 == 1.41.0 (2026-10-19)
 
 * **[Go]** Generate zero-copy byte accessors for flyweight var data. (https://github.com/aeron-io/simple-binary-encoding/pull/1134[#1134])
