@@ -159,7 +159,6 @@ class GolangGeneratorTest
                 "\n" +
                 "import (\n" +
                 "\t\"io\"\n" +
-                "\t\"io/ioutil\"\n" +
                 ")\n" +
                 "\n" +
                 "type SomeMessage struct {\n" +
@@ -179,7 +178,7 @@ class GolangGeneratorTest
                 "blockLength uint16, doRangeCheck bool) error {\n" +
                 "\ts.EngineType = EngineType.Gas\n" +
                 "\tif actingVersion > s.SbeSchemaVersion() && blockLength > s.SbeBlockLength() {\n" +
-                "\t\tio.CopyN(ioutil.Discard, _r, int64(blockLength-s.SbeBlockLength()))\n" +
+                "\t\tio.CopyN(io.Discard, _r, int64(blockLength-s.SbeBlockLength()))\n" +
                 "\t}\n" +
                 "\tif doRangeCheck {\n" +
                 "\t\tif err := s.RangeCheck(actingVersion, s.SbeSchemaVersion()); err != nil {\n" +
@@ -389,7 +388,6 @@ class GolangGeneratorTest
                 "\n" +
                 "import (\n" +
                 "\t\"io\"\n" +
-                "\t\"io/ioutil\"\n" +
                 ")\n" +
                 "\n" +
                 "type SomeMessage struct {\n" +
@@ -416,7 +414,7 @@ class GolangGeneratorTest
                 "\t\t}\n" +
                 "\t}\n" +
                 "\tif actingVersion > s.SbeSchemaVersion() && blockLength > s.SbeBlockLength() {\n" +
-                "\t\tio.CopyN(ioutil.Discard, _r, int64(blockLength-s.SbeBlockLength()))\n" +
+                "\t\tio.CopyN(io.Discard, _r, int64(blockLength-s.SbeBlockLength()))\n" +
                 "\t}\n" +
                 "\tif doRangeCheck {\n" +
                 "\t\tif err := s.RangeCheck(actingVersion, s.SbeSchemaVersion()); err != nil {\n" +
