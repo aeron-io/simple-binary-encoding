@@ -230,8 +230,7 @@ public class GolangGenerator implements CodeGenerator
         if (gap > 0)
         {
             imports.peek().add("io");
-            imports.peek().add("io/ioutil");
-            return String.format("%1$s\tio.CopyN(ioutil.Discard, _r, %2$d)\n", indent, gap);
+            return String.format("%1$s\tio.CopyN(io.Discard, _r, %2$d)\n", indent, gap);
         }
 
         return "";
@@ -641,10 +640,9 @@ public class GolangGenerator implements CodeGenerator
         final char varName)
     {
         imports.peek().add("io");
-        imports.peek().add("io/ioutil");
         sb.append(String.format(
             "\tif actingVersion > %1$s.SbeSchemaVersion() && blockLength > %1$s.SbeBlockLength() {\n" +
-            "\t\tio.CopyN(ioutil.Discard, _r, int64(blockLength-%1$s.SbeBlockLength()))\n" +
+            "\t\tio.CopyN(io.Discard, _r, int64(blockLength-%1$s.SbeBlockLength()))\n" +
             "\t}\n",
             varName));
     }

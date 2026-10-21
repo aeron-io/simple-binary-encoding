@@ -4,7 +4,6 @@ package test973
 
 import (
 	"io"
-	"io/ioutil"
 )
 
 type SomeMessage struct {
@@ -30,7 +29,7 @@ func (s *SomeMessage) Decode(_m *SbeGoMarshaller, _r io.Reader, actingVersion ui
 		}
 	}
 	if actingVersion > s.SbeSchemaVersion() && blockLength > s.SbeBlockLength() {
-		io.CopyN(ioutil.Discard, _r, int64(blockLength-s.SbeBlockLength()))
+		io.CopyN(io.Discard, _r, int64(blockLength-s.SbeBlockLength()))
 	}
 	if doRangeCheck {
 		if err := s.RangeCheck(actingVersion, s.SbeSchemaVersion()); err != nil {
