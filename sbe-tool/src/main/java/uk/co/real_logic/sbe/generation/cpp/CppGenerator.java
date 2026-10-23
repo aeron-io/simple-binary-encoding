@@ -804,7 +804,7 @@ public class CppGenerator implements CodeGenerator
             indent + "#pragma GCC diagnostic push\n" +
             indent + "#pragma GCC diagnostic ignored \"-Wtype-limits\"\n" +
             indent + "#endif\n" +
-            indent + "        if (%5$scount > %6$d)\n" +
+            indent + "        if (%5$scount > %6$s)\n" +
             indent + "        {\n" +
             indent + "            throw std::runtime_error(\"count outside of allowed range [E110]\");\n" +
             indent + "        }\n" +
@@ -830,7 +830,7 @@ public class CppGenerator implements CodeGenerator
             cppTypeNumInGroup,
             dimensionHeaderLength,
             minCheck,
-            numInGroupToken.encoding().applicableMaxValue().longValue(),
+            generateMaxValueLiteral(numInGroupToken.encoding(), ""),
             dimensionsClassName,
             codecStateParameter,
             codecStateAssignment);
@@ -1270,7 +1270,7 @@ public class CppGenerator implements CodeGenerator
             new Formatter(sb).format("\n" +
                 indent + "    %1$s &put%2$s(const std::string &str)\n" +
                 indent + "    {\n" +
-                indent + "        if (str.length() > %4$d)\n" +
+                indent + "        if (str.length() > %4$s)\n" +
                 indent + "        {\n" +
                 indent + "            throw std::runtime_error(\"std::string too long for length type [E109]\");\n" +
                 indent + "        }\n" +
@@ -1279,13 +1279,13 @@ public class CppGenerator implements CodeGenerator
                 className,
                 propertyName,
                 lengthCppType,
-                lengthToken.encoding().applicableMaxValue().longValue());
+                generateMaxValueLiteral(lengthToken.encoding(), ""));
 
             new Formatter(sb).format("\n" +
                 indent + "    #ifdef SBE_USE_STRING_VIEW\n" +
                 indent + "    %1$s &put%2$s(const std::string_view str)\n" +
                 indent + "    {\n" +
-                indent + "        if (str.length() > %4$d)\n" +
+                indent + "        if (str.length() > %4$s)\n" +
                 indent + "        {\n" +
                 indent + "            throw std::runtime_error(\"std::string too long for length type [E109]\");\n" +
                 indent + "        }\n" +
@@ -1295,7 +1295,7 @@ public class CppGenerator implements CodeGenerator
                 className,
                 propertyName,
                 lengthCppType,
-                lengthToken.encoding().applicableMaxValue().longValue());
+                generateMaxValueLiteral(lengthToken.encoding(), ""));
 
             i += token.componentTokenCount();
         }
@@ -4367,13 +4367,12 @@ public class CppGenerator implements CodeGenerator
 
             final Token numInGroupToken = Generators.findFirst("numInGroup", groups, i);
             final long minCount = numInGroupToken.encoding().applicableMinValue().longValue();
-            final long maxCount = numInGroupToken.encoding().applicableMaxValue().longValue();
 
             final String countName = formatPropertyName(groupToken.name()) +
                 (isMessageConstLength(thisGroup) ? "Length" : "ItemLengths.size()");
 
             final String minCheck = minCount > 0 ? countName + " < " + minCount + "LL || " : "";
-            final String maxCheck = countName + " > " + maxCount + "LL";
+            final String maxCheck = countName + " > " + generateMaxValueLiteral(numInGroupToken.encoding(), "LL");
 
             new Formatter(sbEncode).format("\n" +
                 indent + "    length += %1$s::sbeHeaderSize();\n",
@@ -4440,13 +4439,13 @@ public class CppGenerator implements CodeGenerator
 
             new Formatter(sbEncode).format("\n" +
                 indent + "    length += %1$sHeaderLength();\n" +
-                indent + "    if (%1$sLength > %2$dLL)\n" +
+                indent + "    if (%1$sLength > %2$s)\n" +
                 indent + "    {\n" +
                 indent + "        throw std::runtime_error(\"%1$sLength too long for length type [E109]\");\n" +
                 indent + "    }\n" +
                 indent + "    length += %1$sLength;\n",
                 formatPropertyName(varDataToken.name()),
-                lengthToken.encoding().applicableMaxValue().longValue());
+                generateMaxValueLiteral(lengthToken.encoding(), "LL"));
 
             new Formatter(sbSkip).format(
                 indent + "    skip%1$s();\n",
@@ -4484,5 +4483,17 @@ public class CppGenerator implements CodeGenerator
             generateMessageLengthArgs(groups, varData, indent + INDENT, true)[0]);
 
         return sb;
+    }
+
+    /*
+     * A uint64 maxValue does not fit in a long, so generate it as an unsigned literal rather than the negative
+     * number held by longValue().
+     */
+    private static CharSequence generateMaxValueLiteral(final Encoding encoding, final String signedSuffix)
+    {
+        final String maxValue = encoding.applicableMaxValue().toString();
+
+        return PrimitiveType.UINT64 == encoding.primitiveType() ?
+            generateLiteral(PrimitiveType.UINT64, maxValue) : maxValue + signedSuffix;
     }
 }
