@@ -49,6 +49,7 @@ import static uk.co.real_logic.sbe.ir.GenerationUtil.collectFields;
 public class GolangGenerator implements CodeGenerator
 {
     private static final int GROUP_DECODE_INITIAL_CAPACITY = 1024;
+    private static final int VAR_DATA_DECODE_CHUNK_LENGTH = 65536;
 
     private final Ir ir;
     private final OutputManager outputManager;
@@ -1215,6 +1216,8 @@ public class GolangGenerator implements CodeGenerator
             varName,
             propertyName));
 
+        // The length comes off the wire, so the slice grows by at most VAR_DATA_DECODE_CHUNK_LENGTH elements
+        // at a time as bytes arrive. Compare as uint64 so a uint64 length above math.MaxInt cannot go negative.
         decode.append(String.format(
             "\n" +
             "\tif %1$c.%2$sInActingVersion(actingVersion) {\n" +
@@ -1222,12 +1225,25 @@ public class GolangGenerator implements CodeGenerator
             "\t\tif err := _m.Read%3$s(_r, &%2$sLength); err != nil {\n" +
             "\t\t\treturn err\n" +
             "\t\t}\n" +
-            "\t\tif cap(%1$c.%2$s) < int(%2$sLength) {\n" +
-            "\t\t\t%1$s.%2$s = make([]%5$s, %2$sLength)\n" +
-            "\t\t}\n" +
-            "\t\t%1$c.%2$s = %1$c.%2$s[:%2$sLength]\n" +
-            "\t\tif err := _m.ReadBytes(_r, %1$c.%2$s); err != nil {\n" +
-            "\t\t\treturn err\n" +
+            "\t\t%1$c.%2$s = %1$c.%2$s[:0]\n" +
+            "\t\tfor uint64(len(%1$c.%2$s)) < uint64(%2$sLength) {\n" +
+            "\t\t\t%2$sStart := len(%1$c.%2$s)\n" +
+            "\t\t\t%2$sRemaining := uint64(%2$sLength) - uint64(%2$sStart)\n" +
+            "\t\t\t%2$sEnd := cap(%1$c.%2$s)\n" +
+            "\t\t\tif %2$sEnd == %2$sStart {\n" +
+            "\t\t\t\t%2$sGrowth := " + VAR_DATA_DECODE_CHUNK_LENGTH + "\n" +
+            "\t\t\t\tif %2$sRemaining < " + VAR_DATA_DECODE_CHUNK_LENGTH + " {\n" +
+            "\t\t\t\t\t%2$sGrowth = int(%2$sRemaining)\n" +
+            "\t\t\t\t}\n" +
+            "\t\t\t\t%1$c.%2$s = append(%1$c.%2$s, make([]%5$s, %2$sGrowth)...)\n" +
+            "\t\t\t\t%2$sEnd = len(%1$c.%2$s)\n" +
+            "\t\t\t} else if uint64(%2$sEnd-%2$sStart) > %2$sRemaining {\n" +
+            "\t\t\t\t%2$sEnd = %2$sStart + int(%2$sRemaining)\n" +
+            "\t\t\t}\n" +
+            "\t\t\t%1$c.%2$s = %1$c.%2$s[:%2$sEnd]\n" +
+            "\t\t\tif err := _m.ReadBytes(_r, %1$c.%2$s[%2$sStart:]); err != nil {\n" +
+            "\t\t\t\treturn err\n" +
+            "\t\t\t}\n" +
             "\t\t}\n" +
             "\t}\n",
             varName,
