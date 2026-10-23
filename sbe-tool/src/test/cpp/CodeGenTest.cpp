@@ -981,6 +981,26 @@ TEST_F(CodeGenTest, shouldBeAbleToUseStdStringMethodsForDecode)
     EXPECT_EQ(carDecoder.encodedLength(), expectedCarEncodedLength);
 }
 
+TEST_F(CodeGenTest, shouldEscapeOnlyControlCharactersInJsonEscapedString)
+{
+    char buffer[BUFFER_LEN] = {};
+    Car carEncoder;
+    carEncoder.wrapForEncode(buffer, 0, sizeof(buffer));
+    carEncoder.fuelFiguresCount(0);
+    carEncoder.performanceFiguresCount(0);
+    carEncoder.putManufacturer(std::string("M"))
+        .putModel(std::string("a\x01\x1f\x7f\xc3\xa9z"))
+        .putActivationCode(std::string(""))
+        .putColor(std::string(""));
+
+    Car carDecoder(buffer, carEncoder.encodedLength(), Car::sbeBlockLength(), Car::sbeSchemaVersion());
+    EXPECT_EQ(carDecoder.fuelFigures().count(), 0u);
+    EXPECT_EQ(carDecoder.performanceFigures().count(), 0u);
+    carDecoder.skipManufacturer();
+
+    EXPECT_EQ(carDecoder.getModelAsJsonEscapedString(), std::string("a\\u0001\\u001f\x7f\xc3\xa9z"));
+}
+
 TEST_F(CodeGenTest, shouldPrintFullDecodedFlyweightRegardlessOfReadPosition)
 {
     const char *expectedDisplayString =
