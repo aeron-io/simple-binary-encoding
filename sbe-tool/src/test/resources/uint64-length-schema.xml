@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   package="uint64_length"
+                   id="1"
+                   version="0"
+                   semanticVersion="1.0"
+                   description="Group count and var data length encoded as uint64"
+                   byteOrder="littleEndian">
+    <types>
+        <composite name="messageHeader" description="Message identifiers and length of message root">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+        </composite>
+        <composite name="groupSizeEncoding" description="Repeating group dimensions">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="numInGroup" primitiveType="uint64"/>
+        </composite>
+        <composite name="varStringEncoding" description="Variable length string">
+            <type name="length" primitiveType="uint64"/>
+            <type name="varData" primitiveType="uint8" length="0" characterEncoding="UTF-8"/>
+        </composite>
+    </types>
+    <sbe:message name="Uint64Lengths" id="1">
+        <field name="id" id="1" type="uint32"/>
+        <group name="entries" id="2" dimensionType="groupSizeEncoding">
+            <field name="value" id="3" type="uint32"/>
+        </group>
+        <data name="text" id="4" type="varStringEncoding"/>
+    </sbe:message>
+</sbe:messageSchema>
