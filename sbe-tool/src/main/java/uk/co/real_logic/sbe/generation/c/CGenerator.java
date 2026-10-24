@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -548,6 +548,12 @@ public class CGenerator implements CodeGenerator
                 "    struct %6$s *const codec)\n" +
                 "{\n" +
                 "%2$s" +
+                "    if (SBE_BOUNDS_CHECK_EXPECT(\n" +
+                "        ((%6$s_sbe_position(codec) + %3$d) > codec->buffer_length), false))\n" +
+                "    {\n" +
+                "        errno = E100;\n" +
+                "        return NULL;\n" +
+                "    }\n\n" +
                 "    %4$s length_field_value;\n" +
                 "    memcpy(&length_field_value, codec->buffer + %6$s_sbe_position(codec), sizeof(%4$s));\n" +
                 "    const char *field_ptr = (codec->buffer + %6$s_sbe_position(codec) + %3$d);\n\n" +
@@ -715,6 +721,11 @@ public class CGenerator implements CodeGenerator
             "    const struct %5$s *const codec)\n" +
             "{\n" +
             "%2$s" +
+            "    if (SBE_BOUNDS_CHECK_EXPECT(((%5$s_sbe_position(codec) + %6$d) > codec->buffer_length), false))\n" +
+            "    {\n" +
+            "        errno = E100;\n" +
+            "        return 0;\n" +
+            "    }\n\n" +
             "    %4$s length;\n" +
             "    memcpy(&length, codec->buffer + %5$s_sbe_position(codec), sizeof(%4$s));\n\n" +
             "    return %3$s(length);\n" +
@@ -723,7 +734,8 @@ public class CGenerator implements CodeGenerator
             generateArrayFieldNotPresentCondition(token.version()),
             formatByteOrderEncoding(lengthToken.encoding().byteOrder(), lengthToken.encoding().primitiveType()),
             lengthCType,
-            structName));
+            structName,
+            sizeOfLengthField));
     }
 
     private void generateChoiceSet(final CharSequence[] scope, final List<Token> tokens) throws IOException
