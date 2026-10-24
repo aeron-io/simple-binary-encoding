@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2025 Real Logic Limited.
+# Copyright 2013-2026 Real Logic Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ set(GROUP_WITH_DATA_SCHEMA ${CODEC_SCHEMA_DIR}/group-with-data-schema.xml)
 set(ISSUE889_SCHEMA ${CODEC_SCHEMA_DIR}/issue889.xml)
 set(FLOATING_POINT_INFINITY_SCHEMA ${CODEC_SCHEMA_DIR}/floating-point-infinity-schema.xml)
 set(UINT64_LENGTH_SCHEMA ${CODEC_SCHEMA_DIR}/uint64-length-schema.xml)
+set(WIRE_BOUNDS_SCHEMA ${CODEC_SCHEMA_DIR}/wire-bounds-test-schema.xml)
 
 set(GENERATED_CODECS
     ${C_CODEC_TARGET_DIR}
@@ -45,7 +46,7 @@ set(GENERATED_CODECS
 
 add_custom_command(
     OUTPUT ${GENERATED_CODECS}
-    DEPENDS sbe-jar ${SBE_JAR} ${CODE_GENERATION_SCHEMA} ${CODE_GENERATION_SCHEMA_WITH_VERSION} ${GROUP_WITH_DATA_SCHEMA} ${ISSUE889_SCHEMA} ${FLOATING_POINT_INFINITY_SCHEMA} ${UINT64_LENGTH_SCHEMA}
+    DEPENDS sbe-jar ${SBE_JAR} ${CODE_GENERATION_SCHEMA} ${CODE_GENERATION_SCHEMA_WITH_VERSION} ${GROUP_WITH_DATA_SCHEMA} ${ISSUE889_SCHEMA} ${FLOATING_POINT_INFINITY_SCHEMA} ${UINT64_LENGTH_SCHEMA} ${WIRE_BOUNDS_SCHEMA}
     COMMAND
         ${Java_JAVA_EXECUTABLE} --add-opens java.base/jdk.internal.misc=ALL-UNNAMED
             -Dsbe.output.dir=${C_CODEC_TARGET_DIR}
@@ -58,6 +59,7 @@ add_custom_command(
             ${ISSUE889_SCHEMA}
             ${FLOATING_POINT_INFINITY_SCHEMA}
             ${UINT64_LENGTH_SCHEMA}
+            ${WIRE_BOUNDS_SCHEMA}
 )
 
 add_custom_target(c_codecs DEPENDS ${GENERATED_CODECS})
@@ -69,6 +71,7 @@ sbe_test(GroupWithDataTest c_codecs)
 sbe_test(Issue889Test c_codecs)
 sbe_test(InfinityTest c_codecs)
 sbe_test(Uint64LengthTest c_codecs)
+sbe_test(VarDataLengthPrefixBoundsTest c_codecs)
 
 # Compile a dummy C source to test C compliance of generated headers.
 add_executable(CComplianceTest CComplianceTest.c)
