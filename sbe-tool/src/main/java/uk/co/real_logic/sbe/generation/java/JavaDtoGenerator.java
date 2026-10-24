@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  * Copyright (C) 2017 MarketFactory, Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -808,11 +808,14 @@ public class JavaDtoGenerator implements CodeGenerator
 
                 if (characterEncoding == null)
                 {
-                    decoderValueExtraction.append(blockIndent).append("byte[] ").append(dataVar)
-                        .append(" = new byte[decoder.").append(formattedPropertyName).append("Length()];\n")
-                        .append(blockIndent).append("decoder.get").append(toUpperFirstChar(formattedPropertyName))
-                        .append("(").append(dataVar).append(", 0, decoder.").append(formattedPropertyName)
-                        .append("Length());\n");
+                    decoderValueExtraction.append(blockIndent).append("UnsafeBuffer ")
+                        .append(dataVar).append("View = new UnsafeBuffer();\n")
+                        .append(blockIndent).append("decoder.wrap").append(toUpperFirstChar(formattedPropertyName))
+                        .append("(").append(dataVar).append("View);\n")
+                        .append(blockIndent).append("byte[] ").append(dataVar).append(" = new byte[")
+                        .append(dataVar).append("View.capacity()];\n")
+                        .append(blockIndent).append(dataVar).append("View.getBytes(0, ").append(dataVar)
+                        .append(");\n");
                 }
                 else
                 {
