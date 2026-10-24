@@ -1078,6 +1078,20 @@ public class CppGenerator implements CodeGenerator
             version);
     }
 
+    /*
+     * The length prefix of var data must fit in the buffer before it is read, otherwise the read itself is past the
+     * end of the buffer whatever the length turns out to be.
+     */
+    private static String generateLengthPrefixCheck(final String indent, final int lengthOfLengthField)
+    {
+        return
+            indent + "        if (SBE_BOUNDS_CHECK_EXPECT(((sbePosition() + " + lengthOfLengthField +
+            ") > m_bufferLength), false))\n" +
+            indent + "        {\n" +
+            indent + "            throw std::runtime_error(\"buffer too short for length [E100]\");\n" +
+            indent + "        }\n";
+    }
+
     private void generateVarData(
         final StringBuilder sb,
         final String className,
@@ -1118,6 +1132,7 @@ public class CppGenerator implements CodeGenerator
                 indent + "    {\n" +
                 "%2$s" +
                 "%5$s" +
+                generateLengthPrefixCheck(indent, lengthOfLengthField) +
                 indent + "        %4$s length;\n" +
                 indent + "        std::memcpy(&length, m_buffer + sbePosition(), sizeof(%4$s));\n" +
                 indent + "        return %3$s(length);\n" +
@@ -1140,6 +1155,7 @@ public class CppGenerator implements CodeGenerator
                 "%6$s" +
                 indent + "        std::uint64_t lengthOfLengthField = %3$d;\n" +
                 indent + "        std::uint64_t lengthPosition = sbePosition();\n" +
+                generateLengthPrefixCheck(indent, lengthOfLengthField) +
                 indent + "        %5$s lengthFieldValue;\n" +
                 indent + "        std::memcpy(&lengthFieldValue, m_buffer + lengthPosition, sizeof(%5$s));\n" +
                 indent + "        std::uint64_t dataLength = %4$s(lengthFieldValue);\n" +
@@ -1158,6 +1174,7 @@ public class CppGenerator implements CodeGenerator
                 indent + "    {\n" +
                 "%2$s" +
                 "%6$s" +
+                generateLengthPrefixCheck(indent, lengthOfLengthField) +
                 indent + "        %4$s lengthFieldValue;\n" +
                 indent + "        std::memcpy(&lengthFieldValue, m_buffer + sbePosition(), sizeof(%4$s));\n" +
                 indent + "        const char *fieldPtr = m_buffer + sbePosition() + %3$d;\n" +
