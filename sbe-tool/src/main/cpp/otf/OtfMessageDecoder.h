@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -204,6 +204,67 @@ static void decodeComposite(
     listener.onEndComposite(fieldToken, *tokens, tokenIndex, toIndex);
 }
 
+/*
+ * End of the bytes a field's type occupies at the acting version. Composite members added in a later version do
+ * not count, since a block encoded by an older version ends before them.
+ */
+inline std::uint64_t typeEnd(
+    const std::vector<Token> &tokens, const std::size_t typeIndex, const std::uint64_t baseOffset,
+    std::uint64_t actingVersion)
+{
+    const Token &typeToken = tokens.at(typeIndex);
+    if (typeToken.isConstantEncoding() || typeToken.tokenVersion() > static_cast<std::int32_t>(actingVersion))
+    {
+        return 0;
+    }
+
+    const std::uint64_t offset = baseOffset + static_cast<std::uint64_t>(typeToken.offset());
+    if (Signal::BEGIN_COMPOSITE != typeToken.signal())
+    {
+        return offset + static_cast<std::uint64_t>(typeToken.encodedLength());
+    }
+
+    std::uint64_t end = 0;
+    const std::size_t endIndex = typeIndex + static_cast<std::size_t>(typeToken.componentTokenCount()) - 1;
+    for (std::size_t i = typeIndex + 1; i < endIndex; i += static_cast<std::size_t>(tokens.at(i).componentTokenCount()))
+    {
+        const std::uint64_t memberEnd = typeEnd(tokens, i, offset, actingVersion);
+        end = memberEnd > end ? memberEnd : end;
+    }
+
+    return end;
+}
+
+/*
+ * Extent of the fixed fields present at the acting version, i.e. the smallest block length from which they can be
+ * read. Fields are only appended in later schema versions, so an older block may be shorter than the schema block
+ * but never shorter than this.
+ */
+inline std::uint64_t minBlockLength(
+    const std::vector<Token> &tokens, std::size_t tokenIndex, const std::size_t numTokens, std::uint64_t actingVersion)
+{
+    std::uint64_t minLength = 0;
+
+    while (tokenIndex < numTokens)
+    {
+        const Token &fieldToken = tokens.at(tokenIndex);
+        if (Signal::BEGIN_FIELD != fieldToken.signal())
+        {
+            break;
+        }
+
+        if (fieldToken.tokenVersion() <= static_cast<std::int32_t>(actingVersion) && !fieldToken.isConstantEncoding())
+        {
+            const std::uint64_t fieldEnd = typeEnd(tokens, tokenIndex + 1, 0, actingVersion);
+            minLength = fieldEnd > minLength ? fieldEnd : minLength;
+        }
+
+        tokenIndex += fieldToken.componentTokenCount();
+    }
+
+    return minLength;
+}
+
 template<typename TokenListener>
 static size_t decodeFields(
     const char *buffer,
@@ -361,6 +422,11 @@ std::pair<size_t, size_t> decodeGroups(
 
         size_t beginFieldsIndex = tokenIndex + dimensionsTypeComposite.componentTokenCount() + 1;
 
+        if (numInGroup > 0 && blockLength < minBlockLength(*tokens, beginFieldsIndex, numTokens, actingVersion))
+        {
+            throw std::runtime_error("group blockLength too short for fields");
+        }
+
         listener.onGroupHeader(token, numInGroup);
 
         for (std::uint64_t i = 0; i < numInGroup; i++)
@@ -411,6 +477,12 @@ std::size_t decode(
     }
 
     size_t numTokens = msgTokens->size();
+
+    if (blockLength < minBlockLength(*msgTokens, 1, numTokens, actingVersion))
+    {
+        throw std::runtime_error("message blockLength too short for fields");
+    }
+
     const size_t tokenIndex = decodeFields(buffer, 0, length, actingVersion, msgTokens, 1, numTokens, listener);
 
     size_t bufferIndex = blockLength;
