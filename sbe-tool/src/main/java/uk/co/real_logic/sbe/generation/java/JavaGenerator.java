@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -879,7 +879,7 @@ public class JavaGenerator implements CodeGenerator
                 generateAnnotations(indent + INDENT, groupName, groups, sb, JavaUtil::decoderName);
             }
             generateGroupDecoderClassHeader(sb, groupName, outerClassName, fieldPrecedenceModel, groupToken,
-                tokens, groups, index, indent + INDENT);
+                tokens, fields, groups, index, indent + INDENT);
 
             generateDecoderFields(sb, fieldPrecedenceModel, fields, indent + INDENT);
             generateDecoderGroups(sb, fieldPrecedenceModel, outerClassName, groups, indent + INDENT, true);
@@ -944,6 +944,100 @@ public class JavaGenerator implements CodeGenerator
         }
     }
 
+    // A composite member added in a later version than its field only counts from that version on, since a block
+    // encoded by an older version ends before it.
+    private static void addEndBySinceVersion(
+        final List<Token> tokens,
+        final int typeIndex,
+        final int sinceVersion,
+        final int baseOffset,
+        final TreeMap<Integer, Integer> endBySinceVersion)
+    {
+        final Token typeToken = tokens.get(typeIndex);
+        if (typeToken.isConstantEncoding())
+        {
+            return;
+        }
+
+        final int version = Math.max(sinceVersion, typeToken.version());
+        final int offset = baseOffset + typeToken.offset();
+        if (Signal.BEGIN_COMPOSITE == typeToken.signal())
+        {
+            final int endIndex = typeIndex + typeToken.componentTokenCount() - 1;
+            for (int i = typeIndex + 1; i < endIndex; )
+            {
+                addEndBySinceVersion(tokens, i, version, offset, endBySinceVersion);
+                i += tokens.get(i).componentTokenCount();
+            }
+        }
+        else
+        {
+            endBySinceVersion.merge(version, offset + typeToken.encodedLength(), Math::max);
+        }
+    }
+
+    // Smallest block length that holds every non-constant field present at the acting version, or null when the
+    // group has no such fields.
+    private static String minBlockLengthExpression(final List<Token> fieldTokens, final String actingVersion)
+    {
+        final TreeMap<Integer, Integer> endBySinceVersion = new TreeMap<>();
+        for (int i = 0, size = fieldTokens.size(); i < size; )
+        {
+            final Token fieldToken = fieldTokens.get(i);
+            if (Signal.BEGIN_FIELD != fieldToken.signal())
+            {
+                i++;
+                continue;
+            }
+
+            // Constant fields occupy no bytes on the wire, so they must not raise the minimum block length.
+            if (!fieldToken.isConstantEncoding())
+            {
+                addEndBySinceVersion(fieldTokens, i + 1, fieldToken.version(), 0, endBySinceVersion);
+            }
+
+            i += fieldToken.componentTokenCount();
+        }
+
+        if (endBySinceVersion.isEmpty())
+        {
+            return null;
+        }
+
+        // A field added in a later version must not lower the minimum set by an earlier one.
+        int runningEnd = 0;
+        final TreeMap<Integer, Integer> minByVersion = new TreeMap<>();
+        for (final Map.Entry<Integer, Integer> entry : endBySinceVersion.entrySet())
+        {
+            runningEnd = Math.max(runningEnd, entry.getValue());
+            minByVersion.put(entry.getKey(), runningEnd);
+        }
+
+        final StringBuilder expression = new StringBuilder();
+        String baseValue = "0";
+        int closing = 0;
+        for (final Map.Entry<Integer, Integer> entry : minByVersion.descendingMap().entrySet())
+        {
+            if (entry.getKey() <= 0)
+            {
+                baseValue = Integer.toString(entry.getValue());
+                break;
+            }
+
+            expression.append('(').append(actingVersion).append(" >= ").append(entry.getKey())
+                .append(" ? ").append(entry.getValue()).append(" : ");
+            closing++;
+        }
+
+        expression.append(baseValue);
+        for (int i = 0; i < closing; i++)
+        {
+            expression.append(')');
+        }
+
+        return expression.toString();
+    }
+
     private void generateGroupDecoderClassHeader(
         final StringBuilder sb,
         final String groupName,
@@ -951,6 +1045,7 @@ public class JavaGenerator implements CodeGenerator
         final FieldPrecedenceModel fieldPrecedenceModel,
         final Token groupToken,
         final List<Token> tokens,
+        final List<Token> fieldTokens,
         final List<Token> subGroupTokens,
         final int index,
         final String indent)
@@ -993,8 +1088,21 @@ public class JavaGenerator implements CodeGenerator
             .append(indent).append("        final int limit = parentMessage.limit();\n")
             .append(indent).append("        parentMessage.limit(limit + HEADER_SIZE);\n")
             .append(indent).append("        blockLength = ").append(blockLenCast).append(blockLengthGet).append(";\n")
-            .append(indent).append("        count = ").append(numInGroupCast).append(numInGroupGet).append(";\n")
-            .append(indent).append("    }\n\n");
+            .append(indent).append("        count = ").append(numInGroupCast).append(numInGroupGet).append(";\n");
+
+        final String minBlockLength = minBlockLengthExpression(fieldTokens, "parentMessage.actingVersion");
+        if (null != minBlockLength)
+        {
+            sb.append(indent).append("        if (count > 0 && blockLength < ").append(minBlockLength).append(")\n")
+                .append(indent).append("        {\n")
+                .append(indent).append("            throw new IndexOutOfBoundsException(\"group blockLength=\" + ")
+                .append("blockLength +\n")
+                .append(indent).append("                \" is less than the fields at actingVersion=\" + ")
+                .append("parentMessage.actingVersion);\n")
+                .append(indent).append("        }\n");
+        }
+
+        sb.append(indent).append("    }\n\n");
 
         generateAccessOrderListenerMethodForNextGroupElement(sb, fieldPrecedenceModel, indent + "    ", groupToken);
 
