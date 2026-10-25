@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   package="uint64.var.data.length"
+                   id="921"
+                   version="0"
+                   semanticVersion="1"
+                   description="Decoding of a var data field with a uint64 length"
+                   byteOrder="littleEndian">
+    <types>
+        <composite name="messageHeader" description="Message identifiers and length of message root">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+        </composite>
+        <composite name="varString64Encoding">
+            <type name="length" primitiveType="uint64"/>
+            <type name="varData" primitiveType="uint8" length="0" characterEncoding="UTF-8"/>
+        </composite>
+    </types>
+    <sbe:message name="WideLength" id="1">
+        <field name="a" id="1" type="uint32"/>
+        <data name="payload" id="20" type="varString64Encoding"/>
+    </sbe:message>
+</sbe:messageSchema>
