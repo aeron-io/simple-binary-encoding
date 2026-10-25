@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,19 @@ import java.nio.file.Path;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.co.real_logic.sbe.xml.XmlSchemaParser.parse;
 
 class RustGeneratorTest
 {
     @TempDir
     Path tempDir;
+
+    @Test
+    void shouldEscapeConstantForRustByteString()
+    {
+        assertEquals("a\\\"\\\\\\x01\\x0a", RustGenerator.escapeByteStringLiteral("a\"\\\u0001\n"));
+    }
 
     @Test
     void shouldGenerateFloatingPointInfinityLiteralsForConstantsAndNulls() throws Exception

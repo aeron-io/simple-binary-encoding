@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  * Copyright (C) 2017 MarketFactory, Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -161,6 +161,11 @@ public class CSharpUtil
         return sb.toString();
     }
 
+    private static String escapeXmlDoc(final String description)
+    {
+        return Generators.toSingleLine(description).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    }
+
     static String generateDocumentation(final String indent, final Token token)
     {
         final String description = token.description();
@@ -171,7 +176,7 @@ public class CSharpUtil
 
         return
             indent + "/// <summary>\n" +
-            indent + "/// " + description + "\n" +
+            indent + "/// " + escapeXmlDoc(description) + "\n" +
             indent + "/// </summary>\n";
     }
 

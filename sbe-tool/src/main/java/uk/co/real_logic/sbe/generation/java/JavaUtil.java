@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -516,28 +516,24 @@ public class JavaUtil
 
     private static void escapeJavadoc(final Appendable out, final String doc) throws IOException
     {
-        for (int i = 0, length = doc.length(); i < length; i++)
-        {
-            final char c = doc.charAt(i);
-            switch (c)
-            {
-                case '<':
-                    out.append("&lt;");
-                    break;
-
-                case '>':
-                    out.append("&gt;");
-                    break;
-
-                default:
-                    out.append(c);
-                    break;
-            }
-        }
+        out.append(escapeJavadoc(doc));
     }
 
     private static void escapeJavadoc(final StringBuilder sb, final String doc)
     {
+        sb.append(escapeJavadoc(doc));
+    }
+
+    /**
+     * Escape schema supplied text so it can be embedded in a Javadoc comment without being able to terminate the
+     * comment or introduce unicode escapes.
+     *
+     * @param doc text to be escaped.
+     * @return the escaped text.
+     */
+    public static String escapeJavadoc(final String doc)
+    {
+        final StringBuilder sb = new StringBuilder(doc.length() + 8);
         for (int i = 0, length = doc.length(); i < length; i++)
         {
             final char c = doc.charAt(i);
@@ -555,10 +551,73 @@ public class JavaUtil
                     sb.append("&amp;");
                     break;
 
+                case '\\':
+                    sb.append("&#92;");
+                    break;
+
+                case '/':
+                    if (i > 0 && '*' == doc.charAt(i - 1))
+                    {
+                        sb.append("&#47;");
+                    }
+                    else
+                    {
+                        sb.append(c);
+                    }
+                    break;
+
                 default:
                     sb.append(c);
                     break;
             }
         }
+
+        return sb.toString();
+    }
+
+    /**
+     * Escape schema supplied text so it can be embedded in a Java string literal.
+     *
+     * @param value text to be escaped.
+     * @return the escaped text.
+     */
+    public static String escapeJavaStringLiteral(final String value)
+    {
+        final StringBuilder sb = new StringBuilder(value.length() + 8);
+        for (int i = 0, length = value.length(); i < length; i++)
+        {
+            final char c = value.charAt(i);
+            switch (c)
+            {
+                case '"':
+                    sb.append("\\\"");
+                    break;
+
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+
+                case '\n':
+                    sb.append("\\n");
+                    break;
+
+                case '\r':
+                    sb.append("\\r");
+                    break;
+
+                default:
+                    if (c < ' ' || (c >= 0x7f && c <= 0x9f))
+                    {
+                        sb.append(String.format("\\u%04x", (int)c));
+                    }
+                    else
+                    {
+                        sb.append(c);
+                    }
+                    break;
+            }
+        }
+
+        return sb.toString();
     }
 }
