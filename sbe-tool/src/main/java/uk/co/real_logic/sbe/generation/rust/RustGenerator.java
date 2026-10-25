@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,7 +138,8 @@ public class RustGenerator implements CodeGenerator
             indent(writer, 0, "name = \"%s\"\n", namespace);
             indent(writer, 0, "version = \"%s\"\n", crateVersion);
             indent(writer, 0, "authors = [\"sbetool\"]\n");
-            indent(writer, 0, "description = \"%s\"\n", ir.description());
+            indent(writer, 0, "description = \"%s\"\n",
+                Generators.escapeStringLiteral(String.valueOf(ir.description()), false));
             indent(writer, 0, "edition = \"2021\"\n\n");
             indent(writer, 0, "[lib]\n");
             indent(writer, 0, "name = \"%s\"\n", namespace);
@@ -419,7 +420,7 @@ public class RustGenerator implements CodeGenerator
             if (!Strings.isEmpty(description))
             {
                 indent(sb, level, "/// GROUP ENCODER (id=%s, description='%s')\n",
-                    groupToken.id(), description);
+                    groupToken.id(), Generators.toSingleLine(description));
             }
             else
             {
@@ -514,7 +515,7 @@ public class RustGenerator implements CodeGenerator
         {
             return;
         }
-        indent(writer, level, "/// %s\n", description);
+        indent(writer, level, "/// %s\n", Generators.toSingleLine(description));
     }
 
     private static void appendFieldDocDescription(
@@ -526,7 +527,7 @@ public class RustGenerator implements CodeGenerator
         {
             return;
         }
-        indent(writer, level, "/// - description: %s\n", description);
+        indent(writer, level, "/// - description: %s\n", Generators.toSingleLine(description));
     }
 
     private static void generateRustDoc(
@@ -1076,12 +1077,12 @@ public class RustGenerator implements CodeGenerator
             {
                 indent(sb, level, "pub fn %s(&self) -> &'static [u8] {\n",
                     formatFunctionName(name));
-                indent(sb, level + 1, "b\"%s\"\n", rawConstValue);
+                indent(sb, level + 1, "b\"%s\"\n", escapeByteStringLiteral(rawConstValue));
             }
             else if (JavaUtil.isUtf8Encoding(characterEncoding))
             {
                 indent(sb, level, "pub fn %s(&self) -> &'static str {\n", formatFunctionName(name));
-                indent(sb, level + 1, "\"%s\"\n", rawConstValue);
+                indent(sb, level + 1, "\"%s\"\n", Generators.escapeStringLiteral(rawConstValue, true));
             }
             else
             {
@@ -1282,7 +1283,7 @@ public class RustGenerator implements CodeGenerator
             if (!Strings.isEmpty(description))
             {
                 indent(sb, level, "/// GROUP DECODER (id=%s, description='%s')\n",
-                    groupToken.id(), description);
+                    groupToken.id(), Generators.toSingleLine(description));
             }
             else
             {
@@ -1771,7 +1772,7 @@ public class RustGenerator implements CodeGenerator
             final String compositeDescription = token.description();
             if (!Strings.isEmpty(compositeDescription))
             {
-                indent(out, 0, "//! %s\n\n", compositeDescription);
+                indent(out, 0, "//! %s\n\n", Generators.toSingleLine(compositeDescription));
             }
             indent(out, 0, "use crate::*;\n\n");
 
@@ -2042,5 +2043,28 @@ public class RustGenerator implements CodeGenerator
         indent(writer, level, "pub fn %s(&self) -> %s {\n", formatFunctionName(name), rustTypeName);
         indent(writer, level + 1, rustExpression + "\n");
         indent(writer, level, "}\n\n");
+    }
+
+    static String escapeByteStringLiteral(final String value)
+    {
+        final StringBuilder sb = new StringBuilder(value.length() + 8);
+        for (int i = 0, length = value.length(); i < length; i++)
+        {
+            final char c = value.charAt(i);
+            if ('"' == c || '\\' == c)
+            {
+                sb.append('\\').append(c);
+            }
+            else if (c < ' ' || (c >= 0x7f && c <= 0xff))
+            {
+                sb.append(String.format("\\x%02x", (int)c));
+            }
+            else
+            {
+                sb.append(c);
+            }
+        }
+
+        return sb.toString();
     }
 }

@@ -365,7 +365,7 @@ public class GolangGenerator implements CodeGenerator
                     sb.append(String.format(
                         "\tcopy(%1$s[:], \"%2$s\")\n",
                         varName,
-                        token.encoding().constValue()));
+                        Generators.escapeStringLiteral(token.encoding().constValue().toString(), false)));
                 }
                 else
                 {
@@ -585,7 +585,7 @@ public class GolangGenerator implements CodeGenerator
                     sb.append(String.format(
                         "\tcopy(%1$s[:], \"%2$s\")\n",
                         varName,
-                        encoding.constValue()));
+                        Generators.escapeStringLiteral(encoding.constValue().toString(), false)));
                 }
                 else
                 {
