@@ -3,6 +3,7 @@
 == 1.42.0 (unreleased)
 
 * **[Java]** Upgrade to `Gradle` 9.8.2.
+* **[Java]** Upgrade to `Versions` 0.67.0.
 
 == 1.41.0 (2026-10-19)
 
