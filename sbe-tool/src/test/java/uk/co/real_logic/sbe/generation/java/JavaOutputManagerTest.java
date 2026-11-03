@@ -16,6 +16,7 @@
 package uk.co.real_logic.sbe.generation.java;
 
 import org.agrona.SystemUtil;
+import org.agrona.generation.PackageOutputManager;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -25,6 +26,8 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JavaOutputManagerTest
@@ -61,6 +64,26 @@ class JavaOutputManagerTest
         assertFileExists(packageName, exampleClassName2);
         assertFileExists(typePackageName, typeClassName);
         assertFileExists(typePackageName2, typeClassName2);
+    }
+
+    @Test
+    void shouldResetActivePackageManagerToInitialAfterOutputClose() throws IOException
+    {
+        final String tempDirName = SystemUtil.tmpDirName();
+        final JavaOutputManager cut = new JavaOutputManager(tempDirName, "uk.co.real_logic.test");
+        final String exampleClassName = "ExampleClassName";
+
+        final PackageOutputManager initialPackageOutputManager = cut.getInitialPackageOutputManager();
+        final PackageOutputManager actingPackageOutputManager = cut.getActingPackageOutputManager();
+        assertEquals(initialPackageOutputManager, actingPackageOutputManager);
+
+        cut.setPackageName("uk.co.real_logic.other");
+        assertNotEquals(initialPackageOutputManager, cut.getActingPackageOutputManager());
+
+        final Writer out = cut.createOutput(exampleClassName);
+        out.close();
+
+        assertEquals(initialPackageOutputManager, cut.getActingPackageOutputManager());
     }
 
     private void assertFileExists(final String packageName, final String exampleClassName) throws IOException
