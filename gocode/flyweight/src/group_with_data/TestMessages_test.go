@@ -3,6 +3,7 @@ package group_with_data
 import (
 	_ "fmt"
 	"testing"
+	"unsafe"
 )
 
 func TestEncodeDecodeTestMessage1(t *testing.T) {
@@ -196,5 +197,56 @@ func TestEncodeDecodeTestMessage4(t *testing.T) {
 			t.Logf("VarDataField2 failed at index %d, expected %s, got %s", i, varDataField2, entry.VarDataField2())
 			t.Fail()
 		}
+	}
+}
+
+func TestVarDataBytes(t *testing.T) {
+	var data [256]byte
+	var in TestMessage4
+	in.WrapForEncode(data[:], 0, uint64(len(data)))
+
+	varDataField1 := "abcdef"
+	varDataField2 := "ghij"
+	in.SetTag1(9876)
+	entries := in.EntriesCount(3)
+	for i := 0; i < 3; i++ {
+		entries.Next().PutVarDataField1(varDataField1).PutVarDataField2(varDataField2)
+	}
+
+	var out TestMessage4
+	decode := func() *TestMessage4Entries {
+		out.WrapForDecode(data[:], 0, uint64(in.SbeBlockLength()), uint64(in.SbeSchemaVersion()), uint64(len(data)))
+		return out.Entries()
+	}
+
+	outEntries := decode()
+	for i := 0; i < 3; i++ {
+		entry := outEntries.Next()
+		field1 := entry.VarDataField1Bytes()
+		if string(field1) != varDataField1 {
+			t.Errorf("VarDataField1Bytes at index %d: expected %s, got %s", i, varDataField1, field1)
+		}
+		if cap(field1) != len(field1) {
+			t.Errorf("VarDataField1Bytes at index %d: capacity %d, want %d", i, cap(field1), len(field1))
+		}
+		start := uintptr(unsafe.Pointer(&data[0]))
+		if p := uintptr(unsafe.Pointer(&field1[0])); p < start || p >= start+uintptr(len(data)) {
+			t.Errorf("VarDataField1Bytes at index %d: not a view of the message buffer", i)
+		}
+		if field2 := entry.VarDataField2Bytes(); string(field2) != varDataField2 {
+			t.Errorf("VarDataField2Bytes at index %d: expected %s, got %s", i, varDataField2, field2)
+		}
+	}
+
+	allocs := testing.AllocsPerRun(100, func() {
+		e := decode()
+		for i := 0; i < 3; i++ {
+			entry := e.Next()
+			_ = entry.VarDataField1Bytes()
+			_ = entry.VarDataField2Bytes()
+		}
+	})
+	if allocs != 0 {
+		t.Errorf("reading var data as bytes allocated %v times per message", allocs)
 	}
 }

@@ -20,11 +20,13 @@ import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.generation.CompilerUtil;
 import org.agrona.generation.StringWriterOutputManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import uk.co.real_logic.sbe.SbeTool;
 import uk.co.real_logic.sbe.Tests;
 import uk.co.real_logic.sbe.generation.common.PrecedenceChecks;
 import uk.co.real_logic.sbe.ir.Ir;
@@ -62,9 +64,15 @@ class JavaGeneratorTest
 
     private Ir ir;
 
+    private String previousKeywordAppendToken;
+
     @BeforeEach
     void setUp() throws Exception
     {
+        // Most of the tests use a schema with reserved Java keywords
+        previousKeywordAppendToken = System.getProperty(SbeTool.KEYWORD_APPEND_TOKEN);
+        System.setProperty(SbeTool.KEYWORD_APPEND_TOKEN, "_");
+
         try (InputStream in = Tests.getLocalResource("code-generation-schema.xml"))
         {
             final ParserOptions options = ParserOptions.builder().stopOnError(true).build();
@@ -74,6 +82,19 @@ class JavaGeneratorTest
 
             outputManager.clear();
             outputManager.setPackageName(ir.applicableNamespace());
+        }
+    }
+
+    @AfterEach
+    void tearDown()
+    {
+        if (previousKeywordAppendToken != null)
+        {
+            System.setProperty(SbeTool.KEYWORD_APPEND_TOKEN, previousKeywordAppendToken);
+        }
+        else
+        {
+            System.clearProperty(SbeTool.KEYWORD_APPEND_TOKEN);
         }
     }
 
@@ -283,6 +304,39 @@ class JavaGeneratorTest
                 ir.applicableNamespace() + ".InfinityValuesDecoder", outputManager.getSources()));
             assertNotNull(CompilerUtil.compileInMemory(
                 ir.applicableNamespace() + ".InfinityValuesDto", outputManager.getSources()));
+        }
+    }
+
+    @Test
+    void shouldNotDecodeSetChoiceAddedAfterActingVersion() throws Exception
+    {
+        try (InputStream in = Tests.getLocalResource("issue1035.xml"))
+        {
+            final ParserOptions options = ParserOptions.builder().stopOnError(true).build();
+            final MessageSchema schema = parse(in, options);
+            ir = new IrGenerator().generate(schema);
+
+            outputManager.clear();
+            outputManager.setPackageName(ir.applicableNamespace());
+
+            generator().generate();
+
+            final Class<?> decoderClass = compile(ir.applicableNamespace() + ".Issue1035Decoder");
+            final Object decoder = decoderClass.getConstructor().newInstance();
+            final Method wrapMethod = decoderClass.getMethod(
+                "wrap", READ_ONLY_BUFFER_CLASS, int.class, int.class, int.class);
+            final UnsafeBuffer buffer = new UnsafeBuffer(new byte[1]);
+            buffer.putByte(0, (byte)0b11);
+
+            wrapMethod.invoke(decoder, buffer, 0, 1, 0);
+            final Object flagsVersion0 = get(decoder, "flags");
+            assertEquals(true, get(flagsVersion0, "oldChoice"));
+            assertEquals(false, get(flagsVersion0, "newChoice"));
+
+            wrapMethod.invoke(decoder, buffer, 0, 1, 1);
+            final Object flagsVersion1 = get(decoder, "flags");
+            assertEquals(true, get(flagsVersion1, "oldChoice"));
+            assertEquals(true, get(flagsVersion1, "newChoice"));
         }
     }
 

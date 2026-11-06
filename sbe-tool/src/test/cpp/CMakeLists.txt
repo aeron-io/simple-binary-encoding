@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2025 Real Logic Limited.
+# Copyright 2013-2026 Real Logic Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,10 +40,12 @@ set(GROUP_WITH_DATA_SCHEMA ${CODEC_SCHEMA_DIR}/group-with-data-schema.xml)
 set(DTO_SCHEMA ${CODEC_SCHEMA_DIR}/dto-test-schema.xml)
 set(ISSUE835_SCHEMA ${CODEC_SCHEMA_DIR}/issue835.xml)
 set(ISSUE889_SCHEMA ${CODEC_SCHEMA_DIR}/issue889.xml)
+set(JSON_CHAR_SCHEMA ${CODEC_SCHEMA_DIR}/json-char-schema.xml)
 set(FLOATING_POINT_INFINITY_SCHEMA ${CODEC_SCHEMA_DIR}/floating-point-infinity-schema.xml)
 set(ACCESS_ORDER_SCHEMA ${CODEC_SCHEMA_DIR}/field-order-check-schema.xml)
 set(VERSIONED_MESSAGE_V1_SCHEMA ${CODEC_SCHEMA_DIR}/versioned-message-v1.xml)
 set(VERSIONED_MESSAGE_V2_SCHEMA ${CODEC_SCHEMA_DIR}/versioned-message-v2.xml)
+set(UINT64_LENGTH_SCHEMA ${CODEC_SCHEMA_DIR}/uint64-length-schema.xml)
 
 set(GENERATED_CODECS
     ${CXX_CODEC_TARGET_DIR}
@@ -59,10 +61,12 @@ add_custom_command(
         ${DTO_SCHEMA}
         ${ISSUE835_SCHEMA}
         ${ISSUE889_SCHEMA}
+        ${JSON_CHAR_SCHEMA}
         ${FLOATING_POINT_INFINITY_SCHEMA}
         ${ACCESS_ORDER_SCHEMA}
         ${VERSIONED_MESSAGE_V1_SCHEMA}
         ${VERSIONED_MESSAGE_V2_SCHEMA}
+        ${UINT64_LENGTH_SCHEMA}
     sbe-jar ${SBE_JAR}
     COMMAND
         ${Java_JAVA_EXECUTABLE} --add-opens java.base/jdk.internal.misc=ALL-UNNAMED
@@ -83,10 +87,12 @@ add_custom_command(
             ${DTO_SCHEMA}
             ${ISSUE835_SCHEMA}
             ${ISSUE889_SCHEMA}
+            ${JSON_CHAR_SCHEMA}
             ${FLOATING_POINT_INFINITY_SCHEMA}
             ${ACCESS_ORDER_SCHEMA}
             ${VERSIONED_MESSAGE_V1_SCHEMA}
             ${VERSIONED_MESSAGE_V2_SCHEMA}
+            ${UINT64_LENGTH_SCHEMA}
 )
 
 add_custom_target(codecs DEPENDS ${GENERATED_CODECS})
@@ -102,10 +108,54 @@ sbe_test(Rc3OtfFullIrTest codecs)
 sbe_test(CompositeElementsTest codecs)
 sbe_test(Issue835Test codecs)
 sbe_test(Issue889Test codecs)
+sbe_test(JsonCharTest codecs)
 sbe_test(InfinityTest codecs)
 sbe_test(FieldAccessOrderCheckTest codecs)
 target_compile_definitions(FieldAccessOrderCheckTest PRIVATE SBE_ENABLE_PRECEDENCE_CHECKS_IN_TESTS)
 sbe_test(VersionedMessageTest codecs)
+sbe_test(Uint64LengthTest codecs)
+
+# OtfMessageEncoderTest lives in the otf/ subdirectory and provides its own main() that takes the
+# IR file path as argv[1]; it is handed the generated code-generation-schema IR.
+add_executable(OtfMessageEncoderTest otf/OtfMessageEncoderTest.cpp)
+add_dependencies(OtfMessageEncoderTest gmock codecs)
+target_include_directories(OtfMessageEncoderTest PRIVATE ${CXX_CODEC_TARGET_DIR})
+target_compile_options(OtfMessageEncoderTest PRIVATE $<$<CXX_COMPILER_ID:AppleClang>:-Werror>)
+target_compile_options(OtfMessageEncoderTest PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Werror>)
+target_compile_options(OtfMessageEncoderTest PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Werror>)
+target_link_libraries(OtfMessageEncoderTest sbe gmock_main ${CMAKE_THREAD_LIBS_INIT})
+add_test(
+    NAME OtfMessageEncoderTest
+    COMMAND OtfMessageEncoderTest ${CXX_CODEC_TARGET_DIR}/code-generation-schema.sbeir
+    WORKING_DIRECTORY ${CXX_CODEC_TARGET_DIR})
+# ---------------------------------------------------------------------------------------------------
+# sbe.cpp.generate.enum.parse: compile-and-run test for the generated fromString()/operator>>.
+# Regenerates the code-generation schema into its own directory with the option enabled.
+# ---------------------------------------------------------------------------------------------------
+set(ENUM_PARSE_DIR ${CODEC_TARGET_DIR}/cpp_enum_parse)
+add_custom_command(
+    OUTPUT ${ENUM_PARSE_DIR}
+    DEPENDS ${CODE_GENERATION_SCHEMA} sbe-jar ${SBE_JAR}
+    COMMAND
+        ${Java_JAVA_EXECUTABLE} --add-opens java.base/jdk.internal.misc=ALL-UNNAMED
+            -Dsbe.output.dir=${ENUM_PARSE_DIR}
+            -Dsbe.target.language=cpp
+            -Dsbe.keyword.append.token=X
+            -Dsbe.cpp.generate.enum.parse=true
+            -jar ${SBE_JAR}
+            ${CODE_GENERATION_SCHEMA}
+)
+add_custom_target(codecs_enum_parse DEPENDS ${ENUM_PARSE_DIR})
+
+add_executable(CppEnumParseTest CppEnumParseTest.cpp)
+add_dependencies(CppEnumParseTest gmock codecs_enum_parse)
+target_compile_features(CppEnumParseTest PRIVATE cxx_std_17)
+target_include_directories(CppEnumParseTest PRIVATE ${ENUM_PARSE_DIR})
+target_compile_options(CppEnumParseTest PRIVATE $<$<CXX_COMPILER_ID:AppleClang>:-Werror>)
+target_compile_options(CppEnumParseTest PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Werror>)
+target_compile_options(CppEnumParseTest PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Werror>)
+target_link_libraries(CppEnumParseTest gmock_main ${CMAKE_THREAD_LIBS_INIT})
+add_test(NAME CppEnumParseTest COMMAND CppEnumParseTest)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     # Check if the GCC version supports C++17

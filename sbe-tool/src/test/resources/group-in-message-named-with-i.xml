@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   package="group_in_message_named_with_i"
+                   id="1"
+                   version="0"
+                   byteOrder="littleEndian">
+    <types>
+        <composite name="messageHeader">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+        </composite>
+        <composite name="groupSizeEncoding">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="numInGroup" primitiveType="uint16"/>
+        </composite>
+    </types>
+    <sbe:message name="Item" id="1">
+        <group name="parts" id="1">
+            <field name="value" id="2" type="uint8"/>
+        </group>
+    </sbe:message>
+</sbe:messageSchema>

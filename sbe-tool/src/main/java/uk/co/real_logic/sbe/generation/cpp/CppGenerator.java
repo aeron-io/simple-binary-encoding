@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,8 @@ public class CppGenerator implements CodeGenerator
     private final String precedenceChecksFlagName;
     private final boolean shouldSupportTypesPackageNames;
     private final Map<String, String> namespaceByType = new HashMap<>();
+    // Opt-in: generate enum string parsing (fromString + operator>>), the inverse of c_str/operator<<.
+    private final boolean shouldGenerateEnumParse = Boolean.getBoolean("sbe.cpp.generate.enum.parse");
 
     /**
      * Create a new Cpp language {@link CodeGenerator}.
@@ -804,7 +806,7 @@ public class CppGenerator implements CodeGenerator
             indent + "#pragma GCC diagnostic push\n" +
             indent + "#pragma GCC diagnostic ignored \"-Wtype-limits\"\n" +
             indent + "#endif\n" +
-            indent + "        if (%5$scount > %6$d)\n" +
+            indent + "        if (%5$scount > %6$s)\n" +
             indent + "        {\n" +
             indent + "            throw std::runtime_error(\"count outside of allowed range [E110]\");\n" +
             indent + "        }\n" +
@@ -830,7 +832,7 @@ public class CppGenerator implements CodeGenerator
             cppTypeNumInGroup,
             dimensionHeaderLength,
             minCheck,
-            numInGroupToken.encoding().applicableMaxValue().longValue(),
+            generateMaxValueLiteral(numInGroupToken.encoding(), ""),
             dimensionsClassName,
             codecStateParameter,
             codecStateAssignment);
@@ -1270,7 +1272,7 @@ public class CppGenerator implements CodeGenerator
             new Formatter(sb).format("\n" +
                 indent + "    %1$s &put%2$s(const std::string &str)\n" +
                 indent + "    {\n" +
-                indent + "        if (str.length() > %4$d)\n" +
+                indent + "        if (str.length() > %4$s)\n" +
                 indent + "        {\n" +
                 indent + "            throw std::runtime_error(\"std::string too long for length type [E109]\");\n" +
                 indent + "        }\n" +
@@ -1279,13 +1281,13 @@ public class CppGenerator implements CodeGenerator
                 className,
                 propertyName,
                 lengthCppType,
-                lengthToken.encoding().applicableMaxValue().longValue());
+                generateMaxValueLiteral(lengthToken.encoding(), ""));
 
             new Formatter(sb).format("\n" +
                 indent + "    #ifdef SBE_USE_STRING_VIEW\n" +
                 indent + "    %1$s &put%2$s(const std::string_view str)\n" +
                 indent + "    {\n" +
-                indent + "        if (str.length() > %4$d)\n" +
+                indent + "        if (str.length() > %4$s)\n" +
                 indent + "        {\n" +
                 indent + "            throw std::runtime_error(\"std::string too long for length type [E109]\");\n" +
                 indent + "        }\n" +
@@ -1295,7 +1297,7 @@ public class CppGenerator implements CodeGenerator
                 className,
                 propertyName,
                 lengthCppType,
-                lengthToken.encoding().applicableMaxValue().longValue());
+                generateMaxValueLiteral(lengthToken.encoding(), ""));
 
             i += token.componentTokenCount();
         }
@@ -1421,6 +1423,11 @@ public class CppGenerator implements CodeGenerator
             out.append(generateEnumLookupMethod(tokens.subList(1, tokens.size() - 1), enumToken));
 
             out.append(generateEnumDisplay(tokens.subList(1, tokens.size() - 1), enumToken));
+
+            if (shouldGenerateEnumParse)
+            {
+                out.append(generateEnumParse(tokens.subList(1, tokens.size() - 1), enumToken));
+            }
 
             out.append("};\n\n");
             out.append(CppUtil.closingBraces(namespaces.length)).append("\n#endif\n");
@@ -1864,9 +1871,12 @@ public class CppGenerator implements CodeGenerator
         return sb;
     }
 
-    private static CharSequence generateEnumFileHeader(final CharSequence[] namespaces, final String className)
+    private CharSequence generateEnumFileHeader(final CharSequence[] namespaces, final String className)
     {
         final StringBuilder sb = new StringBuilder();
+
+        // fromString() pulls in <unordered_map>, but only while it is emitted inline.
+        final String fromStringInclude = shouldGenerateEnumParse ? "#include <unordered_map>\n" : "";
 
         sb.append("/* Generated SBE (Simple Binary Encoding) message codec */\n");
 
@@ -1885,6 +1895,7 @@ public class CppGenerator implements CodeGenerator
             "#include <stdexcept>\n" +
             "#include <sstream>\n" +
             "#include <string>\n" +
+            "%3$s" +
             "\n" +
 
             "#define SBE_NULLVALUE_INT8 (std::numeric_limits<std::int8_t>::min)()\n" +
@@ -1896,7 +1907,8 @@ public class CppGenerator implements CodeGenerator
             "#define SBE_NULLVALUE_UINT32 (std::numeric_limits<std::uint32_t>::max)()\n" +
             "#define SBE_NULLVALUE_UINT64 (std::numeric_limits<std::uint64_t>::max)()\n",
             String.join("_", namespaces).toUpperCase(),
-            className.toUpperCase()));
+            className.toUpperCase(),
+            fromStringInclude));
 
         sb.append("\nnamespace ");
         sb.append(String.join(" {\nnamespace ", namespaces));
@@ -2577,7 +2589,7 @@ public class CppGenerator implements CodeGenerator
             indent + "                case '\\r': oss << \"\\\\r\"; break;\n" +
             indent + "                case '\\t': oss << \"\\\\t\"; break;\n\n" +
             indent + "                default:\n" +
-            indent + "                    if ('\\x00' <= c && c <= '\\x1f')\n" +
+            indent + "                    if (static_cast<unsigned char>(c) <= 0x1f)\n" +
             indent + "                    {\n" +
             indent + "                        oss << \"\\\\u\"" + " << std::hex << std::setw(4)\n" +
             indent + "                            << std::setfill('0') << (int)(c);\n" +
@@ -3983,9 +3995,15 @@ public class CppGenerator implements CodeGenerator
                     if (typeToken.encoding().primitiveType() == PrimitiveType.CHAR)
                     {
                         sb.append(
-                            indent + "if (std::isprint(" + fieldName + "()))\n" +
+                            indent + "if (std::isprint(static_cast<unsigned char>(" + fieldName + "())))\n" +
                             indent + "{\n" +
-                            indent + "    builder << '\"' << (char)" + fieldName + "() << '\"';\n" +
+                            indent + "    const char c = " + fieldName + "();\n" +
+                            indent + "    builder << '\"';\n" +
+                            indent + "    if ('\"' == c || '\\\\' == c)\n" +
+                            indent + "    {\n" +
+                            indent + "        builder << '\\\\';\n" +
+                            indent + "    }\n" +
+                            indent + "    builder << c << '\"';\n" +
                             indent + "}\n" +
                             indent + "else\n" +
                             indent + "{\n" +
@@ -4130,6 +4148,80 @@ public class CppGenerator implements CodeGenerator
             enumName);
 
         return sb;
+    }
+
+    private CharSequence generateEnumParse(final List<Token> tokens, final Token encodingToken)
+    {
+        final String enumName = formatClassName(encodingToken.applicableTypeName());
+        final StringBuilder sb = new StringBuilder();
+
+        new Formatter(sb).format("\n" +
+            "    static %1$s::Value fromString(const char *str)\n" +
+            "    {\n",
+            enumName);
+
+        appendEnumFromStringBody(sb, tokens, enumName, INDENT + INDENT);
+        sb.append("    }\n\n");
+
+        new Formatter(sb).format(
+            "    template<typename CharT, typename Traits>\n" +
+            "    friend std::basic_istream<CharT, Traits> & operator >> (\n" +
+            "        std::basic_istream<CharT, Traits> &is, %1$s::Value &m)\n" +
+            "    {\n" +
+            "        std::string str;\n" +
+            "        is >> str;\n" +
+            "        m = %1$s::fromString(str.c_str());\n" +
+            "        return is;\n" +
+            "    }\n",
+            enumName);
+
+        return sb;
+    }
+
+    // Body of the enum fromString() reverse lookup, emitted at the given indent.
+    private void appendEnumFromStringBody(
+        final StringBuilder sb, final List<Token> tokens, final String enumName, final String indent)
+    {
+        new Formatter(sb).format(
+            indent + "static const std::unordered_map<std::string, %1$s::Value> stringToEnumMap = []()\n" +
+            indent + "{\n" +
+            indent + "    std::unordered_map<std::string, %1$s::Value> map;\n",
+            enumName);
+
+        for (final Token token : tokens)
+        {
+            new Formatter(sb).format(
+                indent + "    map[\"%1$s\"] = %1$s;\n",
+                formatForCppKeyword(token.name()));
+        }
+
+        sb.append(indent).append("    map[\"NULL_VALUE\"] = NULL_VALUE;\n");
+
+        if (shouldDecodeUnknownEnumValues)
+        {
+            sb.append(indent).append("    map[\"SBE_UNKNOWN\"] = SBE_UNKNOWN;\n");
+        }
+
+        sb.append(indent).append("    return map;\n");
+        sb.append(indent).append("}();\n\n");
+
+        sb.append(indent).append("auto it = stringToEnumMap.find(str);\n");
+        sb.append(indent).append("if (it != stringToEnumMap.end())\n");
+        sb.append(indent).append("{\n");
+        sb.append(indent).append("    return it->second;\n");
+        sb.append(indent).append("}\n\n");
+
+        if (shouldDecodeUnknownEnumValues)
+        {
+            sb.append(indent).append("return SBE_UNKNOWN;\n");
+        }
+        else
+        {
+            new Formatter(sb).format(
+                indent + "throw std::runtime_error(\"unknown enum value: \" + std::string(str) +\n" +
+                indent + "    \" for enum %1$s [E103]\");\n",
+                enumName);
+        }
     }
 
     private Object[] generateMessageLengthArgs(
@@ -4287,13 +4379,12 @@ public class CppGenerator implements CodeGenerator
 
             final Token numInGroupToken = Generators.findFirst("numInGroup", groups, i);
             final long minCount = numInGroupToken.encoding().applicableMinValue().longValue();
-            final long maxCount = numInGroupToken.encoding().applicableMaxValue().longValue();
 
             final String countName = formatPropertyName(groupToken.name()) +
                 (isMessageConstLength(thisGroup) ? "Length" : "ItemLengths.size()");
 
             final String minCheck = minCount > 0 ? countName + " < " + minCount + "LL || " : "";
-            final String maxCheck = countName + " > " + maxCount + "LL";
+            final String maxCheck = countName + " > " + generateMaxValueLiteral(numInGroupToken.encoding(), "LL");
 
             new Formatter(sbEncode).format("\n" +
                 indent + "    length += %1$s::sbeHeaderSize();\n",
@@ -4360,13 +4451,13 @@ public class CppGenerator implements CodeGenerator
 
             new Formatter(sbEncode).format("\n" +
                 indent + "    length += %1$sHeaderLength();\n" +
-                indent + "    if (%1$sLength > %2$dLL)\n" +
+                indent + "    if (%1$sLength > %2$s)\n" +
                 indent + "    {\n" +
                 indent + "        throw std::runtime_error(\"%1$sLength too long for length type [E109]\");\n" +
                 indent + "    }\n" +
                 indent + "    length += %1$sLength;\n",
                 formatPropertyName(varDataToken.name()),
-                lengthToken.encoding().applicableMaxValue().longValue());
+                generateMaxValueLiteral(lengthToken.encoding(), "LL"));
 
             new Formatter(sbSkip).format(
                 indent + "    skip%1$s();\n",
@@ -4405,6 +4496,19 @@ public class CppGenerator implements CodeGenerator
 
         return sb;
     }
+    
+    /*
+     * A uint64 maxValue does not fit in a long, so generate it as an unsigned literal rather than the negative
+     * number held by longValue().
+     */
+    private static CharSequence generateMaxValueLiteral(final Encoding encoding, final String signedSuffix)
+    {
+        final String maxValue = encoding.applicableMaxValue().toString();
+
+        return PrimitiveType.UINT64 == encoding.primitiveType() ?
+            generateLiteral(PrimitiveType.UINT64, maxValue) : maxValue + signedSuffix;
+
+     }
 
     private static final class SettableField
     {

@@ -67,6 +67,16 @@ public class JavaOutputManager implements DynamicPackageOutputManager
         actingPackageOutputManager = initialPackageOutputManager;
     }
 
+    PackageOutputManager getInitialPackageOutputManager()
+    {
+        return initialPackageOutputManager;
+    }
+
+    PackageOutputManager getActingPackageOutputManager()
+    {
+        return actingPackageOutputManager;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -77,8 +87,14 @@ public class JavaOutputManager implements DynamicPackageOutputManager
         {
             public void close() throws IOException
             {
-                super.close();
-                resetPackage();
+                try
+                {
+                    super.close();
+                }
+                finally
+                {
+                    resetPackage();
+                }
             }
         };
     }

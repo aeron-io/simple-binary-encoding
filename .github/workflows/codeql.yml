@@ -67,7 +67,8 @@ jobs:
           config-file: ./.github/codeql/codeql-config.yml
 
       - name: Build with Gradle
-        run: ./gradlew
+        # CodeQL needs the code compiled only; the default tasks (clean build) also run the tests, checkstyle and javadoc
+        run: ./gradlew assemble testClasses
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@95e58e9a2cdfd71adc6e0353d5c52f41a045d225 # v4.35.2

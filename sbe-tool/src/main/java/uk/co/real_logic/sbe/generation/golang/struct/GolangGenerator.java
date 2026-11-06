@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  * Copyright (C) 2016 MarketFactory, Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,6 +48,8 @@ import static uk.co.real_logic.sbe.ir.GenerationUtil.collectFields;
 @SuppressWarnings("MethodLength")
 public class GolangGenerator implements CodeGenerator
 {
+    private static final int GROUP_DECODE_INITIAL_CAPACITY = 1024;
+
     private final Ir ir;
     private final OutputManager outputManager;
 
@@ -230,8 +232,7 @@ public class GolangGenerator implements CodeGenerator
         if (gap > 0)
         {
             imports.peek().add("io");
-            imports.peek().add("io/ioutil");
-            return String.format("%1$s\tio.CopyN(ioutil.Discard, _r, %2$d)\n", indent, gap);
+            return String.format("%1$s\tio.CopyN(io.Discard, _r, %2$d)\n", indent, gap);
         }
 
         return "";
@@ -641,10 +642,9 @@ public class GolangGenerator implements CodeGenerator
         final char varName)
     {
         imports.peek().add("io");
-        imports.peek().add("io/ioutil");
         sb.append(String.format(
             "\tif actingVersion > %1$s.SbeSchemaVersion() && blockLength > %1$s.SbeBlockLength() {\n" +
-            "\t\tio.CopyN(ioutil.Discard, _r, int64(blockLength-%1$s.SbeBlockLength()))\n" +
+            "\t\tio.CopyN(io.Discard, _r, int64(blockLength-%1$s.SbeBlockLength()))\n" +
             "\t}\n",
             varName));
     }
@@ -1293,8 +1293,8 @@ public class GolangGenerator implements CodeGenerator
 
         // Write the group itself
         encode.append(String.format(
-            "\tfor i := range %1$s.%2$s {\n" +
-            "\t\tif err := %1$s.%2$s[i].Encode(_m, _w); err != nil {\n" +
+            "\tfor idx := range %1$s.%2$s {\n" +
+            "\t\tif err := %1$s.%2$s[idx].Encode(_m, _w); err != nil {\n" +
             "\t\t\treturn err\n" +
             "\t\t}\n",
             varName,
@@ -1328,14 +1328,24 @@ public class GolangGenerator implements CodeGenerator
             blockLengthMarshalType,
             numInGroupMarshalType));
 
-        // Read the group itself
+        // Read the group itself. numInGroup comes off the wire, so a new slice starts at no more than
+        // GROUP_DECODE_INITIAL_CAPACITY entries and grows only as entries are actually decoded.
         decode.append(String.format(
             "\t\tif cap(%1$c.%2$s) < int(%2$sNumInGroup) {\n" +
-            "\t\t\t%1$s.%2$s = make([]%3$s%2$s, %2$sNumInGroup)\n" +
+            "\t\t\t%4$sCapacity := int(%4$sNumInGroup)\n" +
+            "\t\t\tif %4$sCapacity > " + GROUP_DECODE_INITIAL_CAPACITY + " {\n" +
+            "\t\t\t\t%4$sCapacity = " + GROUP_DECODE_INITIAL_CAPACITY + "\n" +
+            "\t\t\t}\n" +
+            "\t\t\t%1$s.%2$s = make([]%3$s%2$s, 0, %4$sCapacity)\n" +
             "\t\t}\n" +
-            "\t\t%1$c.%2$s = %1$c.%2$s[:%2$sNumInGroup]\n" +
-            "\t\tfor i := range %1$s.%2$s {\n" +
-            "\t\t\tif err := %1$s.%2$s[i].Decode(_m, _r, actingVersion, uint(%4$sBlockLength)); err != nil {\n" +
+            "\t\t%1$c.%2$s = %1$c.%2$s[:0]\n" +
+            "\t\tfor idx := 0; idx < int(%4$sNumInGroup); idx++ {\n" +
+            "\t\t\tif idx < cap(%1$c.%2$s) {\n" +
+            "\t\t\t\t%1$c.%2$s = %1$c.%2$s[:idx+1]\n" +
+            "\t\t\t} else {\n" +
+            "\t\t\t\t%1$c.%2$s = append(%1$c.%2$s, %3$s%2$s{})\n" +
+            "\t\t\t}\n" +
+            "\t\t\tif err := %1$s.%2$s[idx].Decode(_m, _r, actingVersion, uint(%4$sBlockLength)); err != nil {\n" +
             "\t\t\t\treturn err\n" +
             "\t\t\t}\n" +
             "\t\t}\n",
@@ -1346,8 +1356,8 @@ public class GolangGenerator implements CodeGenerator
 
         // Range check the group itself
         rc.append(String.format(
-            "\tfor i := range %1$s.%2$s {\n" +
-            "\t\tif err := %1$s.%2$s[i].RangeCheck(actingVersion, schemaVersion); err != nil {\n" +
+            "\tfor idx := range %1$s.%2$s {\n" +
+            "\t\tif err := %1$s.%2$s[idx].RangeCheck(actingVersion, schemaVersion); err != nil {\n" +
             "\t\t\treturn err\n" +
             "\t\t}\n" +
             "\t}\n",

@@ -130,12 +130,16 @@ public class JavaDtoGenerator implements CodeGenerator
             collectVarData(messageBody, offset, varData);
             generateVarData(classBuilder, varData, BASE_INDENT + INDENT);
 
+            final String headerEncoderClassName = formatClassName(
+                ir.headerStructure().tokens().get(0).applicableTypeName() + "Encoder");
+
             generateDecodeWith(classBuilder, dtoClassName, decoderClassName, fields,
                 groups, varData, BASE_INDENT + INDENT, fieldToken -> fieldToken.version() > msgToken.version());
             generateDecodeFrom(classBuilder, dtoClassName, decoderClassName, BASE_INDENT + INDENT);
             generateEncodeWith(classBuilder, dtoClassName, encoderClassName, fields, groups, varData,
                 BASE_INDENT + INDENT);
-            generateEncodeWithOverloads(classBuilder, dtoClassName, encoderClassName, BASE_INDENT + INDENT);
+            generateEncodeWithOverloads(classBuilder, dtoClassName, headerEncoderClassName, encoderClassName,
+                BASE_INDENT + INDENT);
             generateComputeEncodedLength(classBuilder, decoderClassName,
                 decoderClassName + ".BLOCK_LENGTH",
                 groups, varData, BASE_INDENT + INDENT);
@@ -302,7 +306,7 @@ public class JavaDtoGenerator implements CodeGenerator
             classBuilder.appendPublic().append("\n")
                 .append(generateDocumentation(indent, groupToken))
                 .append(indent).append("public void ").append(formattedPropertyName).append("(")
-                .append("List<").append(qualifiedDtoClassName).append("> value)")
+                .append("List<").append(qualifiedDtoClassName).append("> value)\n")
                 .append(indent).append("{\n")
                 .append(indent).append(INDENT).append("this.").append(fieldName).append(" = value;\n")
                 .append(indent).append("}\n");
@@ -906,6 +910,7 @@ public class JavaDtoGenerator implements CodeGenerator
     private static void generateEncodeWithOverloads(
         final ClassBuilder classBuilder,
         final String dtoClassName,
+        final String headerEncoderClassName,
         final String encoderClassName,
         final String indent)
     {
@@ -930,7 +935,7 @@ public class JavaDtoGenerator implements CodeGenerator
             .append(indent).append(INDENT).append(encoderClassName).append(" encoder = new ")
             .append(encoderClassName).append("();\n")
             .append(indent).append(INDENT)
-            .append("encoder.wrapAndApplyHeader(buffer, offset, new MessageHeaderEncoder());\n")
+            .append("encoder.wrapAndApplyHeader(buffer, offset, new ").append(headerEncoderClassName).append("());\n")
             .append(indent).append(INDENT).append("encodeWith(encoder, dto);\n")
             .append(indent).append(INDENT).append("return encoder.limit() - offset;\n")
             .append(indent).append("}\n");
@@ -951,7 +956,7 @@ public class JavaDtoGenerator implements CodeGenerator
             .append(dtoClassName).append(" dto)\n")
             .append(indent).append("{\n")
             .append(indent).append(INDENT).append("byte[] bytes = new byte[dto.computeEncodedLength() + ")
-            .append("MessageHeaderEncoder.ENCODED_LENGTH];\n")
+            .append(headerEncoderClassName).append(".ENCODED_LENGTH];\n")
             .append(indent).append(INDENT).append("encodeWithHeaderWith(dto, new UnsafeBuffer(bytes), 0);\n")
             .append(indent).append(INDENT).append("return bytes;\n")
             .append(indent).append("}\n");

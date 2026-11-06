@@ -17,6 +17,7 @@ package uk.co.real_logic.sbe.generation.golang;
 
 import org.agrona.generation.StringWriterOutputManager;
 import org.junit.jupiter.api.Test;
+import uk.co.real_logic.sbe.SbeTool;
 import uk.co.real_logic.sbe.Tests;
 import uk.co.real_logic.sbe.generation.golang.struct.GolangGenerator;
 import uk.co.real_logic.sbe.ir.Ir;
@@ -28,6 +29,7 @@ import java.io.InputStream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.co.real_logic.sbe.xml.XmlSchemaParser.parse;
 
@@ -157,7 +159,6 @@ class GolangGeneratorTest
                 "\n" +
                 "import (\n" +
                 "\t\"io\"\n" +
-                "\t\"io/ioutil\"\n" +
                 ")\n" +
                 "\n" +
                 "type SomeMessage struct {\n" +
@@ -177,7 +178,7 @@ class GolangGeneratorTest
                 "blockLength uint16, doRangeCheck bool) error {\n" +
                 "\ts.EngineType = EngineType.Gas\n" +
                 "\tif actingVersion > s.SbeSchemaVersion() && blockLength > s.SbeBlockLength() {\n" +
-                "\t\tio.CopyN(ioutil.Discard, _r, int64(blockLength-s.SbeBlockLength()))\n" +
+                "\t\tio.CopyN(io.Discard, _r, int64(blockLength-s.SbeBlockLength()))\n" +
                 "\t}\n" +
                 "\tif doRangeCheck {\n" +
                 "\t\tif err := s.RangeCheck(actingVersion, s.SbeSchemaVersion()); err != nil {\n" +
@@ -387,7 +388,6 @@ class GolangGeneratorTest
                 "\n" +
                 "import (\n" +
                 "\t\"io\"\n" +
-                "\t\"io/ioutil\"\n" +
                 ")\n" +
                 "\n" +
                 "type SomeMessage struct {\n" +
@@ -414,7 +414,7 @@ class GolangGeneratorTest
                 "\t\t}\n" +
                 "\t}\n" +
                 "\tif actingVersion > s.SbeSchemaVersion() && blockLength > s.SbeBlockLength() {\n" +
-                "\t\tio.CopyN(ioutil.Discard, _r, int64(blockLength-s.SbeBlockLength()))\n" +
+                "\t\tio.CopyN(io.Discard, _r, int64(blockLength-s.SbeBlockLength()))\n" +
                 "\t}\n" +
                 "\tif doRangeCheck {\n" +
                 "\t\tif err := s.RangeCheck(actingVersion, s.SbeSchemaVersion()); err != nil {\n" +
@@ -492,6 +492,10 @@ class GolangGeneratorTest
     @SuppressWarnings("MethodLength")
     void shouldHandleLowerCaseEnumValueReference() throws Exception
     {
+        // The schema has a field named `_`, a Go keyword, so the generator needs the append token.
+        final String keywordAppendToken = System.getProperty(SbeTool.KEYWORD_APPEND_TOKEN);
+        System.setProperty(SbeTool.KEYWORD_APPEND_TOKEN, "_");
+
         try (InputStream in = Tests.getLocalResource("code-generation-schema.xml"))
         {
             final ParserOptions options = ParserOptions.builder().stopOnError(true).build();
@@ -512,6 +516,17 @@ class GolangGeneratorTest
                 \treturn
                 }
                 """));
+        }
+        finally
+        {
+            if (null == keywordAppendToken)
+            {
+                System.clearProperty(SbeTool.KEYWORD_APPEND_TOKEN);
+            }
+            else
+            {
+                System.setProperty(SbeTool.KEYWORD_APPEND_TOKEN, keywordAppendToken);
+            }
         }
     }
 
@@ -544,6 +559,26 @@ class GolangGeneratorTest
                 .orElseThrow();
             assertThat(floatConstantsSource, containsString("\"math\""));
             assertThat(floatConstantsSource, containsString("math.Inf"));
+        }
+    }
+
+    @Test
+    void shouldNotShadowReceiverWithGroupLoopVariable() throws Exception
+    {
+        try (InputStream in = Tests.getLocalResource("group-in-message-named-with-i.xml"))
+        {
+            final ParserOptions options = ParserOptions.builder().stopOnError(true).build();
+            final MessageSchema schema = parse(in, options);
+            final Ir ir = new IrGenerator().generate(schema);
+            final StringWriterOutputManager outputManager = new StringWriterOutputManager();
+            outputManager.setPackageName(ir.applicableNamespace());
+
+            new GolangGenerator(ir, outputManager).generate();
+
+            final String source = outputManager.getSource("group_in_message_named_with_i.Item").toString();
+            assertThat(source, containsString("for idx := range i.Parts {"));
+            assertThat(source, containsString("i.Parts[idx].Encode(_m, _w)"));
+            assertThat(source, not(containsString("for i := range i.Parts")));
         }
     }
 }
