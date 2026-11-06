@@ -20,12 +20,7 @@ import dto_test.KeywordsDto;
 import dto_test.KeywordsEncoder;
 import dto_test.MessageHeaderDecoder;
 import dto_test.MessageHeaderEncoder;
-import extension.BooleanType;
-import extension.BoostType;
-import extension.CarDecoder;
-import extension.CarDto;
-import extension.CarEncoder;
-import extension.Model;
+import extension.*;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.junit.jupiter.api.Test;
@@ -35,6 +30,7 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DtoTest
 {
@@ -75,6 +71,84 @@ public class DtoTest
 
         assertThat(outputLength, equalTo(inputLength));
         assertThat(outputBuffer.byteArray(), equalTo(inputBuffer.byteArray()));
+    }
+
+    @Test
+    void shouldRoundTripCustomCar1()
+    {
+        final ExpandableArrayBuffer inputBuffer = new ExpandableArrayBuffer();
+        encodeCustomCar(inputBuffer, 0);
+
+        final CustomCarDecoder decoder = new CustomCarDecoder();
+        decoder.wrap(inputBuffer, 0, CustomCarDecoder.BLOCK_LENGTH, CustomCarDecoder.SCHEMA_VERSION);
+        final String decoderString = decoder.toString();
+
+        final CustomCarDto dto = new CustomCarDto();
+        CustomCarDto.decodeWith(decoder, dto);
+
+        final ExpandableArrayBuffer outputBuffer = new ExpandableArrayBuffer();
+        final CustomCarEncoder encoder = new CustomCarEncoder();
+        encoder.wrap(outputBuffer, 0);
+        CustomCarDto.encodeWith(encoder, dto);
+
+        final String dtoString = dto.toString();
+
+        assertThat(outputBuffer.byteArray(), equalTo(inputBuffer.byteArray()));
+        assertThat(dtoString, equalTo(decoderString));
+    }
+
+    @Test
+    void shouldRoundTripCustomCar2()
+    {
+        final ExpandableArrayBuffer inputBuffer = new ExpandableArrayBuffer();
+        final int inputLength = encodeCustomCar(inputBuffer, 0);
+
+        final CustomCarDto dto = CustomCarDto.decodeFrom(inputBuffer, 0,
+            CustomCarDecoder.BLOCK_LENGTH, CustomCarDecoder.SCHEMA_VERSION);
+
+        final ExpandableArrayBuffer outputBuffer = new ExpandableArrayBuffer();
+        final int outputLength = CustomCarDto.encodeWith(dto, outputBuffer, 0);
+
+        assertThat(outputLength, equalTo(inputLength));
+        assertThat(outputBuffer.byteArray(), equalTo(inputBuffer.byteArray()));
+    }
+
+    @Test
+    void shouldReturnCarBytes()
+    {
+        final ExpandableArrayBuffer inputBuffer = new ExpandableArrayBuffer();
+        encodeCar(inputBuffer, 0);
+
+        final CarDecoder decoder = new CarDecoder();
+        decoder.wrap(inputBuffer, 0, CarDecoder.BLOCK_LENGTH, CarDecoder.SCHEMA_VERSION);
+
+        final CarDto dto = new CarDto();
+        CarDto.decodeWith(decoder, dto);
+
+        final byte[] bytes = CarDto.bytes(dto);
+        assertEquals(235, bytes.length);
+
+        final byte[] bytesWithHeader = CarDto.bytesWithHeader(dto);
+        assertEquals(243, bytesWithHeader.length);
+    }
+
+    @Test
+    void shouldReturnCustomCarBytes()
+    {
+        final ExpandableArrayBuffer inputBuffer = new ExpandableArrayBuffer();
+        encodeCustomCar(inputBuffer, 0);
+
+        final CustomCarDecoder decoder = new CustomCarDecoder();
+        decoder.wrap(inputBuffer, 0, CustomCarDecoder.BLOCK_LENGTH, CustomCarDecoder.SCHEMA_VERSION);
+
+        final CustomCarDto dto = new CustomCarDto();
+        CustomCarDto.decodeWith(decoder, dto);
+
+        final byte[] bytes = CustomCarDto.bytes(dto);
+        assertEquals(235, bytes.length);
+
+        final byte[] bytesWithHeader = CustomCarDto.bytesWithHeader(dto);
+        assertEquals(247, bytesWithHeader.length);
     }
 
     @Test
@@ -204,6 +278,97 @@ public class DtoTest
         acceleration.next()
             .mph(100)
             .seconds(11.8f);
+
+        car.manufacturer("Ford");
+        car.model("Fiesta");
+        car.activationCode("1234");
+
+        return car.limit();
+    }
+
+    private static int encodeCustomCar(final MutableDirectBuffer buffer, final int offset)
+    {
+        final CustomMessageHeaderEncoder headerEncoder = new CustomMessageHeaderEncoder();
+
+        final CustomCarEncoder car = new CustomCarEncoder();
+        car.wrapAndApplyHeader(buffer, offset, headerEncoder);
+        headerEncoder.extra(1234_5678L);
+        car.wrap(buffer, offset);
+        car.serialNumber(1234);
+        car.modelYear(2013);
+        car.available(BooleanType.T);
+        car.code(Model.A);
+        car.vehicleCode("ABCDEF");
+
+        for (int i = 0, size = CarEncoder.someNumbersLength(); i < size; i++)
+        {
+            car.someNumbers(i, i);
+        }
+
+        car.extras().cruiseControl(true).sportsPack(true);
+
+        car.cupHolderCount((short)119);
+
+        car.engine().capacity(2000)
+                .numCylinders((short)4)
+                .manufacturerCode("ABC")
+                .efficiency((byte)35)
+                .boosterEnabled(BooleanType.T)
+                .booster().boostType(BoostType.NITROUS)
+                .horsePower((short)200);
+
+        final CustomCarEncoder.FuelFiguresEncoder fuelFigures = car.fuelFiguresCount(3);
+        fuelFigures.next()
+                .speed(30)
+                .mpg(35.9f)
+                .usageDescription("this is a description");
+
+        fuelFigures.next()
+                .speed(55)
+                .mpg(49.0f)
+                .usageDescription("this is a description");
+
+        fuelFigures.next()
+                .speed(75)
+                .mpg(40.0f)
+                .usageDescription("this is a description");
+
+        final CustomCarEncoder.PerformanceFiguresEncoder perfFigures = car.performanceFiguresCount(2);
+
+        perfFigures.next()
+                .octaneRating((short)95);
+
+        CustomCarEncoder.PerformanceFiguresEncoder.AccelerationEncoder acceleration =
+            perfFigures.accelerationCount(3);
+
+        acceleration.next()
+                .mph(30)
+                .seconds(4.0f);
+
+        acceleration.next()
+                .mph(60)
+                .seconds(7.5f);
+
+        acceleration.next()
+                .mph(100)
+                .seconds(12.2f);
+
+        perfFigures.next()
+                .octaneRating((short)99);
+
+        acceleration = perfFigures.accelerationCount(3);
+
+        acceleration.next()
+                .mph(30)
+                .seconds(3.8f);
+
+        acceleration.next()
+                .mph(60)
+                .seconds(7.1f);
+
+        acceleration.next()
+                .mph(100)
+                .seconds(11.8f);
 
         car.manufacturer("Ford");
         car.model("Fiesta");
