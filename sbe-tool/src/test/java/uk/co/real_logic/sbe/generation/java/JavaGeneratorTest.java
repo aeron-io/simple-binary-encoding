@@ -88,8 +88,14 @@ class JavaGeneratorTest
     @AfterEach
     void tearDown()
     {
-        if (previousKeywordAppendToken != null) System.setProperty(SbeTool.KEYWORD_APPEND_TOKEN, previousKeywordAppendToken);
-        else System.clearProperty(SbeTool.KEYWORD_APPEND_TOKEN);
+        if (previousKeywordAppendToken != null)
+        {
+            System.setProperty(SbeTool.KEYWORD_APPEND_TOKEN, previousKeywordAppendToken);
+        }
+        else
+        {
+            System.clearProperty(SbeTool.KEYWORD_APPEND_TOKEN);
+        }
     }
 
     @Test

@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2025 Real Logic Limited.
+# Copyright 2013-2026 Real Logic Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,10 +40,12 @@ set(GROUP_WITH_DATA_SCHEMA ${CODEC_SCHEMA_DIR}/group-with-data-schema.xml)
 set(DTO_SCHEMA ${CODEC_SCHEMA_DIR}/dto-test-schema.xml)
 set(ISSUE835_SCHEMA ${CODEC_SCHEMA_DIR}/issue835.xml)
 set(ISSUE889_SCHEMA ${CODEC_SCHEMA_DIR}/issue889.xml)
+set(JSON_CHAR_SCHEMA ${CODEC_SCHEMA_DIR}/json-char-schema.xml)
 set(FLOATING_POINT_INFINITY_SCHEMA ${CODEC_SCHEMA_DIR}/floating-point-infinity-schema.xml)
 set(ACCESS_ORDER_SCHEMA ${CODEC_SCHEMA_DIR}/field-order-check-schema.xml)
 set(VERSIONED_MESSAGE_V1_SCHEMA ${CODEC_SCHEMA_DIR}/versioned-message-v1.xml)
 set(VERSIONED_MESSAGE_V2_SCHEMA ${CODEC_SCHEMA_DIR}/versioned-message-v2.xml)
+set(UINT64_LENGTH_SCHEMA ${CODEC_SCHEMA_DIR}/uint64-length-schema.xml)
 
 set(GENERATED_CODECS
     ${CXX_CODEC_TARGET_DIR}
@@ -59,10 +61,12 @@ add_custom_command(
         ${DTO_SCHEMA}
         ${ISSUE835_SCHEMA}
         ${ISSUE889_SCHEMA}
+        ${JSON_CHAR_SCHEMA}
         ${FLOATING_POINT_INFINITY_SCHEMA}
         ${ACCESS_ORDER_SCHEMA}
         ${VERSIONED_MESSAGE_V1_SCHEMA}
         ${VERSIONED_MESSAGE_V2_SCHEMA}
+        ${UINT64_LENGTH_SCHEMA}
     sbe-jar ${SBE_JAR}
     COMMAND
         ${Java_JAVA_EXECUTABLE} --add-opens java.base/jdk.internal.misc=ALL-UNNAMED
@@ -83,10 +87,12 @@ add_custom_command(
             ${DTO_SCHEMA}
             ${ISSUE835_SCHEMA}
             ${ISSUE889_SCHEMA}
+            ${JSON_CHAR_SCHEMA}
             ${FLOATING_POINT_INFINITY_SCHEMA}
             ${ACCESS_ORDER_SCHEMA}
             ${VERSIONED_MESSAGE_V1_SCHEMA}
             ${VERSIONED_MESSAGE_V2_SCHEMA}
+            ${UINT64_LENGTH_SCHEMA}
 )
 
 add_custom_target(codecs DEPENDS ${GENERATED_CODECS})
@@ -102,10 +108,12 @@ sbe_test(Rc3OtfFullIrTest codecs)
 sbe_test(CompositeElementsTest codecs)
 sbe_test(Issue835Test codecs)
 sbe_test(Issue889Test codecs)
+sbe_test(JsonCharTest codecs)
 sbe_test(InfinityTest codecs)
 sbe_test(FieldAccessOrderCheckTest codecs)
 target_compile_definitions(FieldAccessOrderCheckTest PRIVATE SBE_ENABLE_PRECEDENCE_CHECKS_IN_TESTS)
 sbe_test(VersionedMessageTest codecs)
+sbe_test(Uint64LengthTest codecs)
 
 # OtfMessageEncoderTest lives in the otf/ subdirectory and provides its own main() that takes the
 # IR file path as argv[1]; it is handed the generated code-generation-schema IR.

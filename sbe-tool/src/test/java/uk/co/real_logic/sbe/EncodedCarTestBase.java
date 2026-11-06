@@ -15,38 +15,18 @@
  */
 package uk.co.real_logic.sbe;
 
-import baseline.*;
+import baseline.BooleanType;
+import baseline.CarEncoder;
+import baseline.MessageHeaderEncoder;
+import baseline.Model;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.junit.jupiter.api.BeforeAll;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
 public class EncodedCarTestBase
 {
     protected static final MessageHeaderEncoder MESSAGE_HEADER = new MessageHeaderEncoder();
     protected static final CarEncoder CAR = new CarEncoder();
-
-    private static byte[] vehicleCode;
-    private static byte[] manufacturerCode;
-    private static byte[] manufacturer;
-    private static byte[] model;
-
-    @BeforeAll
-    public static void setupExampleData()
-    {
-        try
-        {
-            vehicleCode = "ab\"def".getBytes(CarEncoder.vehicleCodeCharacterEncoding());
-            manufacturerCode = "123".getBytes(EngineEncoder.manufacturerCodeCharacterEncoding());
-            manufacturer = "Honda".getBytes(CarEncoder.manufacturerCharacterEncoding());
-            model = "Civic VTi".getBytes(CarEncoder.modelCharacterEncoding());
-        }
-        catch (final UnsupportedEncodingException ex)
-        {
-            throw new RuntimeException(ex);
-        }
-    }
 
     protected static void encodeTestMessage(final ByteBuffer buffer)
     {
@@ -69,7 +49,7 @@ public class EncodedCarTestBase
             .modelYear(2013)
             .available(BooleanType.T)
             .code(Model.A)
-            .putVehicleCode(vehicleCode, srcOffset);
+            .vehicleCode("ab=5\n\1");
 
         for (int i = 0, size = CarEncoder.someNumbersLength(); i < size; i++)
         {
@@ -85,7 +65,7 @@ public class EncodedCarTestBase
         CAR.engine()
             .capacity(2000)
             .numCylinders((short)4)
-            .putManufacturerCode(manufacturerCode, srcOffset);
+            .manufacturerCode((byte)'$');
 
         CAR.putUuid(7L, 3L)
             .cupHolderCount((byte)5);
@@ -109,8 +89,8 @@ public class EncodedCarTestBase
             .next().mph(60).seconds(7.1f)
             .next().mph(100).seconds(11.8f);
 
-        CAR.manufacturer(new String(manufacturer));
-        CAR.putModel(model, srcOffset, model.length);
+        CAR.manufacturer("Honda™\uD83D\uDE00");
+        CAR.model("Civic VTi");
         CAR.activationCode("315\\8");
 
         bufferOffset += CAR.encodedLength();

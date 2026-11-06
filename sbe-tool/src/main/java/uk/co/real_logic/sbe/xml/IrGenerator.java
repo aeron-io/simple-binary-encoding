@@ -260,9 +260,12 @@ public class IrGenerator
     private void add(final EnumType type, final int offset, final Field field)
     {
         final PrimitiveType encodingType = type.encodingType();
+        final boolean isOptional =
+            Presence.OPTIONAL == type.presence() || Presence.OPTIONAL == type.encodingTypePresence();
         final Encoding.Builder encodingBuilder = new Encoding.Builder()
             .primitiveType(encodingType)
             .semanticType(semanticTypeOf(type, field))
+            .presence(isOptional ? Encoding.Presence.OPTIONAL : Encoding.Presence.REQUIRED)
             .nullValue(type.nullValue())
             .byteOrder(schema.byteOrder());
 

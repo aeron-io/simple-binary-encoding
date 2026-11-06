@@ -43,6 +43,7 @@ public class EnumType extends Type
 
     private final PrimitiveType encodingType;
     private final PrimitiveValue nullValue;
+    private final Presence encodingTypePresence;
     private final Map<PrimitiveValue, ValidValue> validValueByPrimitiveValueMap = new LinkedHashMap<>();
     private final Map<String, ValidValue> validValueByNameMap = new LinkedHashMap<>();
 
@@ -78,6 +79,7 @@ public class EnumType extends Type
             case "int32":
                 encodingType = PrimitiveType.get(encodingTypeStr);
                 encodedDataType = null;
+                encodingTypePresence = Presence.REQUIRED;
                 break;
 
             default:
@@ -100,6 +102,7 @@ public class EnumType extends Type
                 }
 
                 encodingType = encodedDataType.primitiveType();
+                encodingTypePresence = encodedDataType.presence();
         }
 
         final String nullValueStr = getAttributeValueOrNull(node, "nullValue");
@@ -171,6 +174,17 @@ public class EnumType extends Type
     public PrimitiveType encodingType()
     {
         return encodingType;
+    }
+
+    /**
+     * The {@link Presence} of the type named by the encodingType, or {@link Presence#REQUIRED} when the
+     * encodingType is a primitive type.
+     *
+     * @return the {@link Presence} of the type named by the encodingType.
+     */
+    public Presence encodingTypePresence()
+    {
+        return encodingTypePresence;
     }
 
     /**

@@ -356,6 +356,7 @@ project(':sbe-tool') {
                 'sbe.keyword.append.token': '$',
                 'sbe.java.generate.dtos': 'true')
         args = ['src/test/resources/example-extension-schema.xml',
+                'src/test/resources/example-extension-schema-custom-header.xml',
                 'src/test/resources/dto-test-schema.xml',
                 'src/test/resources/floating-point-infinity-schema.xml']
     }

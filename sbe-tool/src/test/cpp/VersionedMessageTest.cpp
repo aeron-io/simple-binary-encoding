@@ -65,3 +65,36 @@ TEST_F(VersionedMessageTest, shouldExposeSchemaVersionFromIr)
     EXPECT_EQ(irDecoder.schemaId(), 1);
     EXPECT_EQ(irDecoder.schemaVersion(), 2);
 }
+
+TEST_F(VersionedMessageTest, shouldEncodeUsingSbeSetAllFields)
+{
+    char buffer[BUFFER_LEN] = {};
+
+    m_versionedMessageV2.wrapForEncode(buffer, 0, sizeof(buffer))
+        .sbeSetAllFields(10, 20, 30, 40, 50)
+        .putString1("v2message", 9);
+
+    m_versionedMessageV1Decoder.wrapForDecode(
+        buffer,
+        0,
+        VersionedMessageV2::sbeBlockLength(),
+        VersionedMessageV2::sbeSchemaVersion(),
+        m_versionedMessageV2.encodedLength());
+
+    EXPECT_EQ(m_versionedMessageV1Decoder.fieldA1(), (uint32_t)10);
+    EXPECT_EQ(m_versionedMessageV1Decoder.fieldB1(), (uint32_t)20);
+    EXPECT_STREQ(m_versionedMessageV1Decoder.string1(), "v2message");
+
+    VersionedMessageV2 v2Decoder(
+        buffer,
+        m_versionedMessageV2.encodedLength(),
+        VersionedMessageV2::sbeBlockLength(),
+        VersionedMessageV2::sbeSchemaVersion());
+
+    EXPECT_EQ(v2Decoder.fieldA1(), (uint32_t)10);
+    EXPECT_EQ(v2Decoder.fieldB1(), (uint32_t)20);
+    EXPECT_EQ(v2Decoder.fieldC2(), (uint32_t)30);
+    EXPECT_EQ(v2Decoder.fieldD2(), (uint32_t)40);
+    EXPECT_EQ(v2Decoder.fieldE2(), (uint32_t)50);
+    EXPECT_STREQ(v2Decoder.string1(), "v2message");
+}

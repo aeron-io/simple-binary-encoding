@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -243,6 +243,7 @@ public class CppGenerator implements CodeGenerator
 
                 final StringBuilder sb = new StringBuilder();
                 generateFields(sb, className, fields, fieldPrecedenceModel, BASE_INDENT);
+                generateSetAllFields(sb, className, fields, BASE_INDENT);
                 generateGroups(sb, groups, fieldPrecedenceModel, BASE_INDENT);
                 generateVarData(sb, className, varData, fieldPrecedenceModel, BASE_INDENT);
                 generateDisplay(sb, msgToken.name(), fields, groups, varData);
@@ -653,6 +654,7 @@ public class CppGenerator implements CodeGenerator
             final List<Token> fields = new ArrayList<>();
             i = collectFields(tokens, i, fields);
             generateFields(sb, formatClassName(groupName), fields, fieldPrecedenceModel, indent + INDENT);
+            generateSetAllFields(sb, formatClassName(groupName), fields, indent + INDENT);
 
             final List<Token> groups = new ArrayList<>();
             i = collectGroups(tokens, i, groups);
@@ -804,7 +806,7 @@ public class CppGenerator implements CodeGenerator
             indent + "#pragma GCC diagnostic push\n" +
             indent + "#pragma GCC diagnostic ignored \"-Wtype-limits\"\n" +
             indent + "#endif\n" +
-            indent + "        if (%5$scount > %6$d)\n" +
+            indent + "        if (%5$scount > %6$s)\n" +
             indent + "        {\n" +
             indent + "            throw std::runtime_error(\"count outside of allowed range [E110]\");\n" +
             indent + "        }\n" +
@@ -830,7 +832,7 @@ public class CppGenerator implements CodeGenerator
             cppTypeNumInGroup,
             dimensionHeaderLength,
             minCheck,
-            numInGroupToken.encoding().applicableMaxValue().longValue(),
+            generateMaxValueLiteral(numInGroupToken.encoding(), ""),
             dimensionsClassName,
             codecStateParameter,
             codecStateAssignment);
@@ -1270,7 +1272,7 @@ public class CppGenerator implements CodeGenerator
             new Formatter(sb).format("\n" +
                 indent + "    %1$s &put%2$s(const std::string &str)\n" +
                 indent + "    {\n" +
-                indent + "        if (str.length() > %4$d)\n" +
+                indent + "        if (str.length() > %4$s)\n" +
                 indent + "        {\n" +
                 indent + "            throw std::runtime_error(\"std::string too long for length type [E109]\");\n" +
                 indent + "        }\n" +
@@ -1279,13 +1281,13 @@ public class CppGenerator implements CodeGenerator
                 className,
                 propertyName,
                 lengthCppType,
-                lengthToken.encoding().applicableMaxValue().longValue());
+                generateMaxValueLiteral(lengthToken.encoding(), ""));
 
             new Formatter(sb).format("\n" +
                 indent + "    #ifdef SBE_USE_STRING_VIEW\n" +
                 indent + "    %1$s &put%2$s(const std::string_view str)\n" +
                 indent + "    {\n" +
-                indent + "        if (str.length() > %4$d)\n" +
+                indent + "        if (str.length() > %4$s)\n" +
                 indent + "        {\n" +
                 indent + "            throw std::runtime_error(\"std::string too long for length type [E109]\");\n" +
                 indent + "        }\n" +
@@ -1295,7 +1297,7 @@ public class CppGenerator implements CodeGenerator
                 className,
                 propertyName,
                 lengthCppType,
-                lengthToken.encoding().applicableMaxValue().longValue());
+                generateMaxValueLiteral(lengthToken.encoding(), ""));
 
             i += token.componentTokenCount();
         }
@@ -1446,6 +1448,9 @@ public class CppGenerator implements CodeGenerator
             out.append(generateFixedFlyweightCode(compositeName, token.encodedLength()));
 
             out.append(generateCompositePropertyElements(
+                compositeName, tokens.subList(1, tokens.size() - 1), BASE_INDENT));
+
+            out.append(generateCompositeSetAllFields(
                 compositeName, tokens.subList(1, tokens.size() - 1), BASE_INDENT));
 
             out.append(generateCompositeDisplay(
@@ -1770,6 +1775,7 @@ public class CppGenerator implements CodeGenerator
             "#include <string>\n" +
             "#include <vector>\n" +
             "#include <tuple>\n" +
+            "#include <utility>\n" +
             "\n" +
 
             "#if defined(WIN32) || defined(_WIN32)\n" +
@@ -2583,7 +2589,7 @@ public class CppGenerator implements CodeGenerator
             indent + "                case '\\r': oss << \"\\\\r\"; break;\n" +
             indent + "                case '\\t': oss << \"\\\\t\"; break;\n\n" +
             indent + "                default:\n" +
-            indent + "                    if ('\\x00' <= c && c <= '\\x1f')\n" +
+            indent + "                    if (static_cast<unsigned char>(c) <= 0x1f)\n" +
             indent + "                    {\n" +
             indent + "                        oss << \"\\\\u\"" + " << std::hex << std::setw(4)\n" +
             indent + "                            << std::setfill('0') << (int)(c);\n" +
@@ -3989,9 +3995,15 @@ public class CppGenerator implements CodeGenerator
                     if (typeToken.encoding().primitiveType() == PrimitiveType.CHAR)
                     {
                         sb.append(
-                            indent + "if (std::isprint(" + fieldName + "()))\n" +
+                            indent + "if (std::isprint(static_cast<unsigned char>(" + fieldName + "())))\n" +
                             indent + "{\n" +
-                            indent + "    builder << '\"' << (char)" + fieldName + "() << '\"';\n" +
+                            indent + "    const char c = " + fieldName + "();\n" +
+                            indent + "    builder << '\"';\n" +
+                            indent + "    if ('\"' == c || '\\\\' == c)\n" +
+                            indent + "    {\n" +
+                            indent + "        builder << '\\\\';\n" +
+                            indent + "    }\n" +
+                            indent + "    builder << c << '\"';\n" +
                             indent + "}\n" +
                             indent + "else\n" +
                             indent + "{\n" +
@@ -4367,13 +4379,12 @@ public class CppGenerator implements CodeGenerator
 
             final Token numInGroupToken = Generators.findFirst("numInGroup", groups, i);
             final long minCount = numInGroupToken.encoding().applicableMinValue().longValue();
-            final long maxCount = numInGroupToken.encoding().applicableMaxValue().longValue();
 
             final String countName = formatPropertyName(groupToken.name()) +
                 (isMessageConstLength(thisGroup) ? "Length" : "ItemLengths.size()");
 
             final String minCheck = minCount > 0 ? countName + " < " + minCount + "LL || " : "";
-            final String maxCheck = countName + " > " + maxCount + "LL";
+            final String maxCheck = countName + " > " + generateMaxValueLiteral(numInGroupToken.encoding(), "LL");
 
             new Formatter(sbEncode).format("\n" +
                 indent + "    length += %1$s::sbeHeaderSize();\n",
@@ -4440,13 +4451,13 @@ public class CppGenerator implements CodeGenerator
 
             new Formatter(sbEncode).format("\n" +
                 indent + "    length += %1$sHeaderLength();\n" +
-                indent + "    if (%1$sLength > %2$dLL)\n" +
+                indent + "    if (%1$sLength > %2$s)\n" +
                 indent + "    {\n" +
                 indent + "        throw std::runtime_error(\"%1$sLength too long for length type [E109]\");\n" +
                 indent + "    }\n" +
                 indent + "    length += %1$sLength;\n",
                 formatPropertyName(varDataToken.name()),
-                lengthToken.encoding().applicableMaxValue().longValue());
+                generateMaxValueLiteral(lengthToken.encoding(), "LL"));
 
             new Formatter(sbSkip).format(
                 indent + "    skip%1$s();\n",
@@ -4484,5 +4495,210 @@ public class CppGenerator implements CodeGenerator
             generateMessageLengthArgs(groups, varData, indent + INDENT, true)[0]);
 
         return sb;
+    }
+
+    /*
+     * A uint64 maxValue does not fit in a long, so generate it as an unsigned literal rather than the negative
+     * number held by longValue().
+     */
+    private static CharSequence generateMaxValueLiteral(final Encoding encoding, final String signedSuffix)
+    {
+        final String maxValue = encoding.applicableMaxValue().toString();
+
+        return PrimitiveType.UINT64 == encoding.primitiveType() ?
+            generateLiteral(PrimitiveType.UINT64, maxValue) : maxValue + signedSuffix;
+
+    }
+
+    private static final class SettableField
+    {
+        final String propertyName;
+        final String type;
+        final String setterCall;
+        final String templateParam;
+
+        SettableField(
+            final String propertyName,
+            final String type,
+            final String setterCall,
+            final String templateParam)
+        {
+            this.propertyName = propertyName;
+            this.type = type;
+            this.setterCall = setterCall;
+            this.templateParam = templateParam;
+        }
+    }
+
+    private SettableField toSettableField(final String propertyName, final Token token)
+    {
+        switch (token.signal())
+        {
+            case ENCODING:
+            {
+                final PrimitiveType primitiveType = token.encoding().primitiveType();
+                final int arrayLength = token.arrayLength();
+                if (arrayLength == 1)
+                {
+                    final String type = "const " + cppTypeName(primitiveType);
+                    final String setter = "this->" + propertyName + "(" + propertyName + ");";
+                    return new SettableField(propertyName, type, setter, null);
+                }
+                else if (arrayLength > 1)
+                {
+                    if (primitiveType == PrimitiveType.CHAR)
+                    {
+                        final String type = "const char *";
+                        final String setter = "this->put" + toUpperFirstChar(propertyName) + "(" + propertyName + ");";
+                        return new SettableField(propertyName, type, setter, null);
+                    }
+                    else
+                    {
+                        final String type = "const " + cppTypeName(primitiveType) + " *";
+                        final String setter = "this->put" + toUpperFirstChar(propertyName) +
+                            "(reinterpret_cast<const char *>(" + propertyName + "));";
+                        return new SettableField(propertyName, type, setter, null);
+                    }
+                }
+                return null;
+            }
+
+            case BEGIN_ENUM:
+            {
+                final String enumName = formatClassName(token.applicableTypeName());
+                final String type = "const " + enumName + "::Value";
+                final String setter = "this->" + propertyName + "(" + propertyName + ");";
+                return new SettableField(propertyName, type, setter, null);
+            }
+
+            case BEGIN_SET:
+            case BEGIN_COMPOSITE:
+            {
+                final String templateParam = toUpperFirstChar(propertyName) + "Handler";
+                final String type = templateParam + " &&";
+                final String setter = "std::forward<" + templateParam + ">(" + propertyName +
+                    ")(this->" + propertyName + "());";
+                return new SettableField(propertyName, type, setter, templateParam);
+            }
+
+            default:
+                return null;
+        }
+    }
+
+    private void generateSetAllFields(
+        final StringBuilder sb,
+        final String containingClassName,
+        final List<Token> tokens,
+        final String indent)
+    {
+        final List<SettableField> settableFields = new ArrayList<>();
+
+        for (int i = 0, size = tokens.size(); i < size; i++)
+        {
+            final Token signalToken = tokens.get(i);
+            if (signalToken.signal() == Signal.BEGIN_FIELD)
+            {
+                final Token encodingToken = tokens.get(i + 1);
+                if (encodingToken.isConstantEncoding() || signalToken.isConstantEncoding())
+                {
+                    continue;
+                }
+
+                final String propertyName = formatPropertyName(signalToken.name());
+                final SettableField field = toSettableField(propertyName, encodingToken);
+                if (field != null)
+                {
+                    settableFields.add(field);
+                }
+            }
+        }
+
+        renderSetAllFields(sb, containingClassName, settableFields, indent);
+    }
+
+    private CharSequence generateCompositeSetAllFields(
+        final String compositeName,
+        final List<Token> tokens,
+        final String indent)
+    {
+        final StringBuilder sb = new StringBuilder();
+        final List<SettableField> settableFields = new ArrayList<>();
+
+        for (int i = 0; i < tokens.size();)
+        {
+            final Token fieldToken = tokens.get(i);
+            if (!fieldToken.isConstantEncoding())
+            {
+                final String propertyName = formatPropertyName(fieldToken.name());
+                final SettableField field = toSettableField(propertyName, fieldToken);
+                if (field != null)
+                {
+                    settableFields.add(field);
+                }
+            }
+
+            i += fieldToken.componentTokenCount();
+        }
+
+        renderSetAllFields(sb, compositeName, settableFields, indent);
+        return sb;
+    }
+
+    private void renderSetAllFields(
+        final StringBuilder sb,
+        final String className,
+        final List<SettableField> fields,
+        final String indent)
+    {
+        final List<String> templateParams = new ArrayList<>();
+        for (final SettableField field : fields)
+        {
+            if (field.templateParam != null)
+            {
+                templateParams.add("typename " + field.templateParam);
+            }
+        }
+
+        sb.append("\n");
+        sb.append(indent).append("public:\n");
+
+        if (!templateParams.isEmpty())
+        {
+            sb.append(indent).append("    template <")
+                .append(String.join(", ", templateParams))
+                .append(">\n");
+        }
+
+        sb.append(indent).append("    ").append(className).append(" &sbeSetAllFields(");
+
+        if (!fields.isEmpty())
+        {
+            sb.append("\n");
+            for (int i = 0; i < fields.size(); i++)
+            {
+                final SettableField field = fields.get(i);
+                sb.append(indent).append("        ")
+                    .append(field.type).append(" ").append(field.propertyName);
+                if (i < fields.size() - 1)
+                {
+                    sb.append(",");
+                }
+                sb.append("\n");
+            }
+            sb.append(indent).append("    )\n");
+        }
+        else
+        {
+            sb.append(")\n");
+        }
+
+        sb.append(indent).append("    {\n");
+        for (final SettableField field : fields)
+        {
+            sb.append(indent).append("        ").append(field.setterCall).append("\n");
+        }
+        sb.append(indent).append("        return *this;\n");
+        sb.append(indent).append("    }\n");
     }
 }
