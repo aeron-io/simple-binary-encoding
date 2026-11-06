@@ -24,7 +24,12 @@ import uk.co.real_logic.sbe.generation.TargetCodeGeneratorLoader;
 import uk.co.real_logic.sbe.ir.Ir;
 import uk.co.real_logic.sbe.ir.IrDecoder;
 import uk.co.real_logic.sbe.ir.IrEncoder;
-import uk.co.real_logic.sbe.xml.*;
+import uk.co.real_logic.sbe.xml.IrGenerator;
+import uk.co.real_logic.sbe.xml.MessageSchema;
+import uk.co.real_logic.sbe.xml.ParserOptions;
+import uk.co.real_logic.sbe.xml.SchemaTransformer;
+import uk.co.real_logic.sbe.xml.SchemaTransformerFactory;
+import uk.co.real_logic.sbe.xml.XmlSchemaParser;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -269,68 +274,67 @@ public class SbeTool
             return;
         }
 
-        for (final String fileName : args)
+        try
         {
-            final Ir ir;
-            if (fileName.endsWith(".xml"))
+            for (final String fileName : args)
             {
-                final String xsdFilename = System.getProperty(SbeTool.VALIDATION_XSD);
-                if (xsdFilename != null)
+                final Ir ir;
+                if (fileName.endsWith(".xml"))
                 {
-                    validateAgainstSchema(fileName, xsdFilename);
-                }
+                    final String xsdFilename = System.getProperty(SbeTool.VALIDATION_XSD);
+                    if (xsdFilename != null)
+                    {
+                        validateAgainstSchema(fileName, xsdFilename);
+                    }
 
-                final MessageSchema schema;
-                try
-                {
-                    schema = parseSchema(fileName);
+                    final MessageSchema schema = parseSchema(fileName);
+
+                    final SchemaTransformer transformer = new SchemaTransformerFactory(
+                        System.getProperty(SCHEMA_TRANSFORM_VERSION));
+                    ir = new IrGenerator().generate(
+                        transformer.transform(schema), System.getProperty(TARGET_NAMESPACE));
                 }
-                catch (final Exception ex)
+                else if (fileName.endsWith(".sbeir"))
                 {
-                    System.err.println(ex.getMessage());
+                    try (IrDecoder irDecoder = new IrDecoder(fileName))
+                    {
+                        ir = irDecoder.decode();
+                    }
+                }
+                else
+                {
+                    System.err.println("Input file format not supported: " + fileName);
                     exitHandler.accept(-1);
                     return;
                 }
 
-                final SchemaTransformer transformer = new SchemaTransformerFactory(
-                    System.getProperty(SCHEMA_TRANSFORM_VERSION));
-                ir = new IrGenerator().generate(transformer.transform(schema), System.getProperty(TARGET_NAMESPACE));
-            }
-            else if (fileName.endsWith(".sbeir"))
-            {
-                try (IrDecoder irDecoder = new IrDecoder(fileName))
+                final String outputDirName = System.getProperty(OUTPUT_DIR, ".");
+                if (Boolean.parseBoolean(System.getProperty(GENERATE_STUBS, "true")))
                 {
-                    ir = irDecoder.decode();
+                    final String targetLanguage = System.getProperty(TARGET_LANGUAGE, "Java");
+
+                    generate(ir, outputDirName, targetLanguage);
+                }
+
+                if (Boolean.parseBoolean(System.getProperty(GENERATE_IR, "false")))
+                {
+                    final File inputFile = new File(fileName);
+                    final String inputFilename = inputFile.getName();
+                    final int nameEnd = inputFilename.lastIndexOf('.');
+                    final String namePart = inputFilename.substring(0, nameEnd);
+                    final File fullPath = new File(outputDirName, namePart + ".sbeir");
+
+                    try (IrEncoder irEncoder = new IrEncoder(fullPath.getAbsolutePath(), ir))
+                    {
+                        irEncoder.encode();
+                    }
                 }
             }
-            else
-            {
-                System.err.println("Input file format not supported: " + fileName);
-                exitHandler.accept(-1);
-                return;
-            }
-
-            final String outputDirName = System.getProperty(OUTPUT_DIR, ".");
-            if (Boolean.parseBoolean(System.getProperty(GENERATE_STUBS, "true")))
-            {
-                final String targetLanguage = System.getProperty(TARGET_LANGUAGE, "Java");
-
-                generate(ir, outputDirName, targetLanguage);
-            }
-
-            if (Boolean.parseBoolean(System.getProperty(GENERATE_IR, "false")))
-            {
-                final File inputFile = new File(fileName);
-                final String inputFilename = inputFile.getName();
-                final int nameEnd = inputFilename.lastIndexOf('.');
-                final String namePart = inputFilename.substring(0, nameEnd);
-                final File fullPath = new File(outputDirName, namePart + ".sbeir");
-
-                try (IrEncoder irEncoder = new IrEncoder(fullPath.getAbsolutePath(), ir))
-                {
-                    irEncoder.encode();
-                }
-            }
+        }
+        catch (final Exception ex)
+        {
+            ex.printStackTrace(System.err);
+            exitHandler.accept(-1);
         }
     }
 
