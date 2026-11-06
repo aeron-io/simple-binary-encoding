@@ -1,7 +1,25 @@
 = Changelog
 
-== 1.42.0 (unreleased)
+== 1.42.0 (2026-11-06)
 
+=== New & Noteworthy
+
+* **[C{plus}{plus}]** Add `sbeSetAllFields()` to generated message, group, and composite encoders.
+(https://github.com/aeron-io/simple-binary-encoding/pull/1135[#1135], https://github.com/aeron-io/simple-binary-encoding/issues/1076[Issue #1076])
+
+=== Changelog
+
+* **[Go]** Size struct-codec groups from decoded entries, not the wire count. (https://github.com/aeron-io/simple-binary-encoding/pull/1143[#1143])
+* **[C{plus}{plus}]** Escape quote and backslash when writing a single char field as JSON. (https://github.com/aeron-io/simple-binary-encoding/pull/1142[#1142])
+* **[C{plus}{plus}]** Compare as unsigned char when JSON-escaping control characters. (https://github.com/aeron-io/simple-binary-encoding/pull/1140[#1140])
+* **[C{plus}{plus}]** Generate `uint64` max lengths and counts as unsigned literals. (https://github.com/aeron-io/simple-binary-encoding/pull/1141[#1141])
+* **[Java]** Ensure active package manager resets to initial after output close. (https://github.com/aeron-io/simple-binary-encoding/pull/1147[#1147])
+* **[Java]** Use custom header encoder class in DTOs. (https://github.com/aeron-io/simple-binary-encoding/pull/1148[#1148])
+* **[Java]** Set presence on enum encodings in IR. (https://github.com/aeron-io/simple-binary-encoding/pull/1146[#1146])
+* **[Java]** Add newline after setter parameter in Java DTO group setter method. (https://github.com/aeron-io/simple-binary-encoding/pull/1149[#1149])
+* **[Java]** Catch validation errors and return `-1` instead of propagating an exception. (https://github.com/aeron-io/simple-binary-encoding/pull/1111[#1111])
+* **[Java]** Print char fields as `char` instead of numeric (when `primitiveType="char"`). (https://github.com/aeron-io/simple-binary-encoding/pull/1090[#1090]).
+* **[Java]** Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.7.1[Agrona 2.7.1].
 * **[Java]** Upgrade to `Gradle` 9.8.2.
 * **[Java]** Upgrade to `Versions` 0.67.0.
 
