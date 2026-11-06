@@ -20,11 +20,13 @@ import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.generation.CompilerUtil;
 import org.agrona.generation.StringWriterOutputManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import uk.co.real_logic.sbe.SbeTool;
 import uk.co.real_logic.sbe.Tests;
 import uk.co.real_logic.sbe.generation.common.PrecedenceChecks;
 import uk.co.real_logic.sbe.ir.Ir;
@@ -62,9 +64,15 @@ class JavaGeneratorTest
 
     private Ir ir;
 
+    private String previousKeywordAppendToken;
+
     @BeforeEach
     void setUp() throws Exception
     {
+        // Most of the tests use a schema with reserved Java keywords
+        previousKeywordAppendToken = System.getProperty(SbeTool.KEYWORD_APPEND_TOKEN);
+        System.setProperty(SbeTool.KEYWORD_APPEND_TOKEN, "_");
+
         try (InputStream in = Tests.getLocalResource("code-generation-schema.xml"))
         {
             final ParserOptions options = ParserOptions.builder().stopOnError(true).build();
@@ -74,6 +82,19 @@ class JavaGeneratorTest
 
             outputManager.clear();
             outputManager.setPackageName(ir.applicableNamespace());
+        }
+    }
+
+    @AfterEach
+    void tearDown()
+    {
+        if (previousKeywordAppendToken != null)
+        {
+            System.setProperty(SbeTool.KEYWORD_APPEND_TOKEN, previousKeywordAppendToken);
+        }
+        else
+        {
+            System.clearProperty(SbeTool.KEYWORD_APPEND_TOKEN);
         }
     }
 
