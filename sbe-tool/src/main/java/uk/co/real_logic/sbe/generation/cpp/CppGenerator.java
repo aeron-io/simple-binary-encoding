@@ -4496,7 +4496,7 @@ public class CppGenerator implements CodeGenerator
 
         return sb;
     }
-    
+
     /*
      * A uint64 maxValue does not fit in a long, so generate it as an unsigned literal rather than the negative
      * number held by longValue().
@@ -4508,7 +4508,7 @@ public class CppGenerator implements CodeGenerator
         return PrimitiveType.UINT64 == encoding.primitiveType() ?
             generateLiteral(PrimitiveType.UINT64, maxValue) : maxValue + signedSuffix;
 
-     }
+    }
 
     private static final class SettableField
     {
