@@ -70,6 +70,7 @@ public enum TargetCodeGeneratorLoader implements TargetCodeGenerator
                 final JavaDtoGenerator dtoGenerator = new JavaDtoGenerator(
                     ir,
                     shouldSupportTypesPackageNames,
+                    Boolean.getBoolean(JAVA_USE_ASCII_SEQUENCE_VIEW),
                     outputManager);
                 return () ->
                 {

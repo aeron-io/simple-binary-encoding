@@ -361,6 +361,27 @@ project(':sbe-tool') {
                 'src/test/resources/floating-point-infinity-schema.xml']
     }
 
+    tasks.register('generateTestDtosWithAsciiSequenceView', JavaExec) {
+        dependsOn 'compileJava'
+        mainClass.set('uk.co.real_logic.sbe.SbeTool')
+        classpath = sourceSets.main.runtimeClasspath
+        jvmArgs('--add-opens', 'java.base/jdk.internal.misc=ALL-UNNAMED')
+        systemProperties(
+                'sbe.output.dir': generatedDir,
+                'sbe.target.language': 'java',
+                'sbe.validation.stop.on.error': 'true',
+                'sbe.validation.xsd': validationXsdPath,
+                'sbe.generate.precedence.checks': 'true',
+                'sbe.java.precedence.checks.property.name': 'sbe.enable.test.precedence.checks',
+                'sbe.keyword.append.token': '$',
+                'sbe.java.generate.dtos': 'true',
+                'sbe.java.dto.asciisequenceview': 'true',
+                'sbe.target.namespace': 'dto_tests_with_asciisequenceview')
+        args = ['src/test/resources/example-extension-schema.xml',
+                'src/test/resources/dto-test-schema.xml',
+                'src/test/resources/floating-point-infinity-schema.xml']
+    }
+
     jar {
         manifest.attributes(
             'Specification-Title': 'Simple Binary Encoding',

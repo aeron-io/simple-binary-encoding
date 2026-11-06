@@ -979,6 +979,19 @@ public class JavaGenerator implements CodeGenerator
             indent,
             dimensionHeaderLen);
 
+        sb.append(indent).append("\n")
+                .append(indent).append("    public DirectBuffer buffer()\n")
+                .append(indent).append("    {\n")
+                .append(indent).append("        return buffer;\n")
+                .append(indent).append("    }\n");
+
+        sb.append(indent).append("\n")
+                .append(indent).append("    public int limit()\n")
+                .append(indent).append("    {\n")
+                .append(indent).append("        return parentMessage.limit();\n")
+                .append(indent).append("    }\n");
+
+
         final String blockLenCast = PrimitiveType.UINT32 == blockLengthType ? "(int)" : "";
         final String numInGroupCast = PrimitiveType.UINT32 == numInGroupType ? "(int)" : "";
 
@@ -1728,6 +1741,16 @@ public class JavaGenerator implements CodeGenerator
                 characterEncoding,
                 className,
                 indent);
+
+            generateEmptyCharArrayEncodeMethods(
+                    sb,
+                    propertyName,
+                    accessOrderListenerCall,
+                    sizeOfLengthField,
+                    lengthType,
+                    byteOrderStr,
+                    className,
+                    indent);
         }
     }
 
@@ -1821,6 +1844,37 @@ public class JavaGenerator implements CodeGenerator
                 generatePut(lengthPutType, "limit", "length", byteOrderStr),
                 accessOrderListenerCall);
         }
+    }
+
+    private void generateEmptyCharArrayEncodeMethods(
+            final StringBuilder sb,
+            final String propertyName,
+            final CharSequence accessOrderListenerCall,
+            final int sizeOfLengthField,
+            final PrimitiveType lengthType,
+            final String byteOrderStr,
+            final String className,
+            final String indent)
+    {
+        final PrimitiveType lengthPutType = PrimitiveType.UINT32 == lengthType ? PrimitiveType.INT32 : lengthType;
+
+        new Formatter(sb).format("\n" +
+                        indent + "    public %1$s %2$s()\n" +
+                        indent + "    {\n" +
+                        "%3$s" +
+                        indent + "        final int length = 0;\n" +
+                        indent + "        final int headerLength = %4$d;\n" +
+                        indent + "        final int limit = parentMessage.limit();\n" +
+                        indent + "        parentMessage.limit(limit + headerLength + length);\n" +
+                        indent + "        %5$s;\n" +
+                        indent + "        return this;\n" +
+                        indent + "    }\n",
+                className,
+                formatPropertyName(propertyName),
+                accessOrderListenerCall,
+                sizeOfLengthField,
+                generatePut(lengthPutType, "limit", "length", byteOrderStr),
+                accessOrderListenerCall);
     }
 
     private void generateVarDataTypedDecoder(

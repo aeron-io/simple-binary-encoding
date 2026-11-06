@@ -20,6 +20,7 @@ import uk.co.real_logic.sbe.generation.CodeGenerator;
 import uk.co.real_logic.sbe.generation.TargetCodeGenerator;
 import uk.co.real_logic.sbe.ir.Ir;
 
+import static uk.co.real_logic.sbe.SbeTool.JAVA_USE_ASCII_SEQUENCE_VIEW;
 import static uk.co.real_logic.sbe.SbeTool.TYPES_PACKAGE_OVERRIDE;
 
 /**
@@ -36,6 +37,7 @@ public class JavaDtos implements TargetCodeGenerator
         return new JavaDtoGenerator(
             ir,
             Boolean.getBoolean(TYPES_PACKAGE_OVERRIDE),
+            Boolean.getBoolean(JAVA_USE_ASCII_SEQUENCE_VIEW),
             new JavaOutputManager(outputDir, ir.applicableNamespace()));
     }
 }

@@ -219,6 +219,11 @@ public class SbeTool
     public static final String JAVA_GENERATE_DTOS = "sbe.java.generate.dtos";
 
     /**
+     * Should use AsciiSequenceView in place of String (for ASCII encoded fields) in Java DTOs.
+     */
+    public static final String JAVA_USE_ASCII_SEQUENCE_VIEW = "sbe.java.dto.asciisequenceview";
+
+    /**
      * Configuration option used to manage sinceVersion based transformations. When set, parsed schemas will be
      * transformed to discard messages and types higher than the specified version. This can be useful when needing
      * to generate older versions of a schema to do version compatibility testing.

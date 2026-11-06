@@ -61,6 +61,7 @@ public class DtosPropertyTest
     @Property
     void javaDtoEncodeShouldBeTheInverseOfDtoDecode(
         @ForAll("encodedMessage") final SbeArbitraries.EncodedMessage encodedMessage,
+        @ForAll final boolean useAsciiSequenceView,
         final Footnotes footnotes)
         throws Exception
     {
@@ -83,7 +84,7 @@ public class DtosPropertyTest
                     outputManager)
                     .generate();
 
-                new JavaDtoGenerator(encodedMessage.ir(), false, outputManager)
+                new JavaDtoGenerator(encodedMessage.ir(), false, useAsciiSequenceView, outputManager)
                     .generate();
             }
             catch (final Exception generationException)
