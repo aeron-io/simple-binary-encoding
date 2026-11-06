@@ -57,6 +57,7 @@ public class JavaDtoGenerator implements CodeGenerator
     private final Ir ir;
     private final DynamicPackageOutputManager outputManager;
     private final boolean shouldSupportTypesPackageNames;
+    private final boolean useAsciiSequenceView;
     private final Set<String> packageNameByTypes = new HashSet<>();
 
     /**
@@ -69,9 +70,11 @@ public class JavaDtoGenerator implements CodeGenerator
     public JavaDtoGenerator(
         final Ir ir,
         final boolean shouldSupportTypesPackageNames,
+        final boolean useAsciiSequenceView,
         final DynamicPackageOutputManager outputManager)
     {
         this.shouldSupportTypesPackageNames = shouldSupportTypesPackageNames;
+        this.useAsciiSequenceView = useAsciiSequenceView;
         Verify.notNull(ir, "ir");
         Verify.notNull(outputManager, "outputManager");
 
@@ -515,8 +518,7 @@ public class JavaDtoGenerator implements CodeGenerator
             .append(decoderClassName).append("();\n")
             .append(indent).append(INDENT)
             .append("decoder.wrap(buffer, offset, actingBlockLength, actingVersion);\n")
-            .append(indent).append(INDENT).append(dtoClassName).append(" dto = new ")
-            .append(dtoClassName).append("();\n")
+            .append(indent).append(INDENT).append(dtoClassName).append(" dto = new ").append(dtoClassName).append("();\n")
             .append(indent).append(INDENT).append("decodeWith(decoder, dto);\n")
             .append(indent).append(INDENT).append("return dto;\n")
             .append(indent).append("}\n");
@@ -810,10 +812,16 @@ public class JavaDtoGenerator implements CodeGenerator
                         .append("(").append(dataVar).append(", 0, decoder.").append(formattedPropertyName)
                         .append("Length());\n");
                 }
+                else if (useAsciiSequenceView && JavaUtil.isAsciiEncoding(characterEncoding))
+                {
+                    decoderValueExtraction
+                        .append(blockIndent).append("var ").append(formattedPropertyName).append("Offset = decoder.limit() + ").append(decoderClassName).append('.').append(formattedPropertyName).append("HeaderLength();\n")
+                        .append(blockIndent).append("var ").append(formattedPropertyName).append("Length = decoder.skip").append(Generators.toUpperFirstChar(formattedPropertyName)).append("();\n");
+                }
                 else
                 {
                     decoderValueExtraction.append(blockIndent).append("String ").append(dataVar)
-                        .append(" = decoder.").append(formattedPropertyName).append("();\n");
+                            .append(" = decoder.").append(formattedPropertyName).append("();\n");
                 }
 
                 if (isOptional)
@@ -825,24 +833,43 @@ public class JavaDtoGenerator implements CodeGenerator
 
                     sb.append(decoderValueExtraction);
 
-                    sb.append(indent).append(INDENT).append("dto.").append(formattedPropertyName).append("(")
-                        .append(dataVar).append(");\n");
+                    if (characterEncoding != null && useAsciiSequenceView && JavaUtil.isAsciiEncoding(characterEncoding)) {
+                        sb.append(indent).append(INDENT).append("dto.").append(formattedPropertyName).append(".wrap(decoder.buffer(), ").append(formattedPropertyName).append("Offset, ").append(formattedPropertyName).append("Length);\n");
 
-                    final String nullDtoValue = characterEncoding == null ? "new byte[0]" : "\"\"";
+                        sb.append(indent).append("}\n")
+                            .append(indent).append("else\n")
+                            .append(indent).append("{\n")
+                            .append(indent).append(INDENT).append("dto.").append(formattedPropertyName).append(".reset();\n")
+                            .append(indent).append("}\n");
+                    }
+                    else
+                    {
+                        sb.append(indent).append(INDENT).append("dto.").append(formattedPropertyName).append("(")
+                            .append(dataVar).append(");\n");
 
-                    sb.append(indent).append("}\n")
-                        .append(indent).append("else\n")
-                        .append(indent).append("{\n")
-                        .append(indent).append(INDENT).append("dto.")
-                        .append(formattedPropertyName).append("(").append(nullDtoValue).append(");\n")
-                        .append(indent).append("}\n");
+                        final String nullDtoValue = characterEncoding == null ? "new byte[0]" : "\"\"";
+
+                        sb.append(indent).append("}\n")
+                            .append(indent).append("else\n")
+                            .append(indent).append("{\n")
+                            .append(indent).append(INDENT).append("dto.")
+                            .append(formattedPropertyName).append("(").append(nullDtoValue).append(");\n")
+                            .append(indent).append("}\n");
+                    }
                 }
                 else
                 {
                     sb.append(decoderValueExtraction);
 
-                    sb.append(indent).append("dto.").append(formattedPropertyName).append("(")
-                        .append(dataVar).append(");\n");
+                    if (characterEncoding != null && useAsciiSequenceView && JavaUtil.isAsciiEncoding(characterEncoding))
+                    {
+                        sb.append(indent).append("dto.").append(formattedPropertyName).append(".wrap(decoder.buffer(), ").append(formattedPropertyName).append("Offset, ").append(formattedPropertyName).append("Length);\n");
+                    }
+                    else
+                    {
+                        sb.append(indent).append("dto.").append(formattedPropertyName).append("(")
+                            .append(dataVar).append(");\n");
+                    }
                 }
             }
         }
@@ -1190,6 +1217,22 @@ public class JavaDtoGenerator implements CodeGenerator
                         .append("dto.").append(formattedPropertyName).append("(),")
                         .append("0,")
                         .append("dto.").append(formattedPropertyName).append("().length);\n");
+                }
+                else if (useAsciiSequenceView && JavaUtil.isAsciiEncoding(characterEncoding)) {
+                    sb.append(indent).append("{\n")
+                        .append(indent).append("    var length = ").append("dto.").append(formattedPropertyName).append(".length();\n")
+                        .append(indent).append("    if (length == 0)\n")
+                        .append(indent).append("    {\n")
+                        .append(indent).append("        encoder.").append(formattedPropertyName).append("();\n")
+                        .append(indent).append("    }\n")
+                        .append(indent).append("    else\n")
+                        .append(indent).append("    {\n")
+                        .append(indent).append("        encoder.put").append(Generators.toUpperFirstChar(formattedPropertyName)).append("(")
+                                       .append("dto.").append(formattedPropertyName).append(".buffer(), ")
+                                       .append("dto.").append(formattedPropertyName).append(".offset(), ")
+                                       .append("length").append(");\n")
+                        .append(indent).append("    }\n")
+                        .append(indent).append("}\n");
                 }
                 else
                 {
@@ -1706,13 +1749,15 @@ public class JavaDtoGenerator implements CodeGenerator
                 final String propertyName = token.name();
                 final Token varDataToken = Generators.findFirst("varData", tokens, i);
                 final String characterEncoding = varDataToken.encoding().characterEncoding();
-                final String dtoType = characterEncoding == null ? "byte[]" : "String";
+                final String dtoType = characterEncoding == null ? "byte[]" : (useAsciiSequenceView && JavaUtil.isAsciiEncoding(characterEncoding) ? "org.agrona.AsciiSequenceView" : "String");
 
                 final String fieldName = formatFieldName(propertyName);
                 final String formattedPropertyName = formatPropertyName(propertyName);
 
+                final String fieldInitialiser = characterEncoding != null && useAsciiSequenceView && JavaUtil.isAsciiEncoding(characterEncoding) ? " = new org.agrona.AsciiSequenceView()" : "";
+
                 classBuilder.appendField()
-                    .append(indent).append("private ").append(dtoType).append(" ").append(fieldName).append(";\n");
+                    .append(indent).append("private ").append(dtoType).append(" ").append(fieldName).append(fieldInitialiser).append(";\n");
 
                 classBuilder.appendPublic().append("\n")
                     .append(indent).append("public ").append(dtoType).append(" ")

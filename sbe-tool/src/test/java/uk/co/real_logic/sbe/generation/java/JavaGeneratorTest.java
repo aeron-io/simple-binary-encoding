@@ -285,7 +285,7 @@ class JavaGeneratorTest
             outputManager.setPackageName(ir.applicableNamespace());
 
             generator().generate();
-            new JavaDtoGenerator(ir, false, outputManager).generate();
+            new JavaDtoGenerator(ir, false, false, outputManager).generate();
 
             final String source = outputManager.getSources().values().stream()
                 .map(CharSequence::toString)
@@ -720,7 +720,7 @@ class JavaGeneratorTest
             );
             generator.generate();
 
-            final JavaDtoGenerator javaDtoGenerator = new JavaDtoGenerator(ir, true, outputManager);
+            final JavaDtoGenerator javaDtoGenerator = new JavaDtoGenerator(ir, true, false, outputManager);
             javaDtoGenerator.generate();
 
             final Map<String, CharSequence> sources = outputManager.getSources();
