@@ -36,12 +36,12 @@ class ToStringTest extends EncodedCarTestBase
         final String result = CAR.toString();
         assertEquals(
             "[Car]" +
-            "(sbeTemplateId=1|sbeSchemaId=1|sbeSchemaVersion=2|sbeBlockLength=62):" +
+            "(sbeTemplateId=1|sbeSchemaId=1|sbeSchemaVersion=2|sbeBlockLength=60):" +
             "serialNumber=1234|modelYear=2013|available=T|code=A|" +
             "someNumbers=[0,1,2,3,4]|" +
-            "vehicleCode=ab\"def|" +
+            "vehicleCode=ab=5\n\1|" +
             "extras={sportsPack,cruiseControl}|" +
-            "engine=(capacity=2000|numCylinders=4|manufacturerCode=123|)|" +
+            "engine=(capacity=2000|numCylinders=4|manufacturerCode=$|)|" +
             "uuid=[7,3]|" +
             "cupHolderCount=5|" +
             "fuelFigures=[" +
@@ -51,7 +51,7 @@ class ToStringTest extends EncodedCarTestBase
             "performanceFigures=[" +
             "(octaneRating=95|acceleration=[(mph=30|seconds=4.0),(mph=60|seconds=7.5),(mph=100|seconds=12.2)])," +
             "(octaneRating=99|acceleration=[(mph=30|seconds=3.8),(mph=60|seconds=7.1),(mph=100|seconds=11.8)])]|" +
-            "manufacturer='Honda'|model='Civic VTi'|activationCode='315\\8'",
+            "manufacturer='Honda™\uD83D\uDE00'|model='Civic VTi'|activationCode='315\\8'",
             result);
     }
 
@@ -64,7 +64,7 @@ class ToStringTest extends EncodedCarTestBase
         final String result = CAR.toString();
         assertEquals(
             "[Car]" +
-            "(sbeTemplateId=1|sbeSchemaId=1|sbeSchemaVersion=2|sbeBlockLength=62):" +
+            "(sbeTemplateId=1|sbeSchemaId=1|sbeSchemaVersion=2|sbeBlockLength=60):" +
             "serialNumber=0|modelYear=0|available=F|code=NULL_VAL|someNumbers=[0,0,0,0,0]|vehicleCode=|extras={}|" +
             "engine=(capacity=0|numCylinders=0|manufacturerCode=|)|" +
             "uuid=[0,0]|cupHolderCount=0|" +

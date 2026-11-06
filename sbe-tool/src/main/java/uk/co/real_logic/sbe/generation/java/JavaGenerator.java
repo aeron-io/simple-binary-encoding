@@ -4603,14 +4603,9 @@ public class JavaGenerator implements CodeGenerator
                 {
                     if (typeToken.encoding().primitiveType() == PrimitiveType.CHAR)
                     {
-                        append(sb, indent, "char _" + fieldName + " = (char) this." + fieldName + "();");
-                        append(sb, indent, "if (_" + fieldName + " >= 32 && _" + fieldName + " <= 127)");
+                        append(sb, indent, "if(this." + fieldName + "() > 0)");
                         append(sb, indent, "{");
-                        append(sb, indent, "    builder.append('\\'').append(_" + fieldName + ").append('\\'');");
-                        append(sb, indent, "}");
-                        append(sb, indent, "else");
-                        append(sb, indent, "{");
-                        append(sb, indent, "    builder.append('\\\\').append((int) _" + fieldName + ");");
+                        append(sb, indent, "    builder.append((char) this." + fieldName + "());");
                         append(sb, indent, "}");
                     }
                     else

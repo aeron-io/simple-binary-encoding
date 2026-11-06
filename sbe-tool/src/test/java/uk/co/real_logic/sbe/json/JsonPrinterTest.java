@@ -64,14 +64,14 @@ class JsonPrinterTest extends EncodedCarTestBase
             "    \"available\": \"T\",\n" +
             "    \"code\": \"A\",\n" +
             "    \"someNumbers\": [0, 1, 2, 3, 4],\n" +
-            "    \"vehicleCode\": \"ab\\\"def\",\n" +
+            "    \"vehicleCode\": \"ab=5\\n\\u0001\",\n" +
             "    \"extras\": { \"sunRoof\": false, \"sportsPack\": true, \"cruiseControl\": true },\n" +
             "    \"engine\": \n" +
             "    {\n" +
             "        \"capacity\": 2000,\n" +
             "        \"numCylinders\": 4,\n" +
             "        \"maxRpm\": 9000,\n" +
-            "        \"manufacturerCode\": \"123\",\n" +
+            "        \"manufacturerCode\": \"$\",\n" +
             "        \"fuel\": \"Petrol\"\n" +
             "    },\n" +
             "    \"uuid\": [7, 3],\n" +
@@ -122,7 +122,7 @@ class JsonPrinterTest extends EncodedCarTestBase
             "            \"seconds\": 11.8\n" +
             "        }]\n" +
             "    }],\n" +
-            "    \"manufacturer\": \"Honda\",\n" +
+            "    \"manufacturer\": \"Honda™\\uD83D\\uDE00\",\n" +
             "    \"model\": \"Civic VTi\",\n" +
             "    \"activationCode\": \"315\\\\8\"\n" +
             "}",
@@ -179,7 +179,7 @@ class JsonPrinterTest extends EncodedCarTestBase
             "    \"vehicleCode\": \"vc\",\n" + //trailing garbage removed
             "    \"extras\": { \"sunRoof\": false, \"sportsPack\": false, \"cruiseControl\": false },\n" +
             "    \"engine\": \n" + "    {\n" + "        \"capacity\": 0,\n" + "        \"numCylinders\": 0,\n" +
-            "        \"maxRpm\": 9000,\n" + "        \"manufacturerCode\": \"\",\n" +
+            "        \"maxRpm\": 9000,\n" + "        \"manufacturerCode\": \"\\u0000\",\n" +
             "        \"fuel\": \"Petrol\"\n" + "    },\n" + "    \"uuid\": [0, 0],\n" + "    \"cupHolderCount\": 0,\n" +
             "    \"fuelFigures\": [],\n" + "    \"performanceFigures\": [],\n" + "    \"manufacturer\": \"\",\n" +
             "    \"model\": \"\",\n" + "    \"activationCode\": \"\"\n" + "}",

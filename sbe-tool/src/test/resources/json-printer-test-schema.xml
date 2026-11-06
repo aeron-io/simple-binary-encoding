@@ -37,7 +37,7 @@
             <type name="capacity" primitiveType="uint16"/>
             <type name="numCylinders" primitiveType="uint8"/>
             <type name="maxRpm" primitiveType="uint16" presence="constant">9000</type>
-            <type name="manufacturerCode" primitiveType="char" length="3"/>
+            <type name="manufacturerCode" primitiveType="char"/>
             <type name="fuel" primitiveType="char" presence="constant">Petrol</type>
         </composite>
         <enum name="BooleanType" encodingType="uint8">
