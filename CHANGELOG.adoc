@@ -1,5 +1,7 @@
 = Changelog
 
+== 1.43.0 (unreleased)
+
 == 1.42.0 (2026-11-06)
 
 === New & Noteworthy
