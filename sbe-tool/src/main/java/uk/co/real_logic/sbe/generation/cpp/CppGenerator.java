@@ -2583,7 +2583,7 @@ public class CppGenerator implements CodeGenerator
             indent + "                case '\\r': oss << \"\\\\r\"; break;\n" +
             indent + "                case '\\t': oss << \"\\\\t\"; break;\n\n" +
             indent + "                default:\n" +
-            indent + "                    if ('\\x00' <= c && c <= '\\x1f')\n" +
+            indent + "                    if (static_cast<unsigned char>(c) <= 0x1f)\n" +
             indent + "                    {\n" +
             indent + "                        oss << \"\\\\u\"" + " << std::hex << std::setw(4)\n" +
             indent + "                            << std::setfill('0') << (int)(c);\n" +
