@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1607,6 +1607,10 @@ public class JavaGenerator implements CodeGenerator
                 indent + "        final int headerLength = %3$d;\n" +
                 indent + "        final int limit = parentMessage.limit();\n" +
                 indent + "        final int dataLength = %4$s%5$s;\n" +
+                indent + "        if (dataLength < 0 || dataLength > buffer.capacity() - limit - headerLength)\n" +
+                indent + "        {\n" +
+                indent + "            throw new IndexOutOfBoundsException(\"var data length=\" + dataLength);\n" +
+                indent + "        }\n\n" +
                 indent + "        parentMessage.limit(limit + headerLength + dataLength);\n\n" +
                 indent + "        if (0 == dataLength)\n" +
                 indent + "        {\n" +

@@ -578,6 +578,11 @@ public final class FrameCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength < 0 || dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         parentMessage.limit(limit + headerLength + dataLength);
 
         if (0 == dataLength)
@@ -736,6 +741,11 @@ public final class FrameCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength < 0 || dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         parentMessage.limit(limit + headerLength + dataLength);
 
         if (0 == dataLength)
@@ -894,6 +904,11 @@ public final class FrameCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength < 0 || dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         parentMessage.limit(limit + headerLength + dataLength);
 
         if (0 == dataLength)
