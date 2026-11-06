@@ -140,7 +140,6 @@ public class DtoTest
 
         final CustomCarDecoder decoder = new CustomCarDecoder();
         decoder.wrap(inputBuffer, 0, CustomCarDecoder.BLOCK_LENGTH, CustomCarDecoder.SCHEMA_VERSION);
-        final String decoderString = decoder.toString();
 
         final CustomCarDto dto = new CustomCarDto();
         CustomCarDto.decodeWith(decoder, dto);
