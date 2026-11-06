@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3989,9 +3989,15 @@ public class CppGenerator implements CodeGenerator
                     if (typeToken.encoding().primitiveType() == PrimitiveType.CHAR)
                     {
                         sb.append(
-                            indent + "if (std::isprint(" + fieldName + "()))\n" +
+                            indent + "if (std::isprint(static_cast<unsigned char>(" + fieldName + "())))\n" +
                             indent + "{\n" +
-                            indent + "    builder << '\"' << (char)" + fieldName + "() << '\"';\n" +
+                            indent + "    const char c = " + fieldName + "();\n" +
+                            indent + "    builder << '\"';\n" +
+                            indent + "    if ('\"' == c || '\\\\' == c)\n" +
+                            indent + "    {\n" +
+                            indent + "        builder << '\\\\';\n" +
+                            indent + "    }\n" +
+                            indent + "    builder << c << '\"';\n" +
                             indent + "}\n" +
                             indent + "else\n" +
                             indent + "{\n" +
