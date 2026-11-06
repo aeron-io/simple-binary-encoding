@@ -813,6 +813,7 @@ tasks.register('generateGolangCodecsWithXSD', JavaExec) {
             'sbe-tool/src/test/resources/floating-point-infinity-schema.xml',
             'sbe-tool/src/test/resources/since-deprecated-test-schema.xml',
             'sbe-tool/src/test/resources/example-bigendian-test-schema.xml',
+            'sbe-tool/src/test/resources/uint64-length-schema.xml',
             'gocode/resources/example-composite.xml',
             'gocode/resources/group-with-data-extension-schema.xml',
             'gocode/resources/simple.xml']
