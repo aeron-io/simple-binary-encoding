@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -237,6 +237,13 @@ public class JsonTokenListener implements TokenListener
     {
         try
         {
+            if (length < 0 || length > buffer.capacity() - bufferIndex)
+            {
+                throw new IndexOutOfBoundsException(
+                    "var data length=" + length + " exceeds buffer capacity=" + buffer.capacity() +
+                    " at index=" + bufferIndex);
+            }
+
             property(fieldToken.name());
             doubleQuote();
 
