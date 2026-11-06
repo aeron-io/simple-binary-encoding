@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  * Copyright (C) 2017 MarketFactory, Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1340,7 +1340,9 @@ public class CSharpDtoGenerator implements CodeGenerator
                 .append(indent).append("public static string ").append(toUpperFirstChar(propertyName)).append("\n")
                 .append(indent).append("{\n")
                 .append(indent).append(INDENT)
-                .append("get { return \"").append(typeToken.encoding().constValue().toString()).append("\"; }\n")
+                .append("get { return \"")
+                .append(Generators.escapeStringLiteral(typeToken.encoding().constValue().toString(), false))
+                .append("\"; }\n")
                 .append(indent).append("}\n");
         }
         else

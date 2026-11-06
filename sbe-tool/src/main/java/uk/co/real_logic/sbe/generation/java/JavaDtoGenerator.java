@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  * Copyright (C) 2017 MarketFactory, Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1679,7 +1679,8 @@ public class JavaDtoGenerator implements CodeGenerator
                 .append(indent).append("public static String ").append(toLowerFirstChar(propertyName)).append("()\n")
                 .append(indent).append("{\n")
                 .append(indent).append(INDENT)
-                .append("return \"").append(typeToken.encoding().constValue().toString()).append("\";\n")
+                .append("return \"").append(escapeJavaStringLiteral(typeToken.encoding().constValue().toString()))
+                .append("\";\n")
                 .append(indent).append("}\n");
         }
         else
@@ -2014,7 +2015,7 @@ public class JavaDtoGenerator implements CodeGenerator
 
         return
             indent + "/**\n" +
-                indent + " * " + description + "\n" +
+                indent + " * " + escapeJavadoc(description) + "\n" +
                 indent + " */\n";
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  * Copyright (C) 2017 MarketFactory, Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2381,7 +2381,8 @@ public class CSharpGenerator implements CodeGenerator
 
         if (typeToken.isConstantEncoding())
         {
-            append(sb, indent, "builder.Append(\"" + typeToken.encoding().constValue() + "\");");
+            final String constValue = typeToken.encoding().constValue().toString();
+            append(sb, indent, "builder.Append(\"" + Generators.escapeStringLiteral(constValue, false) + "\");");
         }
         else
         {
