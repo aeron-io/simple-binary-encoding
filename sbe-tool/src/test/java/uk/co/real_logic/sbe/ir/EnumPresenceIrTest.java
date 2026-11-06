@@ -32,39 +32,40 @@ import static uk.co.real_logic.sbe.xml.XmlSchemaParser.parse;
 class EnumPresenceIrTest
 {
     private static final String SCHEMA =
-        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" +
-        "<sbe:messageSchema xmlns:sbe=\"http://fixprotocol.io/2016/sbe\"" +
-        "    package=\"enum.presence\" id=\"1063\" version=\"0\" byteOrder=\"littleEndian\">" +
-        "  <types>" +
-        "    <composite name=\"messageHeader\">" +
-        "      <type name=\"blockLength\" primitiveType=\"uint16\"/>" +
-        "      <type name=\"templateId\" primitiveType=\"uint16\"/>" +
-        "      <type name=\"schemaId\" primitiveType=\"uint16\"/>" +
-        "      <type name=\"version\" primitiveType=\"uint16\"/>" +
-        "    </composite>" +
-        "    <type name=\"uInt8NULL\" primitiveType=\"uint8\" presence=\"optional\" nullValue=\"255\"/>" +
-        "    <enum name=\"OptionalEncodingEnum\" encodingType=\"uInt8NULL\">" +
-        "      <validValue name=\"A\">0</validValue>" +
-        "    </enum>" +
-        "    <enum name=\"OptionalEnum\" encodingType=\"uint8\" presence=\"optional\" nullValue=\"255\">" +
-        "      <validValue name=\"A\">0</validValue>" +
-        "    </enum>" +
-        "    <enum name=\"RequiredEnum\" encodingType=\"uint8\">" +
-        "      <validValue name=\"A\">0</validValue>" +
-        "    </enum>" +
-        "    <composite name=\"Holder\">" +
-        "      <ref name=\"optionalEncoding\" type=\"OptionalEncodingEnum\"/>" +
-        "      <ref name=\"required\" type=\"RequiredEnum\"/>" +
-        "    </composite>" +
-        "  </types>" +
-        "  <sbe:message name=\"Msg\" id=\"1\">" +
-        "    <field name=\"optionalEncoding\" id=\"1\" type=\"OptionalEncodingEnum\"/>" +
-        "    <field name=\"optionalEnum\" id=\"2\" type=\"OptionalEnum\"/>" +
-        "    <field name=\"required\" id=\"3\" type=\"RequiredEnum\"/>" +
-        "    <field name=\"optionalField\" id=\"4\" type=\"RequiredEnum\" presence=\"optional\"/>" +
-        "    <field name=\"holder\" id=\"5\" type=\"Holder\"/>" +
-        "  </sbe:message>" +
-        "</sbe:messageSchema>";
+        """
+            <?xml version="1.0" encoding="UTF-8" standalone="yes"?>\
+            <sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"\
+                package="enum.presence" id="1063" version="0" byteOrder="littleEndian">\
+              <types>\
+                <composite name="messageHeader">\
+                  <type name="blockLength" primitiveType="uint16"/>\
+                  <type name="templateId" primitiveType="uint16"/>\
+                  <type name="schemaId" primitiveType="uint16"/>\
+                  <type name="version" primitiveType="uint16"/>\
+                </composite>\
+                <type name="uInt8NULL" primitiveType="uint8" presence="optional" nullValue="255"/>\
+                <enum name="OptionalEncodingEnum" encodingType="uInt8NULL">\
+                  <validValue name="A">0</validValue>\
+                </enum>\
+                <enum name="OptionalEnum" encodingType="uint8" presence="optional" nullValue="255">\
+                  <validValue name="A">0</validValue>\
+                </enum>\
+                <enum name="RequiredEnum" encodingType="uint8">\
+                  <validValue name="A">0</validValue>\
+                </enum>\
+                <composite name="Holder">\
+                  <ref name="optionalEncoding" type="OptionalEncodingEnum"/>\
+                  <ref name="required" type="RequiredEnum"/>\
+                </composite>\
+              </types>\
+              <sbe:message name="Msg" id="1">\
+                <field name="optionalEncoding" id="1" type="OptionalEncodingEnum"/>\
+                <field name="optionalEnum" id="2" type="OptionalEnum"/>\
+                <field name="required" id="3" type="RequiredEnum"/>\
+                <field name="optionalField" id="4" type="RequiredEnum" presence="optional"/>\
+                <field name="holder" id="5" type="Holder"/>\
+              </sbe:message>\
+            </sbe:messageSchema>""";
 
     @Test
     void shouldCarryEnumTypePresenceOnEnumTokens() throws Exception
