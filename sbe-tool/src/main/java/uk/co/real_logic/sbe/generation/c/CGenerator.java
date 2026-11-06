@@ -315,7 +315,7 @@ public class CGenerator implements CodeGenerator
             "#pragma GCC diagnostic push\n" +
             "#pragma GCC diagnostic ignored \"-Wtype-limits\"\n" +
             "#endif\n" +
-            "    if (%7$scount > %8$d)\n" +
+            "    if (%7$scount > %8$s)\n" +
             "    {\n" +
             "        errno = E110;\n" +
             "        return NULL;\n" +
@@ -343,7 +343,7 @@ public class CGenerator implements CodeGenerator
             groupName, cTypeForBlockLength, blockLength, cTypeForNumInGroup,
             dimensionsStructName, dimensionHeaderLength,
             minCheck,
-            numInGroupToken.encoding().applicableMaxValue().longValue()));
+            generateMaxValueLiteral(numInGroupToken.encoding())));
 
         sb.append(String.format("\n" +
             "SBE_ONE_DEF uint64_t %3$s_sbe_header_size(void)\n" +
@@ -2551,5 +2551,17 @@ public class CGenerator implements CodeGenerator
         }
 
         return literal;
+    }
+
+    /*
+     * A uint64 maxValue does not fit in a long, so generate it as an unsigned literal rather than the negative
+     * number held by longValue().
+     */
+    private static CharSequence generateMaxValueLiteral(final Encoding encoding)
+    {
+        final String maxValue = encoding.applicableMaxValue().toString();
+
+        return PrimitiveType.UINT64 == encoding.primitiveType() ?
+            generateLiteral(PrimitiveType.UINT64, maxValue) : maxValue;
     }
 }
