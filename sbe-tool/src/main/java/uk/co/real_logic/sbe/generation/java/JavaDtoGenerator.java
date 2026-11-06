@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  * Copyright (C) 2017 MarketFactory, Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -464,7 +464,7 @@ public class JavaDtoGenerator implements CodeGenerator
             .append(decoderClassName).append(" decoder)\n")
             .append(indent).append("{\n")
             .append(indent).append(INDENT).append("List<").append(dtoClassName)
-            .append("> dtos = new ArrayList<>(decoder.count());\n")
+            .append("> dtos = new ArrayList<>();\n")
             .append(indent).append(INDENT)
             .append("while (decoder.hasNext())\n")
             .append(indent).append(INDENT)
