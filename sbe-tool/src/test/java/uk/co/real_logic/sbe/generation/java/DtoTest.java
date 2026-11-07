@@ -31,6 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class DtoTest
 {
@@ -126,10 +127,10 @@ public class DtoTest
         CarDto.decodeWith(decoder, dto);
 
         final byte[] bytes = CarDto.bytes(dto);
-        assertEquals(235, bytes.length);
+        assertEquals(251, bytes.length);
 
         final byte[] bytesWithHeader = CarDto.bytesWithHeader(dto);
-        assertEquals(243, bytesWithHeader.length);
+        assertEquals(259, bytesWithHeader.length);
     }
 
     @Test
@@ -149,6 +150,49 @@ public class DtoTest
 
         final byte[] bytesWithHeader = CustomCarDto.bytesWithHeader(dto);
         assertEquals(247, bytesWithHeader.length);
+    }
+
+    @Test
+    void shouldAcceptValueInRange()
+    {
+        final CarDto car = new CarDto();
+
+        // UINT64 [0, 18446744073709551614] (implicit, implicit)
+        car.serialNumber(0L);
+        car.serialNumber(Long.MAX_VALUE);
+        car.serialNumber(Long.parseUnsignedLong("18446744073709551614"));
+
+        // UINT64 / Kilometers [0, 150000000] (implicit, explicit)
+        car.mileage(0L);
+        car.mileage(10L);
+        car.mileage(149999999L);
+        car.mileage(150000000L);
+
+        // UINT64 / Cents  [10000000000000000000, 15000000000000000000] (explicit, explicit)
+        car.price(Long.parseUnsignedLong("10000000000000000000"));
+        car.price(Long.parseUnsignedLong("10000000000000000001"));
+        car.price(Long.parseUnsignedLong("14999999999999999999"));
+        car.price(Long.parseUnsignedLong("15000000000000000000"));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenValueOutsideOfRange()
+    {
+        final CarDto car = new CarDto();
+
+        // UINT64 [0, 18446744073709551614] (implicit, implicit)
+        assertThrows(IllegalArgumentException.class, () -> car.serialNumber(CarEncoder.serialNumberNullValue()));
+
+        // UINT64 / Kilometers [0, 150000000] (implicit, explicit)
+        assertThrows(IllegalArgumentException.class, () -> car.mileage(150000001L));
+        assertThrows(IllegalArgumentException.class, () -> car.mileage(Long.parseUnsignedLong("18446744073709551614")));
+        assertThrows(IllegalArgumentException.class, () -> car.mileage(Long.parseUnsignedLong("18446744073709551615")));
+
+        // UINT64 / Cents  [10000000000000000000, 15000000000000000000] (explicit, explicit)
+        assertThrows(IllegalArgumentException.class, () -> car.price(Long.parseUnsignedLong("9999999999999999999")));
+        assertThrows(IllegalArgumentException.class, () -> car.price(Long.parseUnsignedLong("15000000000000000001")));
+        assertThrows(IllegalArgumentException.class, () -> car.price(Long.parseUnsignedLong("18446744073709551614")));
+        assertThrows(IllegalArgumentException.class, () -> car.price(Long.parseUnsignedLong("18446744073709551615")));
     }
 
     @Test
@@ -218,6 +262,8 @@ public class DtoTest
         car.extras().cruiseControl(true).sportsPack(true);
 
         car.cupHolderCount((short)119);
+        car.mileage(100_000L);
+        car.price(Long.parseUnsignedLong("10000000000000000005"));
 
         car.engine().capacity(2000)
             .numCylinders((short)4)

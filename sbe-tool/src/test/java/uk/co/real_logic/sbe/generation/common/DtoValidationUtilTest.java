@@ -64,10 +64,22 @@ public class DtoValidationUtilTest
         "uint64,SIGNED_AND_UNSIGNED,true,18446744073709551615,1,18446744073709551614,true,false",
         "uint64,SIGNED_AND_UNSIGNED,true,18446744073709551615,0,18446744073709551613,false,true",
         "uint64,SIGNED_AND_UNSIGNED,true,18446744073709551615,1,18446744073709551613,true,true",
+        "uint64,SIGNED_AND_UNSIGNED,true,18446744073709551615,0,100,false,true",
+        "uint64,SIGNED_AND_UNSIGNED,false,18446744073709551615,0,100,false,true",
+        "uint64,SIGNED_AND_UNSIGNED,false,18446744073709551615,0,18446744073709551614,false,true",
+        "uint64,SIGNED_AND_UNSIGNED,true,18446744073709551615,0,9223372036854775808,false,true",
+        "uint64,SIGNED_AND_UNSIGNED,true,18446744073709551615,100,18446744073709551614,true,false",
+        "uint64,SIGNED_AND_UNSIGNED,false,18446744073709551615,100,18446744073709551614,true,true",
+        "uint64,SIGNED_AND_UNSIGNED,true,18446744073709551615,9223372036854775809,18446744073709551614,true,false",
         "uint64,SIGNED_ONLY,true,18446744073709551615,0,18446744073709551614,false,false",
         "uint64,SIGNED_ONLY,true,18446744073709551615,1,18446744073709551614,true,false",
         "uint64,SIGNED_ONLY,true,18446744073709551615,0,18446744073709551613,false,true",
         "uint64,SIGNED_ONLY,true,18446744073709551615,1,18446744073709551613,true,true",
+        "uint64,SIGNED_ONLY,true,18446744073709551615,0,100,false,true",
+        "uint64,SIGNED_ONLY,false,18446744073709551615,0,100,false,true",
+        "uint64,SIGNED_ONLY,true,18446744073709551615,0,9223372036854775808,false,true",
+        "uint64,SIGNED_ONLY,true,18446744073709551615,100,18446744073709551614,true,false",
+        "uint64,SIGNED_ONLY,true,18446744073709551615,9223372036854775809,18446744073709551614,true,false",
     })
     void shouldGenerateValidationBasedOnNativeRangeVersusSbeTypeRange(
         final String type,
@@ -95,11 +107,11 @@ public class DtoValidationUtilTest
             nativeTypeRepresentsValuesGreaterThanValidRange(fieldToken, encoding, integerSupport);
 
         assertEquals(
-            shouldValidateBelow, validatesBelow,
-            shouldValidateBelow ? "should" : "should not" + " validate below");
+                shouldValidateBelow, validatesBelow,
+                (shouldValidateBelow ? "should" : "should not") + " validate below");
 
         assertEquals(
-            shouldValidateAbove, validatesAbove,
-            shouldValidateAbove ? "should" : "should not" + " validate above");
+                shouldValidateAbove, validatesAbove,
+                (shouldValidateAbove ? "should" : "should not") + " validate above");
     }
 }
