@@ -7,8 +7,6 @@ query-filters:
   - exclude:
       id: java/iterator-implements-iterable
   - exclude:
-      id: java/missing-override-annotation
-  - exclude:
       id: java/uncaught-number-format-exception
   - exclude:
       id: java/unused-parameter
