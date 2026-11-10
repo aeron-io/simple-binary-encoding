@@ -694,6 +694,7 @@ tasks.register('generateRustTestCodecs', JavaExec) {
             'sbe-tool/src/test/resources/example-bigendian-test-schema.xml',
             'sbe-tool/src/test/resources/fixed-sized-primitive-array-types.xml',
             'sbe-tool/src/test/resources/nested-composite-name.xml',
+            'sbe-tool/src/test/resources/rust-custom-header.xml',
     ]
 }
 

@@ -36,6 +36,7 @@ class MessageCoderDef implements RustGenerator.ParentDef
 
     private final Ir ir;
     private final Token msgToken;
+    private final String headerType;
     final String name;
     final CodecType codecType;
 
@@ -43,6 +44,7 @@ class MessageCoderDef implements RustGenerator.ParentDef
     {
         this.ir = ir;
         this.msgToken = msgToken;
+        this.headerType = ir.headerStructure().tokens().get(0).name();
         this.name = formatStructName(msgToken.name());
         this.codecType = codecType;
     }
@@ -64,7 +66,7 @@ class MessageCoderDef implements RustGenerator.ParentDef
     {
         indent(sb, 0, "pub mod %s {\n", codecType.toString().toLowerCase());
         indent(sb, 1, "use super::*;\n");
-        indent(sb, 1, "use message_header_codec::*;\n\n");
+        indent(sb, 1, "use %s::*;\n\n", codecModName(headerType));
 
         // i.e. <name>Decoder or <name>Encoder
         final String msgTypeName = formatStructName(msgToken.name()) + codecType.name();
@@ -130,9 +132,10 @@ class MessageCoderDef implements RustGenerator.ParentDef
 
     void appendMessageHeaderEncoderFn(final Appendable out) throws IOException
     {
+        final String headerEncoderType = encoderName(headerType);
         indent(out, 2, "#[inline]\n");
-        indent(out, 2, "pub fn header(self, offset: usize) -> MessageHeaderEncoder<Self> {\n");
-        indent(out, 3, "let mut header = MessageHeaderEncoder::default().wrap(self, offset);\n");
+        indent(out, 2, "pub fn header(self, offset: usize) -> %s<Self> {\n", headerEncoderType);
+        indent(out, 3, "let mut header = %s::default().wrap(self, offset);\n", headerEncoderType);
         indent(out, 3, "header.block_length(SBE_BLOCK_LENGTH);\n");
         indent(out, 3, "header.template_id(SBE_TEMPLATE_ID);\n");
         indent(out, 3, "header.schema_id(SBE_SCHEMA_ID);\n");
@@ -144,13 +147,14 @@ class MessageCoderDef implements RustGenerator.ParentDef
     void appendMessageHeaderDecoderFn(final Appendable out) throws IOException
     {
         indent(out, 2, "#[inline]\n");
-        indent(out, 2, "pub fn header(self, mut header: MessageHeaderDecoder<ReadBuf<'a>>, offset: usize) -> Self {\n");
+        indent(out, 2, "pub fn header(self, mut header: %s<ReadBuf<'a>>, offset: usize) -> Self {\n",
+            decoderName(headerType));
         indent(out, 3, "debug_assert_eq!(SBE_TEMPLATE_ID, header.template_id());\n");
         indent(out, 3, "let acting_block_length = header.block_length();\n");
         indent(out, 3, "let acting_version = header.version();\n\n");
         indent(out, 3, "self.wrap(\n");
         indent(out, 4, "header.parent().unwrap(),\n");
-        indent(out, 4, "offset + message_header_codec::ENCODED_LENGTH,\n");
+        indent(out, 4, "offset + %s::ENCODED_LENGTH,\n", codecModName(headerType));
         indent(out, 4, "acting_block_length,\n");
         indent(out, 4, "acting_version,\n");
         indent(out, 3, ")\n");

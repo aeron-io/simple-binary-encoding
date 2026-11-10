@@ -27,6 +27,7 @@ nested_composite_name = { path = "../generated/rust/nested_composite_name" }
 sbe_tests = { path = "../generated/rust/sbe_tests" }
 optional_enum_nullify = { path = "../generated/rust/optional_enum_nullify" }
 fixed_sized_primitive_array = { path = "../generated/rust/fixed_sized_primitive_array" }
+custom_header = { path = "../generated/rust/custom_header" }
 
 [dev-dependencies]
 criterion = "0.7"
