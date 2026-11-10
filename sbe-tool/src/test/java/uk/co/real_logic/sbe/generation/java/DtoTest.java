@@ -200,6 +200,36 @@ public class DtoTest
         assertArrayEquals(originalBytes, otherBytes);
     }
 
+    @Test
+    public void shouldEncodeDefaultCarAndComputeEncodedLength()
+    {
+        final ExpandableArrayBuffer inputBuffer = new ExpandableArrayBuffer();
+        final CarDto car = new CarDto();
+
+        int encodedLength = CarDto.encodeWith(car, inputBuffer, 0);
+        int computedLength = car.computeEncodedLength();
+        assertEquals(encodedLength, computedLength);
+
+        encodedLength = CarDto.encodeWithHeaderWith(car, inputBuffer, 0);
+        computedLength = car.computeEncodedLength() + MessageHeaderEncoder.ENCODED_LENGTH;
+        assertEquals(encodedLength, computedLength);
+    }
+
+    @Test
+    public void shouldEncodeDefaultCustomCarAndComputeEncodedLength()
+    {
+        final ExpandableArrayBuffer inputBuffer = new ExpandableArrayBuffer();
+        final CustomCarDto car = new CustomCarDto();
+
+        int encodedLength = CustomCarDto.encodeWith(car, inputBuffer, 0);
+        int computedLength = car.computeEncodedLength();
+        assertEquals(encodedLength, computedLength);
+
+        encodedLength = CustomCarDto.encodeWithHeaderWith(car, inputBuffer, 0);
+        computedLength = car.computeEncodedLength() + CustomMessageHeaderEncoder.ENCODED_LENGTH;
+        assertEquals(encodedLength, computedLength);
+    }
+
     private static int encodeCar(final MutableDirectBuffer buffer, final int offset)
     {
         final CarEncoder car = new CarEncoder();

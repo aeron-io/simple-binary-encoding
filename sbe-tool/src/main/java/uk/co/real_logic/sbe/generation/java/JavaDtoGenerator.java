@@ -103,6 +103,7 @@ public class JavaDtoGenerator implements CodeGenerator
     @Override
     public void generate() throws IOException
     {
+        packageNameByTypes.clear();
         generateDtosForTypes();
 
         for (final List<Token> tokens : ir.messages())
@@ -384,16 +385,18 @@ public class JavaDtoGenerator implements CodeGenerator
 
                 if (characterEncoding == null)
                 {
-                    lengthBuilder.append("this.").append(fieldName).append(".length");
+                    lengthBuilder.append("this.").append(fieldName).append(" != null ? this.").append(fieldName).append(
+                            ".length : 0");
                 }
                 else if (JavaUtil.isAsciiEncoding(characterEncoding))
                 {
-                    lengthBuilder.append("this.").append(fieldName).append(".length()");
+                    lengthBuilder.append("this.").append(fieldName).append(" != null ? this.").append(fieldName).append(
+                            ".length() : 0");
                 }
                 else
                 {
-                    lengthBuilder.append("this.").append(fieldName)
-                        .append(".getBytes(").append(JavaUtil.charset(characterEncoding)).append(").length");
+                    lengthBuilder.append("this.").append(fieldName).append(" != null ? this.").append(fieldName).append(
+                            ".getBytes(").append(JavaUtil.charset(characterEncoding)).append(").length : 0");
                 }
 
                 lengthBuilder.append(";\n\n");
