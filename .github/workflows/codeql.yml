@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - codeql-filter-test
   pull_request:
     types: [opened, synchronize]
     branches:
