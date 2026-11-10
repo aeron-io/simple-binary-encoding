@@ -59,6 +59,7 @@ public class RustGenerator implements CodeGenerator
     {
         Decoder
         {
+            @Override
             String bufType()
             {
                 return READ_BUF_TYPE;
@@ -67,6 +68,7 @@ public class RustGenerator implements CodeGenerator
 
         Encoder
         {
+            @Override
             String bufType()
             {
                 return WRITE_BUF_TYPE;

@@ -138,6 +138,7 @@ public class SetType extends Type
      *
      * @return encodedLength of the encodingType.
      */
+    @Override
     public int encodedLength()
     {
         return encodingType.size();

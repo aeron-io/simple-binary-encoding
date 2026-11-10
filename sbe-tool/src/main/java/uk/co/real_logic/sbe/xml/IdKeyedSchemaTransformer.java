@@ -30,6 +30,7 @@ class IdKeyedSchemaTransformer implements SchemaTransformer
         this.defaultTransformer = defaultTransformer;
     }
 
+    @Override
     public MessageSchema transform(final MessageSchema originalSchema)
     {
         return lookupTransformer(originalSchema.id()).transform(originalSchema);
