@@ -203,6 +203,7 @@ jobs:
         with:
           patterns: |
             -**/thirdparty/**
+            -**/_deps/**
           input: sarif-results/${{ matrix.language }}.sarif
           output: sarif-results/${{ matrix.language }}.sarif
 
