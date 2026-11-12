@@ -631,6 +631,35 @@ public final class FieldPrecedenceModel
          * {@inheritDoc}
          */
         @Override
+        public boolean equals(final Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+
+            if (!(o instanceof State))
+            {
+                return false;
+            }
+
+            final State other = (State)o;
+            return number == other.number && name.equals(other.name);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int hashCode()
+        {
+            return 31 * number + name.hashCode();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
         public String toString()
         {
             return "State{" +
