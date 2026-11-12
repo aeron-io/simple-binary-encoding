@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  * Copyright 2017 MarketFactory Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -64,6 +64,29 @@ public class XmlSchemaParser
     static final String MESSAGE_XPATH_EXPR =
         "/*[local-name() = 'messageSchema']/*[local-name() = 'message']";
 
+    // Schemas need neither a DOCTYPE nor external entities, so refuse both rather than resolve files or URLs.
+    private static DocumentBuilderFactory newDocumentBuilderFactory() throws Exception
+    {
+        final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+
+        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        try
+        {
+            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+        }
+        catch (final IllegalArgumentException ignore)
+        {
+            // Parsers older than JAXP 1.5 lack these attributes; the features above already refuse a DOCTYPE.
+        }
+        factory.setExpandEntityReferences(false);
+
+        return factory;
+    }
+
     /**
      * Validate the document against a given schema. Errors will be written to {@link java.lang.System#err}.
      *
@@ -76,7 +99,7 @@ public class XmlSchemaParser
     public static void validate(final String xsdFilename, final InputSource is, final ParserOptions options)
         throws Exception
     {
-        final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        final DocumentBuilderFactory factory = newDocumentBuilderFactory();
         final SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 
         factory.setSchema(schemaFactory.newSchema(new File(xsdFilename)));
@@ -120,7 +143,7 @@ public class XmlSchemaParser
      */
     public static MessageSchema parse(final InputSource is, final ParserOptions options) throws Exception
     {
-        final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        final DocumentBuilderFactory factory = newDocumentBuilderFactory();
 
         if (options.xIncludeAware())
         {
