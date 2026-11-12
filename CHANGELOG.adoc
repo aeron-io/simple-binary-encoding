@@ -2,6 +2,14 @@
 
 == 1.43.0 (unreleased)
 
+* **[Java]** Fix `null` pointer handling in DTO encoded length computation for variable-length fields.
+(https://github.com/aeron-io/simple-binary-encoding/pull/1170[#1170])
+* **[Java]** Fix `UINT64` range validation to use unsigned comparison.
+(https://github.com/aeron-io/simple-binary-encoding/pull/1163[#1163])
+* **[Rust]** Honor schema header type. (https://github.com/aeron-io/simple-binary-encoding/pull/1165[#1165])
+* **[Java]** Add equals and `hashCode` to `FieldPrecedenceModel.State` to match `compareTo`.
+(https://github.com/aeron-io/simple-binary-encoding/pull/1171[#1171])
+
 == 1.42.0 (2026-11-06)
 
 === New & Noteworthy
