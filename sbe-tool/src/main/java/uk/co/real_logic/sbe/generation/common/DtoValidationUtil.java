@@ -70,7 +70,9 @@ public final class DtoValidationUtil
             case LONG:
                 final long nativeMinValue = nativeTypeMinValue(primitiveType, integerSupport);
                 final PrimitiveValue nullValue = encoding.applicableNullValue();
-                final boolean gapBefore = minValue.longValue() > nativeMinValue;
+                final boolean gapBefore = primitiveType == PrimitiveType.UINT64 ?
+                        Long.compareUnsigned(minValue.longValue(), nativeMinValue) > 0 :
+                        minValue.longValue() > nativeMinValue;
                 final boolean nullFillsGap = fieldToken.isOptionalEncoding() &&
                     nullValue.longValue() == nativeMinValue &&
                     minValue.longValue() == nativeMinValue + 1L;
@@ -116,7 +118,9 @@ public final class DtoValidationUtil
             case LONG:
                 final long nativeMaxValue = nativeTypeMaxValue(primitiveType, integerSupport);
                 final PrimitiveValue nullValue = encoding.applicableNullValue();
-                final boolean gapAfter = maxValue.longValue() < nativeMaxValue;
+                final boolean gapAfter = primitiveType == PrimitiveType.UINT64 ?
+                    Long.compareUnsigned(maxValue.longValue(), nativeMaxValue) < 0 :
+                    maxValue.longValue() < nativeMaxValue;
                 final boolean nullFillsGap = fieldToken.isOptionalEncoding() &&
                     nullValue.longValue() == nativeMaxValue &&
                     maxValue.longValue() + 1L == nativeMaxValue;
