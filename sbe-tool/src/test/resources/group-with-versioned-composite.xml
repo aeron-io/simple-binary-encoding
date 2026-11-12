@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   package="versioned.composite"
+                   id="1"
+                   version="1"
+                   semanticVersion="1.0"
+                   description="Group field whose composite gains a member in a later version"
+                   byteOrder="littleEndian">
+    <types>
+        <composite name="messageHeader" description="Message identifiers and length of message root">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+        </composite>
+        <composite name="groupSizeEncoding" description="Repeating group dimensions">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="numInGroup" primitiveType="uint16"/>
+        </composite>
+    </types>
+    <types>
+        <enum name="Side" encodingType="uint8">
+            <validValue name="BUY">1</validValue>
+            <validValue name="SELL">2</validValue>
+        </enum>
+        <composite name="Px">
+            <type name="mantissa" primitiveType="int64"/>
+            <ref name="side" type="Side" sinceVersion="1"/>
+        </composite>
+    </types>
+    <sbe:message name="Quotes" id="1">
+        <group name="entries" id="2" dimensionType="groupSizeEncoding">
+            <field name="px" id="3" type="Px"/>
+        </group>
+    </sbe:message>
+</sbe:messageSchema>
