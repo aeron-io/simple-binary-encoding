@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   package="custom_header"
+                   id="42"
+                   version="3"
+                   headerType="customMessageHeader"
+                   byteOrder="littleEndian">
+    <types>
+        <composite name="customMessageHeader">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+            <type name="extra" primitiveType="uint32"/>
+        </composite>
+    </types>
+    <sbe:message name="TestMessage" id="7">
+        <field name="value" id="1" type="uint64"/>
+    </sbe:message>
+</sbe:messageSchema>
