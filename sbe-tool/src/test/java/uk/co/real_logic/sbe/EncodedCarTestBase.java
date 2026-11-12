@@ -42,8 +42,6 @@ public class EncodedCarTestBase
 
         bufferOffset += MESSAGE_HEADER.encodedLength();
 
-        final int srcOffset = 0;
-
         CAR.wrap(directBuffer, bufferOffset)
             .serialNumber(1234)
             .modelYear(2013)
