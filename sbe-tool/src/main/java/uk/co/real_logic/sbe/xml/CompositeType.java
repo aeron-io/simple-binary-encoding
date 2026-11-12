@@ -103,6 +103,7 @@ public class CompositeType extends Type
      *
      * @return encodedLength of the compositeType.
      */
+    @Override
     public int encodedLength()
     {
         int length = 0;

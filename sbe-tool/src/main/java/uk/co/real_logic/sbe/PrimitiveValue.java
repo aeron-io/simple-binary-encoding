@@ -515,6 +515,7 @@ public class PrimitiveValue
      *
      * @return String representing object value.
      */
+    @Override
     public String toString()
     {
         if (Representation.LONG == representation)
@@ -548,6 +549,7 @@ public class PrimitiveValue
      * @param value to compare this value with.
      * @return equivalence of values.
      */
+    @Override
     public boolean equals(final Object value)
     {
         if (value instanceof PrimitiveValue)
@@ -578,6 +580,7 @@ public class PrimitiveValue
      *
      * @return int value of the hashCode.
      */
+    @Override
     public int hashCode()
     {
         final long bits;

@@ -69,6 +69,7 @@ public class CSharpNamespaceOutputManager implements OutputManager
      * @return a {@link java.io.Writer} to which the source code should be written.
      * @throws IOException if an issue occurs when creating the file.
      */
+    @Override
     public Writer createOutput(final String name) throws IOException
     {
         final File targetFile = new File(outputDir, name + ".g.cs");

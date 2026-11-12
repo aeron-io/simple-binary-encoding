@@ -272,6 +272,7 @@ public class EncodedDataType extends Type
      *
      * @return variableLength boolean of the type.
      */
+    @Override
     public boolean isVariableLength()
     {
         return varLen;
@@ -302,6 +303,7 @@ public class EncodedDataType extends Type
      *
      * @return encodedLength of the encoding
      */
+    @Override
     public int encodedLength()
     {
         if (presence() == CONSTANT)

@@ -207,6 +207,7 @@ public class CSharpUtil
          *
          * @return  the string value of this separator
          */
+        @Override
         public String toString()
         {
             return String.valueOf(symbol);

@@ -192,6 +192,7 @@ public class EnumType extends Type
      *
      * @return encodedLength of the encodingType.
      */
+    @Override
     public int encodedLength()
     {
         if (presence() == Presence.CONSTANT)

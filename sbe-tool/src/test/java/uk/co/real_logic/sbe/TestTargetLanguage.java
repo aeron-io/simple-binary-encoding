@@ -27,6 +27,7 @@ public class TestTargetLanguage implements TargetCodeGenerator
     static Ir ir = null;
     static String outputDir = "";
 
+    @Override
     public CodeGenerator newInstance(final Ir ir, final String outputDir)
     {
         TestTargetLanguage.ir = ir;

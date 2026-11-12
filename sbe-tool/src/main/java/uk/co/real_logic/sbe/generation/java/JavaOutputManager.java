@@ -85,6 +85,7 @@ public class JavaOutputManager implements DynamicPackageOutputManager
     {
         return new FilterWriter(actingPackageOutputManager.createOutput(name))
         {
+            @Override
             public void close() throws IOException
             {
                 try

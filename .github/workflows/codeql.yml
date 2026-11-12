@@ -74,6 +74,23 @@ jobs:
         uses: github/codeql-action/analyze@95e58e9a2cdfd71adc6e0353d5c52f41a045d225 # v4.35.2
         with:
           category: "/language:${{matrix.language}}"
+          upload: false
+          output: sarif-results
+
+      - name: filter-sarif
+        uses: advanced-security/filter-sarif@2da736ff05ef065cb2894ac6892e47b5eac2c3c0 # v1.1
+        with:
+          # Filter out generated code.
+          patterns: |
+            -**/generated/**
+            -**/generated-src/**
+          input: sarif-results/${{ matrix.language }}.sarif
+          output: sarif-results/${{ matrix.language }}.sarif
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@95e58e9a2cdfd71adc6e0353d5c52f41a045d225 # v4.35.2
+        with:
+          sarif_file: sarif-results/${{ matrix.language }}.sarif
           
   csharp-analyze:
     name: C# Analyze ${{ matrix.dotnet }}
