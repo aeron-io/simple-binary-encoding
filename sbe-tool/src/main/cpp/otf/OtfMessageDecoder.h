@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -303,7 +303,8 @@ std::size_t decodeData(
             bufferIndex += dataToken.offset();
         }
 
-        if ((bufferIndex + dataLength) > length)
+        // bufferIndex <= length is established above, the subtraction cannot wrap whereas the addition can
+        if (dataLength > static_cast<std::uint64_t>(length - bufferIndex))
         {
             throw std::runtime_error("length too short for data field");
         }

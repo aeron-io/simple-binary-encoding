@@ -46,6 +46,7 @@ set(ACCESS_ORDER_SCHEMA ${CODEC_SCHEMA_DIR}/field-order-check-schema.xml)
 set(VERSIONED_MESSAGE_V1_SCHEMA ${CODEC_SCHEMA_DIR}/versioned-message-v1.xml)
 set(VERSIONED_MESSAGE_V2_SCHEMA ${CODEC_SCHEMA_DIR}/versioned-message-v2.xml)
 set(UINT64_LENGTH_SCHEMA ${CODEC_SCHEMA_DIR}/uint64-length-schema.xml)
+set(UINT64_VAR_DATA_LENGTH_SCHEMA ${CODEC_SCHEMA_DIR}/uint64-var-data-length-schema.xml)
 
 set(GENERATED_CODECS
     ${CXX_CODEC_TARGET_DIR}
@@ -67,6 +68,7 @@ add_custom_command(
         ${VERSIONED_MESSAGE_V1_SCHEMA}
         ${VERSIONED_MESSAGE_V2_SCHEMA}
         ${UINT64_LENGTH_SCHEMA}
+        ${UINT64_VAR_DATA_LENGTH_SCHEMA}
     sbe-jar ${SBE_JAR}
     COMMAND
         ${Java_JAVA_EXECUTABLE} --add-opens java.base/jdk.internal.misc=ALL-UNNAMED
@@ -93,6 +95,7 @@ add_custom_command(
             ${VERSIONED_MESSAGE_V1_SCHEMA}
             ${VERSIONED_MESSAGE_V2_SCHEMA}
             ${UINT64_LENGTH_SCHEMA}
+            ${UINT64_VAR_DATA_LENGTH_SCHEMA}
 )
 
 add_custom_target(codecs DEPENDS ${GENERATED_CODECS})
@@ -114,6 +117,7 @@ sbe_test(FieldAccessOrderCheckTest codecs)
 target_compile_definitions(FieldAccessOrderCheckTest PRIVATE SBE_ENABLE_PRECEDENCE_CHECKS_IN_TESTS)
 sbe_test(VersionedMessageTest codecs)
 sbe_test(Uint64LengthTest codecs)
+sbe_test(OtfVarDataLengthTest codecs)
 
 # OtfMessageEncoderTest lives in the otf/ subdirectory and provides its own main() that takes the
 # IR file path as argv[1]; it is handed the generated code-generation-schema IR.
