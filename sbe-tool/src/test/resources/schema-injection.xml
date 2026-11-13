@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   package="injection.test"
+                   id="1"
+                   version="0"
+                   description="schema */ class Injected {} /**">
+    <types>
+        <composite name="messageHeader">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+        </composite>
+        <type name="Label" primitiveType="char" presence="constant"
+              description="label */ int injectedMember; /**">a&quot;; } static { throw new Error(); } String x() { return &quot;b\u0022</type>
+    </types>
+    <sbe:message name="Probe" id="1" description="probe */ static { throw new Error(); } /**&#10;fn injected() {}">
+        <field name="label" id="1" type="Label"/>
+        <field name="value" id="2" type="uint32"/>
+    </sbe:message>
+</sbe:messageSchema>
