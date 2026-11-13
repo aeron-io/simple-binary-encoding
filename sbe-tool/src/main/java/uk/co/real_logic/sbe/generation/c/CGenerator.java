@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -550,12 +550,10 @@ public class CGenerator implements CodeGenerator
                 "%2$s" +
                 "    %4$s length_field_value;\n" +
                 "    memcpy(&length_field_value, codec->buffer + %6$s_sbe_position(codec), sizeof(%4$s));\n" +
-                "    const char *field_ptr = (codec->buffer + %6$s_sbe_position(codec) + %3$d);\n\n" +
-                "    if (!%6$s_set_sbe_position(\n" +
-                "        codec, %6$s_sbe_position(codec) + %3$d + %5$s(length_field_value)))\n" +
-                "    {\n" +
-                "        return NULL;\n" +
-                "    }\n\n" +
+                "    uint64_t data_length = %5$s(length_field_value);\n" +
+                "    uint64_t pos = %6$s_sbe_position(codec) + %3$d;\n" +
+                "    const char *field_ptr = codec->buffer + pos;\n\n" +
+                generateDataPositionAdvance("%6$s", "data_length", "return NULL;") +
                 "    return field_ptr;\n" +
                 "}\n",
                 propertyName,
@@ -583,10 +581,7 @@ public class CGenerator implements CodeGenerator
                 "    uint64_t data_length = %4$s(length_field_value);\n" +
                 "    uint64_t bytes_to_copy = length < data_length ? length : data_length;\n" +
                 "    uint64_t pos = %6$s_sbe_position(codec);\n\n" +
-                "    if (!%6$s_set_sbe_position(codec, pos + data_length))\n" +
-                "    {\n" +
-                "        return 0;\n" +
-                "    }\n\n" +
+                generateDataPositionAdvance("%6$s", "data_length", "return 0;") +
                 "    memcpy(dst, codec->buffer + pos, bytes_to_copy);\n\n" +
                 "    return bytes_to_copy;\n" +
                 "}\n",
@@ -603,13 +598,10 @@ public class CGenerator implements CodeGenerator
                 "{\n" +
                 "%2$s" +
                 "    %4$s length_field_value = %5$s_%1$s_length(codec);\n" +
-                "    const char *field_ptr = codec->buffer + %5$s_sbe_position(codec) + %3$d;\n" +
-                "    if (!%5$s_set_sbe_position(\n" +
-                "        codec, %5$s_sbe_position(codec) + %3$d + length_field_value))\n" +
-                "    {\n" +
-                "        struct %6$s_string_view ret = {NULL, 0};\n" +
-                "        return ret;\n" +
-                "    }\n\n" +
+                "    uint64_t pos = %5$s_sbe_position(codec) + %3$d;\n" +
+                "    const char *field_ptr = codec->buffer + pos;\n\n" +
+                generateDataPositionAdvance(
+                    "%5$s", "length_field_value", "struct %6$s_string_view ret = {NULL, 0};\n        return ret;") +
                 "    struct %6$s_string_view ret = {field_ptr, length_field_value};\n\n" +
                 "    return ret;\n" +
                 "}\n",
@@ -652,6 +644,23 @@ public class CGenerator implements CodeGenerator
         }
 
         return sb;
+    }
+
+    /*
+     * Advance the position past var data of the given length starting at pos. The check is a subtraction because
+     * pos + length can wrap for a 64-bit length.
+     */
+    private static String generateDataPositionAdvance(
+        final String structName, final String lengthName, final String failure)
+    {
+        return
+            "    if (SBE_BOUNDS_CHECK_EXPECT(\n" +
+            "        ((pos > codec->buffer_length) || (" + lengthName + " > (codec->buffer_length - pos))), false))\n" +
+            "    {\n" +
+            "        errno = E100;\n" +
+            "        " + failure + "\n" +
+            "    }\n" +
+            "    *" + structName + "_sbe_position_ptr(codec) = pos + " + lengthName + ";\n\n";
     }
 
     private void generateVarDataDescriptors(
