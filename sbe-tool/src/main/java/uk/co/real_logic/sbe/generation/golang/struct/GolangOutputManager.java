@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  * Copyright (C) 2016 MarketFactory, Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 import static java.io.File.separatorChar;
+import static uk.co.real_logic.sbe.generation.OutputFiles.checkFileName;
 
 /**
  * {@link OutputManager} for managing the creation of golang source files as the target of code generation.
@@ -67,7 +68,7 @@ public class GolangOutputManager implements OutputManager
     @Override
     public Writer createOutput(final String name) throws IOException
     {
-        final File targetFile = new File(outputDir, name + ".go");
+        final File targetFile = new File(outputDir, checkFileName(name) + ".go");
 
         return Files.newBufferedWriter(targetFile.toPath(), StandardCharsets.UTF_8);
     }

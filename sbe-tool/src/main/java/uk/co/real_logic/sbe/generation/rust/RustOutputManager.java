@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.nio.file.Path;
 
 import static java.io.File.separatorChar;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static uk.co.real_logic.sbe.generation.OutputFiles.checkFileName;
 import static uk.co.real_logic.sbe.generation.rust.RustUtil.toLowerSnakeCase;
 
 /**
@@ -81,7 +82,7 @@ public class RustOutputManager implements OutputManager
     @Override
     public Writer createOutput(final String name) throws IOException
     {
-        final String fileName = toLowerSnakeCase(name) + ".rs";
+        final String fileName = toLowerSnakeCase(checkFileName(name)) + ".rs";
         final File targetFile = new File(srcDir, fileName);
         return Files.newBufferedWriter(targetFile.toPath(), UTF_8);
     }
