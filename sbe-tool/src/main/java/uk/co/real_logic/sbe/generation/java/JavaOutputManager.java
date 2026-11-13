@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import org.agrona.generation.PackageOutputManager;
 import java.io.FilterWriter;
 import java.io.IOException;
 import java.io.Writer;
+
+import static uk.co.real_logic.sbe.generation.OutputFiles.checkFileName;
 
 /**
  * Implementation of {@link DynamicPackageOutputManager} for Java.
@@ -83,7 +85,7 @@ public class JavaOutputManager implements DynamicPackageOutputManager
     @Override
     public Writer createOutput(final String name) throws IOException
     {
-        return new FilterWriter(actingPackageOutputManager.createOutput(name))
+        return new FilterWriter(actingPackageOutputManager.createOutput(checkFileName(name)))
         {
             @Override
             public void close() throws IOException
