@@ -153,6 +153,258 @@ class TypesTest
     }
 
     @ParameterizedTest
+    @ValueSource(bytes = {Byte.MIN_VALUE, -1, 0, 1, Byte.MAX_VALUE})
+    void shouldAppendUInt8AsString(final byte value)
+    {
+        final StringBuilder out = new StringBuilder();
+        final Encoding encoding = new Encoding.Builder().primitiveType(PrimitiveType.UINT8).build();
+        final PrimitiveValue primitiveValue = new PrimitiveValue(Byte.toUnsignedInt(value), 1);
+
+        final MutableDirectBuffer buffer = new UnsafeBuffer(new byte[1]);
+        buffer.putByte(0, value);
+
+        final String expected = Integer.toString(Byte.toUnsignedInt(value));
+
+        Types.appendAsString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, primitiveValue, encoding);
+        assertEquals(expected, out.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(bytes = {Byte.MIN_VALUE, -1, 0, 1, Byte.MAX_VALUE})
+    void shouldAppendInt8AsString(final byte value)
+    {
+        final StringBuilder out = new StringBuilder();
+        final Encoding encoding = new Encoding.Builder().primitiveType(PrimitiveType.INT8).build();
+        final PrimitiveValue primitiveValue = new PrimitiveValue(value, 1);
+
+        final MutableDirectBuffer buffer = new UnsafeBuffer(new byte[1]);
+        buffer.putByte(0, value);
+
+        final String expected = Byte.toString(value);
+
+        Types.appendAsString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, primitiveValue, encoding);
+        assertEquals(expected, out.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(shorts = {Short.MIN_VALUE, -1, 0, 1, Short.MAX_VALUE})
+    void shouldAppendUInt16AsString(final short value)
+    {
+        final StringBuilder out = new StringBuilder();
+        final Encoding encoding = new Encoding.Builder().primitiveType(PrimitiveType.UINT16).build();
+        final PrimitiveValue primitiveValue = new PrimitiveValue(Short.toUnsignedInt(value), 2);
+
+        final MutableDirectBuffer buffer = new UnsafeBuffer(new byte[2]);
+        buffer.putShort(0, value);
+
+        final String expected = Integer.toString(Short.toUnsignedInt(value));
+
+        Types.appendAsString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, primitiveValue, encoding);
+        assertEquals(expected, out.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(shorts = {Short.MIN_VALUE, -1, 0, 1, Short.MAX_VALUE})
+    void shouldAppendInt16AsString(final short value)
+    {
+        final StringBuilder out = new StringBuilder();
+        final Encoding encoding = new Encoding.Builder().primitiveType(PrimitiveType.INT16).build();
+        final PrimitiveValue primitiveValue = new PrimitiveValue(value, 2);
+
+        final MutableDirectBuffer buffer = new UnsafeBuffer(new byte[2]);
+        buffer.putShort(0, value);
+
+        final String expected = Short.toString(value);
+
+        Types.appendAsString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, primitiveValue, encoding);
+        assertEquals(expected, out.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {Integer.MIN_VALUE, -1, 0, 1, Integer.MAX_VALUE})
+    void shouldAppendUInt32AsString(final int value)
+    {
+        final StringBuilder out = new StringBuilder();
+        final Encoding encoding = new Encoding.Builder().primitiveType(PrimitiveType.UINT32).build();
+        final PrimitiveValue primitiveValue = new PrimitiveValue(Integer.toUnsignedLong(value), 4);
+
+        final MutableDirectBuffer buffer = new UnsafeBuffer(new byte[4]);
+        buffer.putInt(0, value);
+
+        final String expected = Integer.toUnsignedString(value);
+
+        Types.appendAsString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, primitiveValue, encoding);
+        assertEquals(expected, out.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {Integer.MIN_VALUE, -1, 0, 1, Integer.MAX_VALUE})
+    void shouldAppendInt32AsString(final int value)
+    {
+        final StringBuilder out = new StringBuilder();
+        final Encoding encoding = new Encoding.Builder().primitiveType(PrimitiveType.INT32).build();
+        final PrimitiveValue primitiveValue = new PrimitiveValue(value, 4);
+
+        final MutableDirectBuffer buffer = new UnsafeBuffer(new byte[4]);
+        buffer.putInt(0, value);
+
+        final String expected = Integer.toString(value);
+
+        Types.appendAsString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, primitiveValue, encoding);
+        assertEquals(expected, out.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {Long.MIN_VALUE, -1L, 0L, 1L, Long.MAX_VALUE})
+    void shouldAppendUInt64AsString(final long value)
+    {
+        final StringBuilder out = new StringBuilder();
+        final Encoding encoding = new Encoding.Builder().primitiveType(PrimitiveType.UINT64).build();
+        final PrimitiveValue primitiveValue = new PrimitiveValue(value, 1);
+
+        final MutableDirectBuffer buffer = new UnsafeBuffer(new byte[8]);
+        buffer.putLong(0, value);
+
+        final String expected = Long.toUnsignedString(value);
+
+        Types.appendAsString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, primitiveValue, encoding);
+        assertEquals(expected, out.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {Long.MIN_VALUE, -1L, 0L, 1L, Long.MAX_VALUE})
+    void shouldAppendInt64AsString(final long value)
+    {
+        final StringBuilder out = new StringBuilder();
+        final Encoding encoding = new Encoding.Builder().primitiveType(PrimitiveType.INT64).build();
+        final PrimitiveValue primitiveValue = new PrimitiveValue(value, 1);
+
+        final MutableDirectBuffer buffer = new UnsafeBuffer(new byte[8]);
+        buffer.putLong(0, value);
+
+        final String expected = Long.toString(value);
+
+        Types.appendAsString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, primitiveValue, encoding);
+        assertEquals(expected, out.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(floats = {Float.MIN_VALUE, -1.0f, 0L, 1.0f, Float.MAX_VALUE, Float.MAX_EXPONENT,
+        Float.MIN_EXPONENT, Float.MIN_NORMAL})
+    void shouldAppendFloatAsString(final float value)
+    {
+        final StringBuilder out = new StringBuilder();
+        final Encoding encoding = new Encoding.Builder().primitiveType(PrimitiveType.FLOAT).build();
+        final PrimitiveValue primitiveValue = new PrimitiveValue(value, 4);
+
+        final MutableDirectBuffer buffer = new UnsafeBuffer(new byte[8]);
+        buffer.putFloat(0, value);
+
+        final String expected = Float.toString(value);
+
+        Types.appendAsString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, primitiveValue, encoding);
+        assertEquals(expected, out.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(doubles = {Double.MIN_VALUE, -1.0, 0.0, 1.0, Double.MAX_VALUE, Double.MAX_EXPONENT,
+        Double.MIN_EXPONENT, Double.MIN_NORMAL})
+    void shouldAppendDoubleAsString(final double value)
+    {
+        final StringBuilder out = new StringBuilder();
+        final Encoding encoding = new Encoding.Builder().primitiveType(PrimitiveType.DOUBLE).build();
+        final PrimitiveValue primitiveValue = new PrimitiveValue(value, 8);
+
+        final MutableDirectBuffer buffer = new UnsafeBuffer(new byte[8]);
+        buffer.putDouble(0, value);
+
+        final String expected = Double.toString(value);
+
+        Types.appendAsString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, buffer, 0, encoding);
+        assertEquals(expected, out.toString());
+
+        out.setLength(0);
+        Types.appendAsJsonString(out, primitiveValue, encoding);
+        assertEquals(expected, out.toString());
+    }
+
+    @ParameterizedTest
     @ValueSource(floats = {Float.MIN_VALUE, 0.0f, Float.MAX_VALUE, Float.MIN_EXPONENT, Float.MAX_EXPONENT,
         Float.MIN_NORMAL})
     void shouldNotExpandJsonFloatToDouble(final float value)
