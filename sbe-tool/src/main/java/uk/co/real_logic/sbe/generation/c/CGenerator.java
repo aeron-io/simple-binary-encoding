@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -635,6 +635,11 @@ public class CGenerator implements CodeGenerator
                 "    }\n\n" +
                 "    memcpy(codec->buffer + length_position, &length_field_value, sizeof(%3$s));\n" +
                 "    uint64_t pos = %5$s_sbe_position(codec);\n\n" +
+                "    if (SBE_BOUNDS_CHECK_EXPECT((length > (codec->buffer_length - pos)), false))\n" +
+                "    {\n" +
+                "        errno = E100;\n" +
+                "        return NULL;\n" +
+                "    }\n\n" +
                 "    if (!%5$s_set_sbe_position(codec, pos + length))\n" +
                 "    {\n" +
                 "        return NULL;\n" +
