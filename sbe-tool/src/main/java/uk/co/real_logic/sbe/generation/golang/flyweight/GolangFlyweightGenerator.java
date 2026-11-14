@@ -70,6 +70,74 @@ public class GolangFlyweightGenerator implements CodeGenerator
         this.outputManager = outputManager;
     }
 
+    // Records, per schema version, the end of the bytes the fixed fields occupy from that version on. Constant fields
+    // occupy no bytes and composite members newer than the acting version are only counted from their own version.
+    private static void collectFieldExtents(
+        final List<Token> tokens,
+        final int typeIndex,
+        final int baseOffset,
+        final int enclosingVersion,
+        final SortedMap<Integer, Integer> extents)
+    {
+        final Token typeToken = tokens.get(typeIndex);
+        if (typeToken.isConstantEncoding())
+        {
+            return;
+        }
+
+        final int version = Math.max(enclosingVersion, typeToken.version());
+        final int offset = baseOffset + typeToken.offset();
+        if (Signal.BEGIN_COMPOSITE != typeToken.signal())
+        {
+            extents.merge(version, offset + typeToken.encodedLength(), Math::max);
+            return;
+        }
+
+        final int endIndex = typeIndex + typeToken.componentTokenCount() - 1;
+        for (int i = typeIndex + 1; i < endIndex; i += tokens.get(i).componentTokenCount())
+        {
+            collectFieldExtents(tokens, i, offset, version, extents);
+        }
+    }
+
+    private static String generateMinBlockLengthCheck(final List<Token> fields, final String indent)
+    {
+        final SortedMap<Integer, Integer> extents = new TreeMap<>();
+        for (int i = 0, size = fields.size(); i < size; )
+        {
+            final Token fieldToken = fields.get(i);
+            if (fieldToken.signal() == Signal.BEGIN_FIELD && !fieldToken.isConstantEncoding())
+            {
+                collectFieldExtents(fields, i + 1, 0, fieldToken.version(), extents);
+            }
+
+            i += fieldToken.componentTokenCount();
+        }
+
+        extents.values().removeIf(end -> end <= 0);
+        if (extents.isEmpty())
+        {
+            return "";
+        }
+
+        final StringBuilder sb = new StringBuilder();
+        final Integer baseLength = extents.remove(0);
+        sb.append(indent).append("\tminBlockLength := uint64(").append(null == baseLength ? 0 : baseLength)
+            .append(")\n");
+        extents.forEach(
+            (version, end) -> sb
+                .append(indent).append("\tif actingVersion >= ").append(version)
+                .append(" && minBlockLength < ").append(end).append(" {\n")
+                .append(indent).append("\t\tminBlockLength = ").append(end).append("\n")
+                .append(indent).append("\t}\n"));
+        sb.append(indent).append("\tif g.count > 0 && g.blockLength < minBlockLength {\n")
+            .append(indent)
+            .append("\t\tpanic(\"group blockLength is less than the fields present at the acting version [E108]\")\n")
+            .append(indent).append("\t}\n");
+
+        return sb.toString();
+    }
+
     private static void generateGroupClassHeader(
         final StringBuilder sb,
         final String groupClassName,
@@ -155,13 +223,14 @@ public class GolangFlyweightGenerator implements CodeGenerator
             indent + "\tg.bufferLength = bufferLength\n" +
             indent + "\tg.blockLength = uint64(dimensions.BlockLength())\n" +
             indent + "\tg.count = uint64(dimensions.NumInGroup())\n" +
+            "%4$s" +
             indent + "\tg.index = 0\n" +
             indent + "\tg.actingVersion = actingVersion\n" +
             indent + "\tg.initialPosition = *pos\n" +
             indent + "\tg.positionPtr = pos\n" +
             indent + "\t*g.positionPtr = *g.positionPtr + %1$d\n" +
             indent + "}\n",
-            dimensionHeaderLength, dimensionsClassName, groupClassName);
+            dimensionHeaderLength, dimensionsClassName, groupClassName, generateMinBlockLengthCheck(fields, indent));
 
         final long minCount = numInGroupToken.encoding().applicableMinValue().longValue();
         final String minCheck = minCount > 0 ? "count < " + minCount + " || " : "";
