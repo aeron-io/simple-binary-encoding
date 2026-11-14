@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   package="flyweight_single_char"
+                   id="9"
+                   version="0"
+                   semanticVersion="0"
+                   description="Single char fields rendered by the generated String methods"
+                   byteOrder="littleEndian">
+    <types>
+        <composite name="messageHeader" description="Message identifiers and length of message root">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+        </composite>
+        <composite name="groupSizeEncoding" description="Repeating group dimensions">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="numInGroup" primitiveType="uint16"/>
+        </composite>
+    </types>
+    <sbe:message name="Letter" id="1">
+        <field name="code" id="1" type="char"/>
+        <group name="entries" id="2" dimensionType="groupSizeEncoding">
+            <field name="side" id="3" type="char"/>
+        </group>
+    </sbe:message>
+</sbe:messageSchema>
