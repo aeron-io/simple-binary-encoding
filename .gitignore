@@ -79,7 +79,7 @@ gocode/flyweight/src/*/*.go
 !gocode/flyweight/src/*/*_test.go
 gocode/flyweight/src/*/*/*.go
 !gocode/flyweight/src/*/*/*_test.go
-gocode/flyweight/src/otf/code-generation-schema.sbeir
+gocode/flyweight/src/otf/*.sbeir
 
 # csharp
 csharp/*/bin
