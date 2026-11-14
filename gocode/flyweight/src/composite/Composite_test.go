@@ -40,8 +40,8 @@ func TestEncodeDecode(t *testing.T) {
 	out.WrapForDecode(
 		data[:],
 		0,
-		uint64(in.SbeSchemaVersion()),
 		uint64(in.SbeBlockLength()),
+		uint64(in.SbeSchemaVersion()),
 		uint64(len(data)),
 	)
 
