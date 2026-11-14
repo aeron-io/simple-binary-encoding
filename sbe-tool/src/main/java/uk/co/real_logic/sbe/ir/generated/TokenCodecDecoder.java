@@ -1015,6 +1015,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int dataOffset = limit + headerLength;
         parentMessage.limit(dataOffset + dataLength);
 
@@ -1031,6 +1036,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -1048,6 +1058,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -1065,6 +1080,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         parentMessage.limit(limit + headerLength + dataLength);
         wrapBuffer.wrap(buffer, limit + headerLength, dataLength);
     }
@@ -1173,6 +1193,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int dataOffset = limit + headerLength;
         parentMessage.limit(dataOffset + dataLength);
 
@@ -1189,6 +1214,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -1206,6 +1236,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -1223,6 +1258,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         parentMessage.limit(limit + headerLength + dataLength);
         wrapBuffer.wrap(buffer, limit + headerLength, dataLength);
     }
@@ -1331,6 +1371,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int dataOffset = limit + headerLength;
         parentMessage.limit(dataOffset + dataLength);
 
@@ -1347,6 +1392,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -1364,6 +1414,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -1381,6 +1436,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         parentMessage.limit(limit + headerLength + dataLength);
         wrapBuffer.wrap(buffer, limit + headerLength, dataLength);
     }
@@ -1489,6 +1549,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int dataOffset = limit + headerLength;
         parentMessage.limit(dataOffset + dataLength);
 
@@ -1505,6 +1570,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -1522,6 +1592,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -1539,6 +1614,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         parentMessage.limit(limit + headerLength + dataLength);
         wrapBuffer.wrap(buffer, limit + headerLength, dataLength);
     }
@@ -1647,6 +1727,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int dataOffset = limit + headerLength;
         parentMessage.limit(dataOffset + dataLength);
 
@@ -1663,6 +1748,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -1680,6 +1770,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -1697,6 +1792,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         parentMessage.limit(limit + headerLength + dataLength);
         wrapBuffer.wrap(buffer, limit + headerLength, dataLength);
     }
@@ -1805,6 +1905,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int dataOffset = limit + headerLength;
         parentMessage.limit(dataOffset + dataLength);
 
@@ -1821,6 +1926,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -1838,6 +1948,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -1855,6 +1970,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         parentMessage.limit(limit + headerLength + dataLength);
         wrapBuffer.wrap(buffer, limit + headerLength, dataLength);
     }
@@ -1963,6 +2083,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int dataOffset = limit + headerLength;
         parentMessage.limit(dataOffset + dataLength);
 
@@ -1979,6 +2104,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -1996,6 +2126,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -2013,6 +2148,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         parentMessage.limit(limit + headerLength + dataLength);
         wrapBuffer.wrap(buffer, limit + headerLength, dataLength);
     }
@@ -2121,6 +2261,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int dataOffset = limit + headerLength;
         parentMessage.limit(dataOffset + dataLength);
 
@@ -2137,6 +2282,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -2154,6 +2304,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -2171,6 +2326,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         parentMessage.limit(limit + headerLength + dataLength);
         wrapBuffer.wrap(buffer, limit + headerLength, dataLength);
     }
@@ -2279,6 +2439,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int dataOffset = limit + headerLength;
         parentMessage.limit(dataOffset + dataLength);
 
@@ -2295,6 +2460,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -2312,6 +2482,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -2329,6 +2504,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         parentMessage.limit(limit + headerLength + dataLength);
         wrapBuffer.wrap(buffer, limit + headerLength, dataLength);
     }
@@ -2437,6 +2617,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int dataOffset = limit + headerLength;
         parentMessage.limit(dataOffset + dataLength);
 
@@ -2453,6 +2638,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -2470,6 +2660,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -2487,6 +2682,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         parentMessage.limit(limit + headerLength + dataLength);
         wrapBuffer.wrap(buffer, limit + headerLength, dataLength);
     }
@@ -2595,6 +2795,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int dataOffset = limit + headerLength;
         parentMessage.limit(dataOffset + dataLength);
 
@@ -2611,6 +2816,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -2628,6 +2838,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -2645,6 +2860,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         parentMessage.limit(limit + headerLength + dataLength);
         wrapBuffer.wrap(buffer, limit + headerLength, dataLength);
     }
@@ -2753,6 +2973,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int dataOffset = limit + headerLength;
         parentMessage.limit(dataOffset + dataLength);
 
@@ -2769,6 +2994,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -2786,6 +3016,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         final int bytesCopied = Math.min(length, dataLength);
         parentMessage.limit(limit + headerLength + dataLength);
         buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);
@@ -2803,6 +3038,11 @@ public final class TokenCodecDecoder
         final int headerLength = 2;
         final int limit = parentMessage.limit();
         final int dataLength = (buffer.getShort(limit, BYTE_ORDER) & 0xFFFF);
+        if (dataLength > buffer.capacity() - limit - headerLength)
+        {
+            throw new IndexOutOfBoundsException("var data length=" + dataLength);
+        }
+
         parentMessage.limit(limit + headerLength + dataLength);
         wrapBuffer.wrap(buffer, limit + headerLength, dataLength);
     }
