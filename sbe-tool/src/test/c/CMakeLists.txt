@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2025 Real Logic Limited.
+# Copyright 2013-2026 Real Logic Limited.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ sbe_test(GroupWithDataTest c_codecs)
 sbe_test(Issue889Test c_codecs)
 sbe_test(InfinityTest c_codecs)
 sbe_test(Uint64LengthTest c_codecs)
+sbe_test(VarDataPutUint64LengthTest c_codecs)
 
 # Compile a dummy C source to test C compliance of generated headers.
 add_executable(CComplianceTest CComplianceTest.c)
