@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -290,7 +290,7 @@ std::size_t decodeData(
         Token &lengthToken = tokens->at(tokenIndex + 2);
         Token &dataToken = tokens->at(tokenIndex + 3);
 
-        if ((bufferIndex + dataToken.offset()) > length)
+        if (isPresent && (bufferIndex + dataToken.offset()) > length)
         {
             throw std::runtime_error("length too short for data length field");
         }
