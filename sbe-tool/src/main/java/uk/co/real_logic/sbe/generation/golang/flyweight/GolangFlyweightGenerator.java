@@ -1970,7 +1970,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
             indent + "\t\t\toss.WriteString(\"\\\\t\")\n\n" +
             indent + "\t\tdefault:\n" +
             indent + "\t\t\tif '\\x00' <= c && c <= '\\x1f' {\n" +
-            indent + "\t\t\t\tfmt.Fprintf(&oss, \"%%x\", c)\n" +
+            indent + "\t\t\t\tfmt.Fprintf(&oss, \"\\\\u%%04x\", c)\n" +
             indent + "\t\t\t} else {\n" +
             indent + "\t\t\t\toss.WriteString(string(c))\n" +
             indent + "\t\t\t}\n" +
