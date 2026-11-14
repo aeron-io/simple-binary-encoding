@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,7 +126,7 @@ class SchemaExtensionTest
         }
 
         { // Decode version 2
-            final Object decoderVersion2 = getMessage1Decoder(buffer, 8, 2);
+            final Object decoderVersion2 = getMessage1Decoder(buffer, 12, 2);
             assertEquals(100, get(decoderVersion2, "tag1"));
             assertEquals(200, get(decoderVersion2, "tag2"));
             final Object compositeDecoder2 = get(decoderVersion2, "tag3");
@@ -140,7 +140,7 @@ class SchemaExtensionTest
         }
 
         { // Decode version 3
-            final Object decoderVersion3 = getMessage1Decoder(buffer, 12, 3);
+            final Object decoderVersion3 = getMessage1Decoder(buffer, 13, 3);
             assertEquals(100, get(decoderVersion3, "tag1"));
             assertEquals(200, get(decoderVersion3, "tag2"));
             final Object compositeDecoder3 = get(decoderVersion3, "tag3");
@@ -155,7 +155,7 @@ class SchemaExtensionTest
         }
 
         { // Decode version 4
-            final Object decoderVersion4 = getMessage1Decoder(buffer, 12, 4);
+            final Object decoderVersion4 = getMessage1Decoder(buffer, 14, 4);
             assertEquals(100, get(decoderVersion4, "tag1"));
             assertEquals(200, get(decoderVersion4, "tag2"));
             final Object compositeDecoder4 = get(decoderVersion4, "tag3");

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import uk.co.real_logic.sbe.ir.Token;
 
 import java.util.List;
 
+import static uk.co.real_logic.sbe.ir.Signal.BEGIN_COMPOSITE;
 import static uk.co.real_logic.sbe.ir.Signal.BEGIN_FIELD;
 import static uk.co.real_logic.sbe.ir.Signal.BEGIN_GROUP;
 import static uk.co.real_logic.sbe.ir.Signal.BEGIN_VAR_DATA;
@@ -56,10 +57,17 @@ public class OtfMessageDecoder
         final List<Token> msgTokens,
         final TokenListener listener)
     {
+        final int numTokens = msgTokens.size();
+        if (blockLength < minBlockLength(msgTokens, 1, numTokens, actingVersion))
+        {
+            throw new IndexOutOfBoundsException(
+                "message blockLength=" + blockLength + " is less than the fields present at actingVersion=" +
+                actingVersion + " for message=" + msgTokens.get(0).name());
+        }
+
         listener.onBeginMessage(msgTokens.get(0));
 
         int i = offset;
-        final int numTokens = msgTokens.size();
         final int tokenIdx = decodeFields(buffer, i, actingVersion, msgTokens, 1, numTokens, listener);
         i += blockLength;
 
@@ -310,6 +318,57 @@ public class OtfMessageDecoder
         }
 
         return bufferOffset;
+    }
+
+    // End of the bytes a type occupies at the acting version; composite members added later do not count.
+    private static int typeEnd(
+        final List<Token> tokens, final int typeIdx, final int baseOffset, final int actingVersion)
+    {
+        final Token typeToken = tokens.get(typeIdx);
+        if (typeToken.isConstantEncoding() || typeToken.version() > actingVersion)
+        {
+            return 0;
+        }
+
+        final int offset = baseOffset + typeToken.offset();
+        if (BEGIN_COMPOSITE != typeToken.signal())
+        {
+            return offset + typeToken.encodedLength();
+        }
+
+        int end = 0;
+        final int endIdx = typeIdx + typeToken.componentTokenCount() - 1;
+        for (int i = typeIdx + 1; i < endIdx; )
+        {
+            end = Math.max(end, typeEnd(tokens, i, offset, actingVersion));
+            i += tokens.get(i).componentTokenCount();
+        }
+
+        return end;
+    }
+
+    private static int minBlockLength(
+        final List<Token> tokens, final int beginFieldsIdx, final int numTokens, final int actingVersion)
+    {
+        int minBlockLength = 0;
+        for (int i = beginFieldsIdx; i < numTokens; )
+        {
+            final Token fieldToken = tokens.get(i);
+            if (BEGIN_FIELD != fieldToken.signal())
+            {
+                break;
+            }
+
+            // Constant fields occupy no bytes on the wire, so they must not raise the minimum block length.
+            if (fieldToken.version() <= actingVersion && !fieldToken.isConstantEncoding())
+            {
+                minBlockLength = Math.max(minBlockLength, typeEnd(tokens, i + 1, 0, actingVersion));
+            }
+
+            i += fieldToken.componentTokenCount();
+        }
+
+        return minBlockLength;
     }
 
     private static long pack(final int bufferOffset, final int tokenIndex)

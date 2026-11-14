@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -824,7 +824,7 @@ public class JavaGenerator implements CodeGenerator
 
             out.append(generateDeclaration(className, implementsString, msgToken));
             out.append(generateFieldOrderStates(fieldPrecedenceModel));
-            out.append(generateDecoderFlyweightCode(fieldPrecedenceModel, className, msgToken));
+            out.append(generateDecoderFlyweightCode(fieldPrecedenceModel, className, msgToken, fields));
 
             final StringBuilder sb = new StringBuilder();
             generateDecoderFields(sb, fieldPrecedenceModel, fields, BASE_INDENT);
@@ -942,6 +942,100 @@ public class JavaGenerator implements CodeGenerator
 
             sb.append(indent).append("    }\n");
         }
+    }
+
+    // A composite member added in a later version than its field only counts from that version on, since a block
+    // encoded by an older version ends before it.
+    private static void addEndBySinceVersion(
+        final List<Token> tokens,
+        final int typeIndex,
+        final int sinceVersion,
+        final int baseOffset,
+        final TreeMap<Integer, Integer> endBySinceVersion)
+    {
+        final Token typeToken = tokens.get(typeIndex);
+        if (typeToken.isConstantEncoding())
+        {
+            return;
+        }
+
+        final int version = Math.max(sinceVersion, typeToken.version());
+        final int offset = baseOffset + typeToken.offset();
+        if (Signal.BEGIN_COMPOSITE == typeToken.signal())
+        {
+            final int endIndex = typeIndex + typeToken.componentTokenCount() - 1;
+            for (int i = typeIndex + 1; i < endIndex; )
+            {
+                addEndBySinceVersion(tokens, i, version, offset, endBySinceVersion);
+                i += tokens.get(i).componentTokenCount();
+            }
+        }
+        else
+        {
+            endBySinceVersion.merge(version, offset + typeToken.encodedLength(), Math::max);
+        }
+    }
+
+    // Smallest block length that holds every non-constant field present at the acting version, or null when the
+    // group has no such fields.
+    private static String minBlockLengthExpression(final List<Token> fieldTokens, final String actingVersion)
+    {
+        final TreeMap<Integer, Integer> endBySinceVersion = new TreeMap<>();
+        for (int i = 0, size = fieldTokens.size(); i < size; )
+        {
+            final Token fieldToken = fieldTokens.get(i);
+            if (Signal.BEGIN_FIELD != fieldToken.signal())
+            {
+                i++;
+                continue;
+            }
+
+            // Constant fields occupy no bytes on the wire, so they must not raise the minimum block length.
+            if (!fieldToken.isConstantEncoding())
+            {
+                addEndBySinceVersion(fieldTokens, i + 1, fieldToken.version(), 0, endBySinceVersion);
+            }
+
+            i += fieldToken.componentTokenCount();
+        }
+
+        if (endBySinceVersion.isEmpty())
+        {
+            return null;
+        }
+
+        // A field added in a later version must not lower the minimum set by an earlier one.
+        int runningEnd = 0;
+        final TreeMap<Integer, Integer> minByVersion = new TreeMap<>();
+        for (final Map.Entry<Integer, Integer> entry : endBySinceVersion.entrySet())
+        {
+            runningEnd = Math.max(runningEnd, entry.getValue());
+            minByVersion.put(entry.getKey(), runningEnd);
+        }
+
+        final StringBuilder expression = new StringBuilder();
+        String baseValue = "0";
+        int closing = 0;
+        for (final Map.Entry<Integer, Integer> entry : minByVersion.descendingMap().entrySet())
+        {
+            if (entry.getKey() <= 0)
+            {
+                baseValue = Integer.toString(entry.getValue());
+                break;
+            }
+
+            expression.append('(').append(actingVersion).append(" >= ").append(entry.getKey())
+                .append(" ? ").append(entry.getValue()).append(" : ");
+            closing++;
+        }
+
+        expression.append(baseValue);
+        for (int i = 0; i < closing; i++)
+        {
+            expression.append(')');
+        }
+
+        return expression.toString();
     }
 
     private void generateGroupDecoderClassHeader(
@@ -3441,7 +3535,8 @@ public class JavaGenerator implements CodeGenerator
     private CharSequence generateDecoderFlyweightCode(
         final FieldPrecedenceModel fieldPrecedenceModel,
         final String className,
-        final Token token)
+        final Token token,
+        final List<Token> fieldTokens)
     {
         final String headerClassName = formatClassName(ir.headerStructure().tokens().get(0).applicableTypeName());
 
@@ -3454,7 +3549,20 @@ public class JavaGenerator implements CodeGenerator
             .append("        final int offset,\n")
             .append("        final int actingBlockLength,\n")
             .append("        final int actingVersion)\n")
-            .append("    {\n")
+            .append("    {\n");
+
+        final String minBlockLength = minBlockLengthExpression(fieldTokens, "actingVersion");
+        if (null != minBlockLength)
+        {
+            methods.append("        if (actingBlockLength < ").append(minBlockLength).append(")\n")
+                .append("        {\n")
+                .append("            throw new IndexOutOfBoundsException(\"message blockLength=\" + ")
+                .append("actingBlockLength +\n")
+                .append("                \" is less than the fields at actingVersion=\" + actingVersion);\n")
+                .append("        }\n\n");
+        }
+
+        methods
             .append("        if (buffer != this.buffer)\n")
             .append("        {\n")
             .append("            this.buffer = buffer;\n")
