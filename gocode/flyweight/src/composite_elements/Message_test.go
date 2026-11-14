@@ -22,8 +22,8 @@ func TestEncodeDecodeMsg(t *testing.T) {
 	out.WrapForDecode(
 		data[:],
 		0,
-		uint64(in.SbeSchemaVersion()),
 		uint64(in.SbeBlockLength()),
+		uint64(in.SbeSchemaVersion()),
 		uint64(len(data)),
 	)
 
@@ -52,8 +52,8 @@ func TestEncodeDecodeMsg2(t *testing.T) {
 	out.WrapForDecode(
 		data[:],
 		0,
-		uint64(in.SbeSchemaVersion()),
 		uint64(in.SbeBlockLength()),
+		uint64(in.SbeSchemaVersion()),
 		uint64(len(data)),
 	)
 
@@ -78,8 +78,8 @@ func TestEncodeDecodeMsg3(t *testing.T) {
 	out.WrapForDecode(
 		data[:],
 		0,
-		uint64(in.SbeSchemaVersion()),
 		uint64(in.SbeBlockLength()),
+		uint64(in.SbeSchemaVersion()),
 		uint64(len(data)),
 	)
 
