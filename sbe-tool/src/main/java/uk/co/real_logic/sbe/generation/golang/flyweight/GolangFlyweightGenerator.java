@@ -2947,8 +2947,17 @@ public class GolangFlyweightGenerator implements CodeGenerator
 
                     if (typeToken.encoding().primitiveType() == PrimitiveType.CHAR)
                     {
-                        sb.append(indent).append("builder.WriteString(fmt.Sprintf(`\"%c\"`, ").append(fieldName)
-                            .append("()))\n");
+                        sb.append(
+                            indent + "builder.WriteString(`\"`)\n" +
+                            indent + "switch c := " + fieldName + "(); {\n" +
+                            indent + "case c == '\"' || c == '\\\\':\n" +
+                            indent + "\tbuilder.WriteString(\"\\\\\" + string(rune(c)))\n" +
+                            indent + "case c < 0x20:\n" +
+                            indent + "\tbuilder.WriteString(fmt.Sprintf(\"\\\\u%04x\", c))\n" +
+                            indent + "default:\n" +
+                            indent + "\tbuilder.WriteString(string(rune(c)))\n" +
+                            indent + "}\n" +
+                            indent + "builder.WriteString(`\"`)\n");
                     }
                     else
                     {
