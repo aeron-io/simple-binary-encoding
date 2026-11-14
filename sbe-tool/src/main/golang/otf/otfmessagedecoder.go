@@ -180,6 +180,48 @@ func DecodeData(
 	return bufferIndex
 }
 
+// typeEnd returns the end of the bytes a type occupies at the acting version. Composite members added in a
+// later version do not count, since a block encoded by an older version ends before them.
+func typeEnd(tokens []Token, typeIndex int, baseOffset uint64, actingVersion uint64) uint64 {
+	typeToken := tokens[typeIndex]
+	if typeToken.IsConstantEncoding() || int64(typeToken.TokenVersion()) > int64(actingVersion) {
+		return 0
+	}
+
+	offset := baseOffset + uint64(typeToken.Offset())
+	if SignalBeginComposite != typeToken.Signal() {
+		return offset + uint64(typeToken.EncodedLength())
+	}
+
+	end := uint64(0)
+	endIndex := typeIndex + int(typeToken.ComponentTokenCount()) - 1
+	for i := typeIndex + 1; i < endIndex; i += int(tokens[i].ComponentTokenCount()) {
+		if memberEnd := typeEnd(tokens, i, offset, actingVersion); memberEnd > end {
+			end = memberEnd
+		}
+	}
+	return end
+}
+
+// minBlockLength returns the extent of the fixed fields present at the acting version, which is the smallest
+// block length from which they can be read. Constant fields occupy no bytes on the wire.
+func minBlockLength(tokens []Token, tokenIndex int, numTokens int, actingVersion uint64) uint64 {
+	minLength := uint64(0)
+	for tokenIndex < numTokens {
+		fieldToken := tokens[tokenIndex]
+		if SignalBeginField != fieldToken.Signal() {
+			break
+		}
+		if int64(fieldToken.TokenVersion()) <= int64(actingVersion) && !fieldToken.IsConstantEncoding() {
+			if fieldEnd := typeEnd(tokens, tokenIndex+1, 0, actingVersion); fieldEnd > minLength {
+				minLength = fieldEnd
+			}
+		}
+		tokenIndex += int(fieldToken.ComponentTokenCount())
+	}
+	return minLength
+}
+
 func DecodeGroups(
 	buffer []byte,
 	bufferIndex int,
@@ -221,6 +263,11 @@ func DecodeGroups(
 		}
 
 		beginFieldsIndex := tokenIndex + int(dimensionsTypeComposite.ComponentTokenCount()) + 1
+		if isPresent && numInGroup > 0 && blockLength < minBlockLength(tokens, beginFieldsIndex, numTokens, actingVersion) {
+			panic(fmt.Sprintf(
+				"group blockLength=%d is less than the fields present at actingVersion=%d for group=%s",
+				blockLength, actingVersion, token.Name()))
+		}
 		listener.OnGroupHeader(token, numInGroup)
 		for i := uint64(0); i < numInGroup; i++ {
 			listener.OnBeginGroup(token, i, numInGroup)
