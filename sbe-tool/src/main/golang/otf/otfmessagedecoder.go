@@ -154,7 +154,8 @@ func DecodeData(
 		isPresent := token.TokenVersion() <= int32(actingVersion)
 		lengthToken := tokens[tokenIndex+2]
 		dataToken := tokens[tokenIndex+3]
-		if (uint64(bufferIndex) + uint64(dataToken.Offset())) > length {
+		// Var data newer than the acting version has no length prefix on the wire.
+		if isPresent && (uint64(bufferIndex)+uint64(dataToken.Offset())) > length {
 			panic("length too short for data length field")
 		}
 		dataLength := uint64(0)
