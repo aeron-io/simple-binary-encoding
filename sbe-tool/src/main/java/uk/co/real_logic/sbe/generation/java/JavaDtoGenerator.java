@@ -1058,13 +1058,13 @@ public class JavaDtoGenerator implements CodeGenerator
                 .append("dto.").append(formattedPropertyName).append("();\n")
                 .append(indent).append("if (null != ").append(formattedPropertyName).append(")\n")
                 .append(indent).append("{\n")
-                .append(indent).append(indent).append("for (int i = 0; i < ").append(formattedPropertyName)
+                .append(indent).append(INDENT).append("for (int i = 0; i < ").append(formattedPropertyName)
                 .append(".length; i++)\n")
-                .append(indent).append(indent).append("{\n")
-                .append(indent).append(indent).append(INDENT).append("encoder.").append(formattedPropertyName)
+                .append(indent).append(INDENT).append("{\n")
+                .append(indent).append(INDENT).append(INDENT).append("encoder.").append(formattedPropertyName)
                 .append("(")
                 .append("i, ").append(formattedPropertyName).append("[i]);\n")
-                .append(indent).append(indent).append("}\n")
+                .append(indent).append(INDENT).append("}\n")
                 .append(indent).append("}\n");
         }
     }
@@ -1106,12 +1106,12 @@ public class JavaDtoGenerator implements CodeGenerator
             .append("dto.").append(formattedPropertyName).append("();\n");
         sb.append(indent).append("if (null != ").append(formattedPropertyName).append(")\n");
         sb.append(indent).append("{\n");
-        sb.append(indent).append(indent).append("encoder.").append(formattedPropertyName)
+        sb.append(indent).append(INDENT).append("encoder.").append(formattedPropertyName)
             .append("(").append(formattedPropertyName).append(");\n");
         sb.append(indent).append("}\n");
         sb.append(indent).append("else\n");
         sb.append(indent).append("{\n");
-        sb.append(indent).append(indent).append("encoder.").append(formattedPropertyName)
+        sb.append(indent).append(INDENT).append("encoder.").append(formattedPropertyName)
             .append("(").append(enumName).append(".NULL_VAL);\n");
         sb.append(indent).append("}\n");
     }
