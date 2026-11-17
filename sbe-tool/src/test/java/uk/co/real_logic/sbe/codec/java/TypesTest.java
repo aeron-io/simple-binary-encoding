@@ -18,10 +18,18 @@ package uk.co.real_logic.sbe.codec.java;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import uk.co.real_logic.sbe.PrimitiveType;
+import uk.co.real_logic.sbe.PrimitiveValue;
+import uk.co.real_logic.sbe.ir.Encoding;
+import uk.co.real_logic.sbe.otf.Types;
 
 import java.nio.ByteOrder;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TypesTest
 {
@@ -142,5 +150,26 @@ class TypesTest
             total += (1 << i);
             assertEquals((int)total, buffer.getInt(bufferIndex, BYTE_ORDER));
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(floats = {Float.MIN_VALUE, 0.0f, Float.MAX_VALUE, Float.MIN_EXPONENT, Float.MAX_EXPONENT,
+        Float.MIN_NORMAL})
+    void shouldNotExpandJsonFloatToDouble(final float value)
+    {
+        final StringBuilder sb = new StringBuilder();
+        final Encoding encoding = new Encoding.Builder().primitiveType(PrimitiveType.FLOAT).build();
+
+        final MutableDirectBuffer buffer = new UnsafeBuffer(new byte[4]);
+        buffer.putFloat(0, value);
+
+        final String expected = Float.toString(value);
+
+        Types.appendAsJsonString(sb, buffer, 0, encoding);
+        assertEquals(expected, sb.toString());
+
+        sb.setLength(0);
+        Types.appendAsJsonString(sb, new PrimitiveValue(value, 4), encoding);
+        assertEquals(expected, sb.toString());
     }
 }

@@ -320,7 +320,7 @@ public class Types
                 }
                 else
                 {
-                    sb.append(value);
+                    sb.append(floatValue);
                 }
                 break;
             }
