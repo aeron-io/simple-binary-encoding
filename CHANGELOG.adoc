@@ -2,6 +2,12 @@
 
 == 1.43.0 (unreleased)
 
+* **[Java]** Add support for unsigned 64-bit long formatting.
+(https://github.com/aeron-io/simple-binary-encoding/pull/1196[#1196])
+* **[Java]** Fix float to double precision expansion in JSON string output.
+(https://github.com/aeron-io/simple-binary-encoding/pull/1195[#1195])
+* **[Java]** Fix indentation in DTO encoder field generation methods.
+(https://github.com/aeron-io/simple-binary-encoding/pull/1173[#1173])
 * **[Java]** Fix `null` pointer handling in DTO encoded length computation for variable-length fields.
 (https://github.com/aeron-io/simple-binary-encoding/pull/1170[#1170])
 * **[Java]** Fix `UINT64` range validation to use unsigned comparison.
