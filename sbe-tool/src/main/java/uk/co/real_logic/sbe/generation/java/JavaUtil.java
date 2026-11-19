@@ -606,7 +606,7 @@ public class JavaUtil
                     break;
 
                 default:
-                    if (c < ' ' || (c >= 0x7f && c <= 0x9f))
+                    if (c < ' ' || (c >= 0x7f && c <= 0x9f) || 0x2028 == c || 0x2029 == c)
                     {
                         sb.append(String.format("\\u%04x", (int)c));
                     }
