@@ -186,7 +186,7 @@ public class OtfMessageDecoder
             final int beginFieldsIdx = tokenIdx + dimensionTypeComposite.componentTokenCount() + 1;
 
             if (isPresent && numInGroup > 0 &&
-                blockLength < minBlockLength(tokens, beginFieldsIdx, numTokens, actingVersion))
+                blockLength < OtfBlockLengthUtil.minBlockLength(tokens, beginFieldsIdx, numTokens, actingVersion))
             {
                 throw new IndexOutOfBoundsException(
                     "group blockLength=" + blockLength + " is less than the fields present at actingVersion=" +
@@ -326,57 +326,6 @@ public class OtfMessageDecoder
         }
 
         return bufferOffset;
-    }
-
-    // End of the bytes a type occupies at the acting version; composite members added later do not count.
-    private static int typeEnd(
-        final List<Token> tokens, final int typeIdx, final int baseOffset, final int actingVersion)
-    {
-        final Token typeToken = tokens.get(typeIdx);
-        if (typeToken.isConstantEncoding() || typeToken.version() > actingVersion)
-        {
-            return 0;
-        }
-
-        final int offset = baseOffset + typeToken.offset();
-        if (BEGIN_COMPOSITE != typeToken.signal())
-        {
-            return offset + typeToken.encodedLength();
-        }
-
-        int end = 0;
-        final int endIdx = typeIdx + typeToken.componentTokenCount() - 1;
-        for (int i = typeIdx + 1; i < endIdx; )
-        {
-            end = Math.max(end, typeEnd(tokens, i, offset, actingVersion));
-            i += tokens.get(i).componentTokenCount();
-        }
-
-        return end;
-    }
-
-    private static int minBlockLength(
-        final List<Token> tokens, final int beginFieldsIdx, final int numTokens, final int actingVersion)
-    {
-        int minBlockLength = 0;
-        for (int i = beginFieldsIdx; i < numTokens; )
-        {
-            final Token fieldToken = tokens.get(i);
-            if (BEGIN_FIELD != fieldToken.signal())
-            {
-                break;
-            }
-
-            // Constant fields occupy no bytes on the wire, so they must not raise the minimum block length.
-            if (fieldToken.version() <= actingVersion && !fieldToken.isConstantEncoding())
-            {
-                minBlockLength = Math.max(minBlockLength, typeEnd(tokens, i + 1, 0, actingVersion));
-            }
-
-            i += fieldToken.componentTokenCount();
-        }
-
-        return minBlockLength;
     }
 
     private static long pack(final int bufferOffset, final int tokenIndex)
