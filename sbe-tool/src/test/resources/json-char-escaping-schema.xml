@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   package="json_char_escaping"
+                   id="8"
+                   version="0"
+                   semanticVersion="0"
+                   description="Char fields and var data that carry wire controlled bytes into JSON output"
+                   byteOrder="littleEndian">
+    <types>
+        <composite name="messageHeader" description="Message identifiers and length of message root">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+        </composite>
+        <composite name="varStringEncoding">
+            <type name="length" primitiveType="uint16"/>
+            <type name="varData" primitiveType="uint8" length="0" characterEncoding="UTF-8"/>
+        </composite>
+        <type name="Array4" primitiveType="char" length="4"/>
+        <composite name="Pair">
+            <type name="first" primitiveType="char"/>
+            <type name="last" primitiveType="char"/>
+        </composite>
+    </types>
+    <sbe:message name="Chars" id="1">
+        <field name="single" id="1" type="char"/>
+        <field name="array" id="2" type="Array4"/>
+        <field name="pair" id="3" type="Pair"/>
+        <data name="note" id="4" type="varStringEncoding"/>
+    </sbe:message>
+</sbe:messageSchema>

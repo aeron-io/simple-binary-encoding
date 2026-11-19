@@ -92,11 +92,49 @@ func (t *JsonTokenListener) escapeString(str string) {
 }
 
 func (t *JsonTokenListener) escape(c rune) {
-	if c == '"' || c == '\\' || c == '\b' || c == '\f' || c == '\n' || c == '\r' || c == '\t' {
-		t.output.WriteString("\\")
+	switch c {
+	case '"':
+		t.output.WriteString("\\\"")
+	case '\\':
+		t.output.WriteString("\\\\")
+	case '\b':
+		t.output.WriteString("\\b")
+	case '\f':
+		t.output.WriteString("\\f")
+	case '\n':
+		t.output.WriteString("\\n")
+	case '\r':
+		t.output.WriteString("\\r")
+	case '\t':
+		t.output.WriteString("\\t")
+	default:
+		if c < 0x20 {
+			t.output.WriteString("\\u00")
+			t.output.WriteByte("0123456789abcdef"[c>>4])
+			t.output.WriteByte("0123456789abcdef"[c&0xf])
+		} else {
+			t.output.WriteRune(c)
+		}
 	}
+}
 
-	t.output.WriteRune(c)
+// appendChars writes the first arrayLength bytes of buffer, which hold a char field, as a JSON string for a single
+// character or as an array of one character strings, escaping each byte.
+func (t *JsonTokenListener) appendChars(buffer []byte, arrayLength int32) {
+	if arrayLength > 1 {
+		t.output.WriteString("[")
+	}
+	for i := int32(0); i < arrayLength; i++ {
+		if i > 0 {
+			t.output.WriteString(", ")
+		}
+		t.doubleQuote()
+		t.escape(rune(buffer[i]))
+		t.doubleQuote()
+	}
+	if arrayLength > 1 {
+		t.output.WriteString("]")
+	}
 }
 
 func (t *JsonTokenListener) determineName(
@@ -167,7 +205,9 @@ func (t *JsonTokenListener) appendEncodingAsString(
 		}
 	} else {
 		elementSize := encoding.PrimitiveType().Size()
-		if arrayLength < 1 && encoding.PrimitiveType() == otf.CHAR {
+		if arrayLength >= 1 && encoding.PrimitiveType() == otf.CHAR {
+			t.appendChars(buffer, arrayLength)
+		} else if arrayLength < 1 && encoding.PrimitiveType() == otf.CHAR {
 			t.doubleQuote()
 			t.escapePrintableChar(buffer, 0, int(arrayLength), elementSize)
 		} else {
