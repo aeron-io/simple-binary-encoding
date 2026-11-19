@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package uk.co.real_logic.sbe.generation.java;
 import uk.co.real_logic.sbe.PrimitiveType;
 import uk.co.real_logic.sbe.generation.CodeGenerator;
 import uk.co.real_logic.sbe.generation.Generators;
+import uk.co.real_logic.sbe.generation.common.BlockLengthUtil;
 import uk.co.real_logic.sbe.generation.common.FieldPrecedenceModel;
 import uk.co.real_logic.sbe.generation.common.PrecedenceChecks;
 import uk.co.real_logic.sbe.ir.*;
@@ -879,7 +880,7 @@ public class JavaGenerator implements CodeGenerator
                 generateAnnotations(indent + INDENT, groupName, groups, sb, JavaUtil::decoderName);
             }
             generateGroupDecoderClassHeader(sb, groupName, outerClassName, fieldPrecedenceModel, groupToken,
-                tokens, groups, index, indent + INDENT);
+                tokens, fields, groups, index, indent + INDENT);
 
             generateDecoderFields(sb, fieldPrecedenceModel, fields, indent + INDENT);
             generateDecoderGroups(sb, fieldPrecedenceModel, outerClassName, groups, indent + INDENT, true);
@@ -951,6 +952,7 @@ public class JavaGenerator implements CodeGenerator
         final FieldPrecedenceModel fieldPrecedenceModel,
         final Token groupToken,
         final List<Token> tokens,
+        final List<Token> fieldTokens,
         final List<Token> subGroupTokens,
         final int index,
         final String indent)
@@ -993,8 +995,21 @@ public class JavaGenerator implements CodeGenerator
             .append(indent).append("        final int limit = parentMessage.limit();\n")
             .append(indent).append("        parentMessage.limit(limit + HEADER_SIZE);\n")
             .append(indent).append("        blockLength = ").append(blockLenCast).append(blockLengthGet).append(";\n")
-            .append(indent).append("        count = ").append(numInGroupCast).append(numInGroupGet).append(";\n")
-            .append(indent).append("    }\n\n");
+            .append(indent).append("        count = ").append(numInGroupCast).append(numInGroupGet).append(";\n");
+
+        final String minBlockLength = BlockLengthUtil.minBlockLengthExpression(fieldTokens, "parentMessage.actingVersion");
+        if (null != minBlockLength)
+        {
+            sb.append(indent).append("        if (count > 0 && blockLength < ").append(minBlockLength).append(")\n")
+                .append(indent).append("        {\n")
+                .append(indent).append("            throw new IndexOutOfBoundsException(\"group blockLength=\" + ")
+                .append("blockLength +\n")
+                .append(indent).append("                \" is less than the fields at actingVersion=\" + ")
+                .append("parentMessage.actingVersion);\n")
+                .append(indent).append("        }\n");
+        }
+
+        sb.append(indent).append("    }\n\n");
 
         generateAccessOrderListenerMethodForNextGroupElement(sb, fieldPrecedenceModel, indent + "    ", groupToken);
 
