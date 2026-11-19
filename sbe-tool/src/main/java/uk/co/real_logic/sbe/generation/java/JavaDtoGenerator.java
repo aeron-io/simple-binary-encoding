@@ -811,14 +811,24 @@ public class JavaDtoGenerator implements CodeGenerator
 
                 if (characterEncoding == null)
                 {
-                    decoderValueExtraction.append(blockIndent).append("UnsafeBuffer ")
-                        .append(dataVar).append("View = new UnsafeBuffer();\n")
-                        .append(blockIndent).append("decoder.wrap").append(toUpperFirstChar(formattedPropertyName))
-                        .append("(").append(dataVar).append("View);\n")
+                    final Token lengthToken = Generators.findFirst("length", tokens, i);
+                    final String negativeLengthCheck = PrimitiveType.UINT32 == lengthToken.encoding().primitiveType() ?
+                        dataVar + "Length < 0 || " : "";
+
+                    decoderValueExtraction.append(blockIndent).append("final int ").append(dataVar)
+                        .append("Length = decoder.").append(formattedPropertyName).append("Length();\n")
+                        .append(blockIndent).append("if (").append(negativeLengthCheck).append(dataVar)
+                        .append("Length > decoder.buffer().capacity() - decoder.limit() - ").append(decoderClassName)
+                        .append(".").append(formattedPropertyName).append("HeaderLength())\n")
+                        .append(blockIndent).append("{\n")
+                        .append(blockIndent).append(INDENT)
+                        .append("throw new IndexOutOfBoundsException(\"var data length=\" + ")
+                        .append(dataVar).append("Length);\n")
+                        .append(blockIndent).append("}\n")
                         .append(blockIndent).append("byte[] ").append(dataVar).append(" = new byte[")
-                        .append(dataVar).append("View.capacity()];\n")
-                        .append(blockIndent).append(dataVar).append("View.getBytes(0, ").append(dataVar)
-                        .append(");\n");
+                        .append(dataVar).append("Length];\n")
+                        .append(blockIndent).append("decoder.get").append(toUpperFirstChar(formattedPropertyName))
+                        .append("(").append(dataVar).append(", 0, ").append(dataVar).append("Length);\n");
                 }
                 else
                 {
