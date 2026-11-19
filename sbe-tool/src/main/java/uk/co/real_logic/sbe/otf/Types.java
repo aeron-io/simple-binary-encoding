@@ -165,7 +165,7 @@ public class Types
                 break;
 
             case UINT64:
-                sb.append(buffer.getLong(index, encoding.byteOrder()));
+                appendUnsignedInt64(buffer.getLong(index, encoding.byteOrder()), sb);
                 break;
 
             case FLOAT:
@@ -226,7 +226,7 @@ public class Types
                 break;
 
             case UINT64:
-                sb.append(buffer.getLong(index, encoding.byteOrder()));
+                appendUnsignedInt64(buffer.getLong(index, encoding.byteOrder()), sb);
                 break;
 
             case FLOAT:
@@ -299,8 +299,11 @@ public class Types
             case INT32:
             case UINT32:
             case INT64:
-            case UINT64:
                 sb.append(value.longValue());
+                break;
+
+            case UINT64:
+                appendUnsignedInt64(value.longValue(), sb);
                 break;
 
             case FLOAT:
@@ -404,6 +407,26 @@ public class Types
         {
             output.append(c);
         }
+    }
+
+    /**
+     * Append an unsigned 64-bit integer value as a decimal string to a {@link StringBuilder}.
+     *
+     * @param value  the unsigned 64-bit integer value to append.
+     * @param output to append the decimal representation to.
+     */
+    private static void appendUnsignedInt64(final long value, final StringBuilder output)
+    {
+        if (value >= 0L)
+        {
+            output.append(value);
+            return;
+        }
+
+        final long quotient = (value >>> 1L) / 5L;
+        final int lastDigit = (int)(value - quotient * 10);
+
+        output.append(quotient).append((char)('0' + lastDigit));
     }
 
     private static void jsonUnicodeEncode(final char c, final StringBuilder output)
