@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import uk.co.real_logic.sbe.Tests;
 import uk.co.real_logic.sbe.generation.Generators;
+import uk.co.real_logic.sbe.generation.cpp.CppDtoGenerator;
 import uk.co.real_logic.sbe.generation.csharp.CSharpDtoGenerator;
 import uk.co.real_logic.sbe.generation.csharp.CSharpGenerator;
 import uk.co.real_logic.sbe.generation.csharp.CSharpNamespaceOutputManager;
@@ -57,6 +58,7 @@ class SchemaInjectionTest
     void shouldEscapeJavaStringLiterals()
     {
         assertEquals("a\\\"b\\\\c\\n\\u0001é", escapeJavaStringLiteral("a\"b\\c\n\u0001é"));
+        assertEquals("\\u2028\\u2029", escapeJavaStringLiteral("\u2028\u2029"));
     }
 
     @Test
@@ -65,6 +67,7 @@ class SchemaInjectionTest
         assertEquals("a\\\"b\\\\c\\n\\u0001", Generators.escapeStringLiteral("a\"b\\c\n\u0001", false));
         assertEquals("\\u{1}", Generators.escapeStringLiteral("\u0001", true));
         assertEquals("a b c", Generators.toSingleLine("a\nb\rc"));
+        assertEquals("a *&#47; b &#92;u002a", Generators.escapeBlockComment("a */ b \\u002a"));
     }
 
     @Test
@@ -125,6 +128,21 @@ class SchemaInjectionTest
             assertTrue(source.contains("a\\\"; } static {"), languageDir.toString());
             assertFalse(source.contains("\nfn injected() {}"), languageDir.toString());
         }));
+    }
+
+    @Test
+    void shouldEscapeSchemaTextInCppDtoSource() throws Exception
+    {
+        final Ir ir = injectionIr();
+        final StringWriterOutputManager outputManager = new StringWriterOutputManager();
+        outputManager.setPackageName(ir.applicableNamespace());
+        new CppDtoGenerator(ir, false, outputManager).generate();
+
+        final String source = outputManager.getSources().values().stream().collect(Collectors.joining("\n"));
+        assertFalse(source.contains("a\"; } static {"));
+        assertTrue(source.contains("a\\\"; } static {"));
+        assertFalse(source.contains("probe */ static { throw new Error(); }"));
+        assertTrue(source.contains("probe *&#47; static { throw new Error(); }"));
     }
 
     @Test

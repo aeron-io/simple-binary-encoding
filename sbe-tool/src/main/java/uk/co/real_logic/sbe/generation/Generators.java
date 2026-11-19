@@ -171,4 +171,36 @@ public class Generators
 
         return sb.toString();
     }
+
+    /**
+     * Escape schema supplied text so it can be embedded in a block comment of generated C-family source. The comment
+     * terminator and backslashes (which can introduce universal character names in C++) are neutralised, and line
+     * separators are collapsed so the text stays inside the comment.
+     *
+     * @param value to be escaped.
+     * @return the escaped text.
+     */
+    public static String escapeBlockComment(final String value)
+    {
+        final StringBuilder sb = new StringBuilder(value.length() + 8);
+        for (int i = 0, length = value.length(); i < length; i++)
+        {
+            final char c = value.charAt(i);
+            if ('*' == c && i + 1 < length && '/' == value.charAt(i + 1))
+            {
+                sb.append("*&#47;");
+                i++;
+            }
+            else if ('\\' == c)
+            {
+                sb.append("&#92;");
+            }
+            else
+            {
+                sb.append('\n' == c || '\r' == c || 0x85 == c || 0x2028 == c || 0x2029 == c ? ' ' : c);
+            }
+        }
+
+        return sb.toString();
+    }
 }

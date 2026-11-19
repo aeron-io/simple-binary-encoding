@@ -1672,7 +1672,9 @@ public class CppDtoGenerator implements CodeGenerator
                 .append(indent).append("static std::string ").append(toLowerFirstChar(propertyName)).append("()\n")
                 .append(indent).append("{\n")
                 .append(indent).append(INDENT)
-                .append("return \"").append(typeToken.encoding().constValue().toString()).append("\";\n")
+                .append("return \"")
+                .append(Generators.escapeStringLiteral(typeToken.encoding().constValue().toString(), false))
+                .append("\";\n")
                 .append(indent).append("}\n");
         }
         else
@@ -2089,7 +2091,7 @@ public class CppDtoGenerator implements CodeGenerator
 
         return
             indent + "/**\n" +
-                indent + " * " + description + "\n" +
+                indent + " * " + Generators.escapeBlockComment(description) + "\n" +
                 indent + " */\n";
     }
 }
