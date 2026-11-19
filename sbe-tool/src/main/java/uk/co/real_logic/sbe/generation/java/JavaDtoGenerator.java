@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  * Copyright (C) 2017 MarketFactory, Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -811,11 +811,24 @@ public class JavaDtoGenerator implements CodeGenerator
 
                 if (characterEncoding == null)
                 {
-                    decoderValueExtraction.append(blockIndent).append("byte[] ").append(dataVar)
-                        .append(" = new byte[decoder.").append(formattedPropertyName).append("Length()];\n")
+                    final Token lengthToken = Generators.findFirst("length", tokens, i);
+                    final String negativeLengthCheck = PrimitiveType.UINT32 == lengthToken.encoding().primitiveType() ?
+                        dataVar + "Length < 0 || " : "";
+
+                    decoderValueExtraction.append(blockIndent).append("final int ").append(dataVar)
+                        .append("Length = decoder.").append(formattedPropertyName).append("Length();\n")
+                        .append(blockIndent).append("if (").append(negativeLengthCheck).append(dataVar)
+                        .append("Length > decoder.buffer().capacity() - decoder.limit() - ").append(decoderClassName)
+                        .append(".").append(formattedPropertyName).append("HeaderLength())\n")
+                        .append(blockIndent).append("{\n")
+                        .append(blockIndent).append(INDENT)
+                        .append("throw new IndexOutOfBoundsException(\"var data length=\" + ")
+                        .append(dataVar).append("Length);\n")
+                        .append(blockIndent).append("}\n")
+                        .append(blockIndent).append("byte[] ").append(dataVar).append(" = new byte[")
+                        .append(dataVar).append("Length];\n")
                         .append(blockIndent).append("decoder.get").append(toUpperFirstChar(formattedPropertyName))
-                        .append("(").append(dataVar).append(", 0, decoder.").append(formattedPropertyName)
-                        .append("Length());\n");
+                        .append("(").append(dataVar).append(", 0, ").append(dataVar).append("Length);\n");
                 }
                 else
                 {
