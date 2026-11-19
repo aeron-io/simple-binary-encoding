@@ -1201,9 +1201,16 @@ public class GolangGenerator implements CodeGenerator
         final String golangTypeForLengthMarshal = golangMarshalType(tokens.get(2).encoding().primitiveType());
         final String golangTypeForData = golangTypeName(tokens.get(3).encoding().primitiveType());
 
+        final String maxLength = Long.toUnsignedString(tokens.get(2).encoding().applicableMaxValue().longValue());
+
         generateCharacterEncodingRangeCheck(rc, varName + "." + propertyName, tokens.get(3));
 
+        // Check the length before writing it, so the wire length never disagrees with the bytes that follow.
+        imports.peek().add("fmt");
         encode.append(String.format(
+            "\tif uint64(len(%3$s.%4$s)) > " + maxLength + " {\n" +
+            "\t\treturn fmt.Errorf(\"%4$s length %%d exceeds maximum " + maxLength + "\", len(%3$s.%4$s))\n" +
+            "\t}\n" +
             "\tif err := _m.Write%1$s(_w, %2$s(len(%3$s.%4$s))); err != nil {\n" +
             "\t\treturn err\n" +
             "\t}\n" +
@@ -1259,11 +1266,22 @@ public class GolangGenerator implements CodeGenerator
         final int numInGroupOffset = numInGroupToken.offset();
         final String numInGroupType = golangTypeName(numInGroupToken.encoding().primitiveType());
         final String numInGroupMarshalType = golangMarshalType(numInGroupToken.encoding().primitiveType());
+        final String maxNumInGroup = Long.toUnsignedString(
+            numInGroupToken.encoding().applicableMaxValue().longValue());
 
         // Offset handling
         final int gap = Math.max(signalToken.offset() - currentOffset, 0);
         encode.append(generateEncodeOffset(gap, ""));
         decode.append(generateDecodeOffset(gap, ""));
+
+        // Check the count before writing the group header, so numInGroup never disagrees with the entries.
+        imports.peek().add("fmt");
+        encode.append(String.format(
+            "\tif uint64(len(%1$s.%2$s)) > " + maxNumInGroup + " {\n" +
+            "\t\treturn fmt.Errorf(\"%2$s count %%d exceeds maximum " + maxNumInGroup + "\", len(%1$s.%2$s))\n" +
+            "\t}\n",
+            varName,
+            toUpperFirstChar(signalToken.name())));
 
         final String encBlockLengthTmpl =
             "\tvar %7$sBlockLength %1$s = %2$d\n" +
