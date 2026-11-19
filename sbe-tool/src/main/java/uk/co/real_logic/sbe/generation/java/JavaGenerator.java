@@ -18,6 +18,7 @@ package uk.co.real_logic.sbe.generation.java;
 import uk.co.real_logic.sbe.PrimitiveType;
 import uk.co.real_logic.sbe.generation.CodeGenerator;
 import uk.co.real_logic.sbe.generation.Generators;
+import uk.co.real_logic.sbe.generation.common.BlockLengthUtil;
 import uk.co.real_logic.sbe.generation.common.FieldPrecedenceModel;
 import uk.co.real_logic.sbe.generation.common.PrecedenceChecks;
 import uk.co.real_logic.sbe.ir.*;
@@ -944,100 +945,6 @@ public class JavaGenerator implements CodeGenerator
         }
     }
 
-    // A composite member added in a later version than its field only counts from that version on, since a block
-    // encoded by an older version ends before it.
-    private static void addEndBySinceVersion(
-        final List<Token> tokens,
-        final int typeIndex,
-        final int sinceVersion,
-        final int baseOffset,
-        final TreeMap<Integer, Integer> endBySinceVersion)
-    {
-        final Token typeToken = tokens.get(typeIndex);
-        if (typeToken.isConstantEncoding())
-        {
-            return;
-        }
-
-        final int version = Math.max(sinceVersion, typeToken.version());
-        final int offset = baseOffset + typeToken.offset();
-        if (Signal.BEGIN_COMPOSITE == typeToken.signal())
-        {
-            final int endIndex = typeIndex + typeToken.componentTokenCount() - 1;
-            for (int i = typeIndex + 1; i < endIndex; )
-            {
-                addEndBySinceVersion(tokens, i, version, offset, endBySinceVersion);
-                i += tokens.get(i).componentTokenCount();
-            }
-        }
-        else
-        {
-            endBySinceVersion.merge(version, offset + typeToken.encodedLength(), Math::max);
-        }
-    }
-
-    // Smallest block length that holds every non-constant field present at the acting version, or null when the
-    // group has no such fields.
-    private static String minBlockLengthExpression(final List<Token> fieldTokens, final String actingVersion)
-    {
-        final TreeMap<Integer, Integer> endBySinceVersion = new TreeMap<>();
-        for (int i = 0, size = fieldTokens.size(); i < size; )
-        {
-            final Token fieldToken = fieldTokens.get(i);
-            if (Signal.BEGIN_FIELD != fieldToken.signal())
-            {
-                i++;
-                continue;
-            }
-
-            // Constant fields occupy no bytes on the wire, so they must not raise the minimum block length.
-            if (!fieldToken.isConstantEncoding())
-            {
-                addEndBySinceVersion(fieldTokens, i + 1, fieldToken.version(), 0, endBySinceVersion);
-            }
-
-            i += fieldToken.componentTokenCount();
-        }
-
-        if (endBySinceVersion.isEmpty())
-        {
-            return null;
-        }
-
-        // A field added in a later version must not lower the minimum set by an earlier one.
-        int runningEnd = 0;
-        final TreeMap<Integer, Integer> minByVersion = new TreeMap<>();
-        for (final Map.Entry<Integer, Integer> entry : endBySinceVersion.entrySet())
-        {
-            runningEnd = Math.max(runningEnd, entry.getValue());
-            minByVersion.put(entry.getKey(), runningEnd);
-        }
-
-        final StringBuilder expression = new StringBuilder();
-        String baseValue = "0";
-        int closing = 0;
-        for (final Map.Entry<Integer, Integer> entry : minByVersion.descendingMap().entrySet())
-        {
-            if (entry.getKey() <= 0)
-            {
-                baseValue = Integer.toString(entry.getValue());
-                break;
-            }
-
-            expression.append('(').append(actingVersion).append(" >= ").append(entry.getKey())
-                .append(" ? ").append(entry.getValue()).append(" : ");
-            closing++;
-        }
-
-        expression.append(baseValue);
-        for (int i = 0; i < closing; i++)
-        {
-            expression.append(')');
-        }
-
-        return expression.toString();
-    }
-
     private void generateGroupDecoderClassHeader(
         final StringBuilder sb,
         final String groupName,
@@ -1090,7 +997,7 @@ public class JavaGenerator implements CodeGenerator
             .append(indent).append("        blockLength = ").append(blockLenCast).append(blockLengthGet).append(";\n")
             .append(indent).append("        count = ").append(numInGroupCast).append(numInGroupGet).append(";\n");
 
-        final String minBlockLength = minBlockLengthExpression(fieldTokens, "parentMessage.actingVersion");
+        final String minBlockLength = BlockLengthUtil.minBlockLengthExpression(fieldTokens, "parentMessage.actingVersion");
         if (null != minBlockLength)
         {
             sb.append(indent).append("        if (count > 0 && blockLength < ").append(minBlockLength).append(")\n")
