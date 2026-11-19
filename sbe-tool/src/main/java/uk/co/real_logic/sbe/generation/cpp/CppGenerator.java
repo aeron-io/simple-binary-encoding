@@ -238,7 +238,7 @@ public class CppGenerator implements CodeGenerator
                 final String[] namespaces = fetchTypesPackageName(msgToken, ir);
                 out.append(generateFileHeader(namespaces, className, typesToInclude));
                 out.append(generateClassDeclaration(className));
-                out.append(generateMessageFlyweightCode(className, msgToken, fieldPrecedenceModel));
+                out.append(generateMessageFlyweightCode(className, msgToken, fields, fieldPrecedenceModel));
                 out.append(generateFullyEncodedCheck(fieldPrecedenceModel));
 
                 final StringBuilder sb = new StringBuilder();
@@ -645,14 +645,16 @@ public class CppGenerator implements CodeGenerator
             final Token numInGroupToken = Generators.findFirst("numInGroup", tokens, i);
             final String cppTypeForNumInGroup = cppTypeName(numInGroupToken.encoding().primitiveType());
 
-            generateGroupClassHeader(sb, groupName, groupToken, tokens, fieldPrecedenceModel, i, indent + INDENT);
-
+            final int groupIndex = i;
             ++i;
             final int groupHeaderTokenCount = tokens.get(i).componentTokenCount();
             i += groupHeaderTokenCount;
 
             final List<Token> fields = new ArrayList<>();
             i = collectFields(tokens, i, fields);
+
+            generateGroupClassHeader(
+                sb, groupName, groupToken, tokens, fields, fieldPrecedenceModel, groupIndex, indent + INDENT);
             generateFields(sb, formatClassName(groupName), fields, fieldPrecedenceModel, indent + INDENT);
             generateSetAllFields(sb, formatClassName(groupName), fields, indent + INDENT);
 
@@ -677,6 +679,7 @@ public class CppGenerator implements CodeGenerator
         final String groupName,
         final Token groupToken,
         final List<Token> tokens,
+        final List<Token> fields,
         final FieldPrecedenceModel fieldPrecedenceModel,
         final int index,
         final String indent)
@@ -763,6 +766,15 @@ public class CppGenerator implements CodeGenerator
             indent + "        m_codecStatePtr = codecState;\n" +
             "#endif\n";
 
+        final String minBlockLength = Generators.minBlockLengthExpression(fields, "actingVersion");
+        final String blockLengthCheck = null == minBlockLength ?
+            "" :
+            indent + "        if (SBE_BOUNDS_CHECK_EXPECT(\n" +
+            indent + "            ((m_blockLength < " + minBlockLength + ") && (m_count > 0)), false))\n" +
+            indent + "        {\n" +
+            indent + "            throw std::runtime_error(\"blockLength too short for group [E108]\");\n" +
+            indent + "        }\n";
+
         new Formatter(sb).format(
             indent + "public:\n" +
             indent + "    %5$s() = default;\n\n" +
@@ -778,6 +790,7 @@ public class CppGenerator implements CodeGenerator
             indent + "        m_bufferLength = bufferLength;\n" +
             indent + "        m_blockLength = dimensions.blockLength();\n" +
             indent + "        m_count = dimensions.numInGroup();\n" +
+            "%6$s" +
             indent + "        m_index = 0;\n" +
             indent + "        m_actingVersion = actingVersion;\n" +
             indent + "        m_initialPosition = *pos;\n" +
@@ -789,7 +802,8 @@ public class CppGenerator implements CodeGenerator
             dimensionsClassName,
             codecStateParameter,
             codecStateAssignment,
-            groupClassName);
+            groupClassName,
+            blockLengthCheck);
 
         final long minCount = numInGroupToken.encoding().applicableMinValue().longValue();
         final String minCheck = minCount > 0 ? "count < " + minCount + " || " : "";
@@ -2848,6 +2862,7 @@ public class CppGenerator implements CodeGenerator
 
     private CharSequence generateConstructorsAndOperators(
         final String className,
+        final CharSequence actingBlockLengthCheck,
         final FieldPrecedenceModel fieldPrecedenceModel)
     {
         return String.format(
@@ -2866,6 +2881,7 @@ public class CppGenerator implements CodeGenerator
             "        m_actingBlockLength(actingBlockLength),\n" +
             "        m_actingVersion(actingVersion)\n" +
             "    {\n" +
+            "%3$s" +
             "%2$s" +
             "    }\n\n" +
 
@@ -2883,14 +2899,17 @@ public class CppGenerator implements CodeGenerator
             "    {\n" +
             "    }\n\n",
             className,
-            generateCodecStateTransitionForWrapping(fieldPrecedenceModel));
+            generateCodecStateTransitionForWrapping(fieldPrecedenceModel),
+            actingBlockLengthCheck);
     }
 
     private CharSequence generateMessageFlyweightCode(
         final String className,
         final Token token,
+        final List<Token> fields,
         final FieldPrecedenceModel fieldPrecedenceModel)
     {
+        final CharSequence actingBlockLengthCheck = generateActingBlockLengthCheck(fields);
         final String blockLengthType = cppTypeName(ir.headerStructure().blockLengthType());
         final String templateIdType = cppTypeName(ir.headerStructure().templateIdType());
         final String schemaIdType = cppTypeName(ir.headerStructure().schemaIdType());
@@ -3032,6 +3051,7 @@ public class CppGenerator implements CodeGenerator
             "        m_buffer = buffer;\n" +
             "        m_bufferLength = bufferLength;\n" +
             "        m_offset = offset;\n" +
+            "%23$s" +
             "        m_actingBlockLength = actingBlockLength;\n" +
             "        m_actingVersion = actingVersion;\n" +
             "        m_position = sbeCheckPosition(m_offset + m_actingBlockLength);\n" +
@@ -3107,7 +3127,7 @@ public class CppGenerator implements CodeGenerator
             generateLiteral(ir.headerStructure().schemaVersionType(), Integer.toString(ir.version())),
             semanticType,
             className,
-            generateConstructorsAndOperators(className, fieldPrecedenceModel),
+            generateConstructorsAndOperators(className, actingBlockLengthCheck, fieldPrecedenceModel),
             formatClassName(headerType),
             semanticVersion,
             generateFieldOrderStateEnum(fieldPrecedenceModel),
@@ -3118,7 +3138,23 @@ public class CppGenerator implements CodeGenerator
             generateOnWrappedListener(fieldPrecedenceModel),
             generateCodecStateTransitionForWrapping(fieldPrecedenceModel),
             generateHiddenCopyConstructor("    ", className),
-            generateCheckForNotWrappedState("decodeLength", fieldPrecedenceModel));
+            generateCheckForNotWrappedState("decodeLength", fieldPrecedenceModel),
+            actingBlockLengthCheck);
+    }
+
+    private static CharSequence generateActingBlockLengthCheck(final List<Token> fields)
+    {
+        final String minBlockLength = Generators.minBlockLengthExpression(fields, "actingVersion");
+        if (null == minBlockLength)
+        {
+            return "";
+        }
+
+        return
+            "        if (SBE_BOUNDS_CHECK_EXPECT((actingBlockLength < " + minBlockLength + "), false))\n" +
+            "        {\n" +
+            "            throw std::runtime_error(\"actingBlockLength too short [E100]\");\n" +
+            "        }\n";
     }
 
     private CharSequence generateAccessOrderErrorType(final FieldPrecedenceModel fieldPrecedenceModel)
