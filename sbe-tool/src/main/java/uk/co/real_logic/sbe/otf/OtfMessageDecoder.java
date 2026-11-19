@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import uk.co.real_logic.sbe.ir.Token;
 
 import java.util.List;
 
+import static uk.co.real_logic.sbe.ir.Signal.BEGIN_COMPOSITE;
 import static uk.co.real_logic.sbe.ir.Signal.BEGIN_FIELD;
 import static uk.co.real_logic.sbe.ir.Signal.BEGIN_GROUP;
 import static uk.co.real_logic.sbe.ir.Signal.BEGIN_VAR_DATA;
@@ -184,6 +185,14 @@ public class OtfMessageDecoder
 
             final int beginFieldsIdx = tokenIdx + dimensionTypeComposite.componentTokenCount() + 1;
 
+            if (isPresent && numInGroup > 0 &&
+                blockLength < OtfBlockLengthUtil.minBlockLength(tokens, beginFieldsIdx, numTokens, actingVersion))
+            {
+                throw new IndexOutOfBoundsException(
+                    "group blockLength=" + blockLength + " is less than the fields present at actingVersion=" +
+                    actingVersion + " for group=" + token.name());
+            }
+
             listener.onGroupHeader(token, numInGroup);
 
             for (int i = 0; i < numInGroup; i++)
@@ -301,6 +310,13 @@ public class OtfMessageDecoder
             if (isPresent)
             {
                 bufferOffset += dataToken.offset();
+
+                if (length < 0 || length > buffer.capacity() - bufferOffset)
+                {
+                    throw new IndexOutOfBoundsException(
+                        "var data length=" + length + " exceeds buffer capacity=" + buffer.capacity() +
+                        " at offset=" + bufferOffset);
+                }
             }
 
             listener.onVarData(token, buffer, bufferOffset, length, dataToken);
