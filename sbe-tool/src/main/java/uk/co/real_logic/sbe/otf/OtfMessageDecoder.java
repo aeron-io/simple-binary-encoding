@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import uk.co.real_logic.sbe.ir.Token;
 
 import java.util.List;
 
+import static uk.co.real_logic.sbe.ir.Signal.BEGIN_COMPOSITE;
 import static uk.co.real_logic.sbe.ir.Signal.BEGIN_FIELD;
 import static uk.co.real_logic.sbe.ir.Signal.BEGIN_GROUP;
 import static uk.co.real_logic.sbe.ir.Signal.BEGIN_VAR_DATA;
@@ -56,10 +57,17 @@ public class OtfMessageDecoder
         final List<Token> msgTokens,
         final TokenListener listener)
     {
+        final int numTokens = msgTokens.size();
+        if (blockLength < OtfBlockLengthUtil.minBlockLength(msgTokens, 1, numTokens, actingVersion))
+        {
+            throw new IndexOutOfBoundsException(
+                "message blockLength=" + blockLength + " is less than the fields present at actingVersion=" +
+                actingVersion + " for message=" + msgTokens.get(0).name());
+        }
+
         listener.onBeginMessage(msgTokens.get(0));
 
         int i = offset;
-        final int numTokens = msgTokens.size();
         final int tokenIdx = decodeFields(buffer, i, actingVersion, msgTokens, 1, numTokens, listener);
         i += blockLength;
 

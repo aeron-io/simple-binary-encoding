@@ -206,6 +206,12 @@ public final class TokenCodecDecoder
         final int actingBlockLength,
         final int actingVersion)
     {
+        if (actingBlockLength < 28)
+        {
+            throw new IndexOutOfBoundsException("message blockLength=" + actingBlockLength +
+                " is less than the fields at actingVersion=" + actingVersion);
+        }
+
         if (buffer != this.buffer)
         {
             this.buffer = buffer;
