@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -38,6 +40,7 @@ using namespace code::generation::test;
 
 // IR (.sbeir) for the example schema, produced by SbeTool; supplied on argv or $SBE_EXAMPLE_IR.
 static std::string g_irFile;
+static std::string g_uint64IrFile = "uint64-length-schema.sbeir";
 
 // =================================================================================================
 // Encoding::put* / putAs*  <->  get* / getAs*
@@ -341,6 +344,107 @@ TEST_F(OtfMessageEncoderTest, ManyGroupEntriesAndNestedGroups)
 }
 
 // =================================================================================================
+// A count or length that does not fit in its wire field is rejected rather than truncated
+// =================================================================================================
+namespace {
+
+struct OversizedEncoder : public OtfMessageEncoder::BasicTokenEncoder
+{
+    std::string name;
+    std::uint64_t value;
+    OversizedEncoder(std::string n, std::uint64_t v) : name(std::move(n)), value(v) {}
+
+    std::uint64_t numInGroup(Token &token) override { return token.name() == name ? value : 0; }
+    std::uint64_t varDataLength(Token &token) override { return token.name() == name ? value : 0; }
+};
+
+std::string encodeCarError(OversizedEncoder &encoder, std::size_t capacity)
+{
+    IrDecoder ir;
+    EXPECT_EQ(ir.decode(g_irFile.c_str()), 0) << "failed to load IR: " << g_irFile;
+    auto msgTokens = ir.message(Car::sbeTemplateId(), Car::sbeSchemaVersion());
+    EXPECT_TRUE(msgTokens);
+
+    std::vector<char> buffer(capacity, 0);
+    try
+    {
+        OtfMessageEncoder::encode(
+            buffer.data(), buffer.size(), Car::sbeSchemaVersion(), Car::sbeBlockLength(), msgTokens, encoder);
+    }
+    catch (const std::runtime_error &e)
+    {
+        return e.what();
+    }
+
+    return "";
+}
+
+} // namespace
+
+TEST_F(OtfMessageEncoderTest, RejectsNumInGroupTooLargeForNumInGroupType)
+{
+    // room for every entry, so only the uint16 numInGroup can reject the count
+    OversizedEncoder encoder("fuelFigures", 65536);
+    EXPECT_NE(encodeCarError(encoder, 4 * 1024 * 1024).find("numInGroup too large"), std::string::npos);
+}
+
+TEST_F(OtfMessageEncoderTest, RejectsVarDataLengthTooLargeForLengthType)
+{
+    OversizedEncoder encoder("manufacturer", 65536);
+    EXPECT_NE(encodeCarError(encoder, 1024 * 1024).find("var data length too large"), std::string::npos);
+}
+
+TEST_F(OtfMessageEncoderTest, RejectsVarDataLengthAboveSchemaMaxValue)
+{
+    // the uint32 length of color has maxValue 1073741824
+    OversizedEncoder encoder("color", 1073741825);
+    EXPECT_NE(encodeCarError(encoder, 8192).find("var data length too large"), std::string::npos);
+}
+
+// A uint64 length has no tighter wire-field bound, so UINT64_MAX passes the range check. The remaining bounds
+// check must compare against the remaining buffer without adding to bufferIndex, which would wrap.
+namespace {
+
+struct HugeVarDataEncoder : public OtfMessageEncoder::BasicTokenEncoder
+{
+    std::uint64_t varDataLength(Token &) override { return std::numeric_limits<std::uint64_t>::max(); }
+};
+
+std::string encodeUint64Error(OtfMessageEncoder::BasicTokenEncoder &encoder)
+{
+    IrDecoder ir;
+    EXPECT_EQ(ir.decode(g_uint64IrFile.c_str()), 0) << "failed to load IR: " << g_uint64IrFile;
+    auto msgTokens = ir.message(1, 0);
+    EXPECT_TRUE(msgTokens);
+
+    std::vector<char> buffer(8192, 0);
+    try
+    {
+        OtfMessageEncoder::encode(buffer.data(), buffer.size(), 0, 4, msgTokens, encoder);
+    }
+    catch (const std::runtime_error &e)
+    {
+        return e.what();
+    }
+
+    return "";
+}
+
+} // namespace
+
+TEST(OtfUint64LengthEncoderTest, RejectsVarDataLengthThatWouldWrap)
+{
+    if (g_uint64IrFile.empty())
+    {
+        GTEST_SKIP() << "uint64-length schema IR not available";
+    }
+
+    HugeVarDataEncoder encoder;
+    EXPECT_NE(
+        encodeUint64Error(encoder).find("length too short for data field"), std::string::npos);
+}
+
+// =================================================================================================
 // OtfHeaderEncoder writes a header that OtfHeaderDecoder reads back unchanged
 // =================================================================================================
 TEST(OtfHeaderEncoderTest, RoundTripsHeaderFields)
@@ -377,6 +481,10 @@ int main(int argc, char **argv)
     if (argc > 1)
     {
         g_irFile = argv[1];
+    }
+    if (argc > 2)
+    {
+        g_uint64IrFile = argv[2];
     }
     return RUN_ALL_TESTS();
 }
