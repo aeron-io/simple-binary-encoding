@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  * Copyright (C) 2017 MarketFactory, Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,7 @@ import java.nio.file.Files;
 
 import static java.io.File.separatorChar;
 import static uk.co.real_logic.sbe.SbeTool.CSHARP_GENERATE_NAMESPACE_DIR;
+import static uk.co.real_logic.sbe.generation.OutputFiles.checkFileName;
 
 /**
  * {@link OutputManager} for managing the creation of C# source files as the target of code generation.
@@ -72,7 +73,7 @@ public class CSharpNamespaceOutputManager implements OutputManager
     @Override
     public Writer createOutput(final String name) throws IOException
     {
-        final File targetFile = new File(outputDir, name + ".g.cs");
+        final File targetFile = new File(outputDir, checkFileName(name) + ".g.cs");
         return Files.newBufferedWriter(targetFile.toPath(), StandardCharsets.UTF_8);
     }
 }
