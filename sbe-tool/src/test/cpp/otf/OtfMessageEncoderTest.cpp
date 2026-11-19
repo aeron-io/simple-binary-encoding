@@ -16,6 +16,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <map>
 #include <memory>
 #include <string>
@@ -39,6 +40,7 @@ using namespace code::generation::test;
 
 // IR (.sbeir) for the example schema, produced by SbeTool; supplied on argv or $SBE_EXAMPLE_IR.
 static std::string g_irFile;
+static std::string g_uint64IrFile = "uint64-length-schema.sbeir";
 
 // =================================================================================================
 // Encoding::put* / putAs*  <->  get* / getAs*
@@ -399,6 +401,49 @@ TEST_F(OtfMessageEncoderTest, RejectsVarDataLengthAboveSchemaMaxValue)
     EXPECT_NE(encodeCarError(encoder, 8192).find("var data length too large"), std::string::npos);
 }
 
+// A uint64 length has no tighter wire-field bound, so UINT64_MAX passes the range check. The remaining bounds
+// check must compare against the remaining buffer without adding to bufferIndex, which would wrap.
+namespace {
+
+struct HugeVarDataEncoder : public OtfMessageEncoder::BasicTokenEncoder
+{
+    std::uint64_t varDataLength(Token &) override { return std::numeric_limits<std::uint64_t>::max(); }
+};
+
+std::string encodeUint64Error(OtfMessageEncoder::BasicTokenEncoder &encoder)
+{
+    IrDecoder ir;
+    EXPECT_EQ(ir.decode(g_uint64IrFile.c_str()), 0) << "failed to load IR: " << g_uint64IrFile;
+    auto msgTokens = ir.message(1, 0);
+    EXPECT_TRUE(msgTokens);
+
+    std::vector<char> buffer(8192, 0);
+    try
+    {
+        OtfMessageEncoder::encode(buffer.data(), buffer.size(), 0, 4, msgTokens, encoder);
+    }
+    catch (const std::runtime_error &e)
+    {
+        return e.what();
+    }
+
+    return "";
+}
+
+} // namespace
+
+TEST(OtfUint64LengthEncoderTest, RejectsVarDataLengthThatWouldWrap)
+{
+    if (g_uint64IrFile.empty())
+    {
+        GTEST_SKIP() << "uint64-length schema IR not available";
+    }
+
+    HugeVarDataEncoder encoder;
+    EXPECT_NE(
+        encodeUint64Error(encoder).find("length too short for data field"), std::string::npos);
+}
+
 // =================================================================================================
 // OtfHeaderEncoder writes a header that OtfHeaderDecoder reads back unchanged
 // =================================================================================================
@@ -436,6 +481,10 @@ int main(int argc, char **argv)
     if (argc > 1)
     {
         g_irFile = argv[1];
+    }
+    if (argc > 2)
+    {
+        g_uint64IrFile = argv[2];
     }
     return RUN_ALL_TESTS();
 }

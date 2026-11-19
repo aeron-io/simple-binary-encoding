@@ -262,7 +262,8 @@ static std::size_t encodeData(
 
             bufferIndex += dataToken.offset();
 
-            if ((bufferIndex + dataLength) > length)
+            // bufferIndex <= length after the prefix check above, so this subtraction cannot wrap.
+            if (dataLength > static_cast<std::uint64_t>(length - bufferIndex))
             {
                 throw std::runtime_error("length too short for data field");
             }
