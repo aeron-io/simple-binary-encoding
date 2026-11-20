@@ -917,7 +917,9 @@ tasks.register('generateGolangFlyweightCodecsWithXSD', JavaExec) {
             'sbe-tool/src/test/resources/message-with-lower-case-bitset.xml',
             'gocode/resources/example-composite.xml',
             'gocode/resources/group-with-data-extension-schema.xml',
-            'gocode/resources/simple.xml']
+            'gocode/resources/simple.xml',
+            'gocode/resources/versioned-groups-v1.xml',
+            'gocode/resources/versioned-groups-v2.xml']
 }
 
 tasks.register('generateGolangCodecs') {
