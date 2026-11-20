@@ -863,6 +863,18 @@ tasks.register('generateGolangFlyweightCodecTestVarData', JavaExec) {
     args = ['sbe-tool/src/test/resources/basic-variable-length-schema.xml']
 }
 
+tasks.register('generateGolangFlyweightCodecTestVersionedMessage', JavaExec) {
+    mainClass.set('uk.co.real_logic.sbe.SbeTool')
+    classpath = project(':sbe-tool').sourceSets.main.runtimeClasspath
+    jvmArgs('--add-opens', 'java.base/jdk.internal.misc=ALL-UNNAMED')
+    systemProperties(
+            'sbe.output.dir': 'gocode/flyweight/src',
+            'sbe.go.generate.generate.flyweights': 'true',
+            'sbe.target.language': 'golang')
+    args = ['sbe-tool/src/test/resources/versioned-message-v1.xml',
+            'sbe-tool/src/test/resources/versioned-message-v2.xml']
+}
+
 tasks.register('generateGolangFlyweightCodecsWithXIncludes', JavaExec) {
     mainClass.set('uk.co.real_logic.sbe.SbeTool')
     classpath = project(':sbe-tool').sourceSets.main.runtimeClasspath
@@ -920,6 +932,7 @@ tasks.register('generateGolangCodecs') {
             'generateGolangFlyweightCodecTestGroup',
             'generateGolangFlyweightCodecTestBasic',
             'generateGolangFlyweightCodecTestComposite',
+            'generateGolangFlyweightCodecTestVersionedMessage',
             'generateGolangFlyweightCodecsWithXIncludes',
             'generateGolangFlyweightCodecsWithXSD',
 	        'generateIrCodecs',

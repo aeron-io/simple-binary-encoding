@@ -2380,8 +2380,8 @@ public class GolangFlyweightGenerator implements CodeGenerator
 
             "func (m *%10$s) DecodeLength() uint64 {\n" +
             "\tvar skipper %10$s\n" +
-            "\tskipper.WrapForDecode(m.buffer, m.offset, uint64(m.SbeBlockLength()),\n" +
-            "\t\tuint64(m.ActingVersion()), m.bufferLength)\n" +
+            "\tskipper.WrapForDecode(m.buffer, m.offset, m.actingBlockLength,\n" +
+            "\t\tm.actingVersion, m.bufferLength)\n" +
             "\tskipper.Skip()\n" +
             "\treturn skipper.EncodedLength()\n" +
             "}\n\n" +
