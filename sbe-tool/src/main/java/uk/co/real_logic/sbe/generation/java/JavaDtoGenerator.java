@@ -26,6 +26,7 @@ import uk.co.real_logic.sbe.ir.Token;
 import org.agrona.LangUtil;
 import org.agrona.Verify;
 import org.agrona.generation.DynamicPackageOutputManager;
+import org.agrona.sbe.MessageDtoEncoder;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -57,6 +58,7 @@ public class JavaDtoGenerator implements CodeGenerator
     private final Ir ir;
     private final DynamicPackageOutputManager outputManager;
     private final boolean shouldSupportTypesPackageNames;
+    private final boolean shouldGenerateInterfaces;
     private final Set<String> packageNameByTypes = new HashSet<>();
 
     /**
@@ -64,14 +66,17 @@ public class JavaDtoGenerator implements CodeGenerator
      *
      * @param ir                                for the messages and types.
      * @param shouldSupportTypesPackageNames    generator support for types in their own package.
+     * @param shouldGenerateInterfaces          whether to generate interfaces for the DTOs.
      * @param outputManager                     for generating the DTOs to.
      */
     public JavaDtoGenerator(
         final Ir ir,
         final boolean shouldSupportTypesPackageNames,
+        final boolean shouldGenerateInterfaces,
         final DynamicPackageOutputManager outputManager)
     {
         this.shouldSupportTypesPackageNames = shouldSupportTypesPackageNames;
+        this.shouldGenerateInterfaces = shouldGenerateInterfaces;
         Verify.notNull(ir, "ir");
         Verify.notNull(outputManager, "outputManager");
 
@@ -116,7 +121,9 @@ public class JavaDtoGenerator implements CodeGenerator
             final List<Token> messageBody = tokens.subList(1, tokens.size() - 1);
             int offset = 0;
 
-            final ClassBuilder classBuilder = new ClassBuilder(dtoClassName, BASE_INDENT, "public final");
+            final String interfaces = shouldGenerateInterfaces ? MessageDtoEncoder.class.getSimpleName() : "";
+            final ClassBuilder classBuilder = new ClassBuilder(dtoClassName, BASE_INDENT, "public final",
+                interfaces);
 
             final List<Token> fields = new ArrayList<>();
             offset = collectFields(messageBody, offset, fields);
@@ -144,6 +151,7 @@ public class JavaDtoGenerator implements CodeGenerator
             generateComputeEncodedLength(classBuilder, decoderClassName,
                 decoderClassName + ".BLOCK_LENGTH",
                 groups, varData, BASE_INDENT + INDENT);
+            generateComputeEncodedLengthWithHeader(classBuilder, headerEncoderClassName, BASE_INDENT + INDENT);
             generateDisplay(classBuilder, encoderClassName, "computeEncodedLength()",
                 BASE_INDENT + INDENT);
 
@@ -153,7 +161,17 @@ public class JavaDtoGenerator implements CodeGenerator
                 out.append(generateDtoFileHeader(packageName));
                 out.append("import org.agrona.DirectBuffer;\n");
                 out.append("import org.agrona.MutableDirectBuffer;\n");
-                out.append("import org.agrona.concurrent.UnsafeBuffer;\n\n");
+
+                if (shouldGenerateInterfaces)
+                {
+                    out.append("import org.agrona.concurrent.UnsafeBuffer;\n");
+                    out.append("import ").append(MessageDtoEncoder.class.getName()).append(";\n\n");
+                }
+                else
+                {
+                    out.append("import org.agrona.concurrent.UnsafeBuffer;\n\n");
+                }
+
                 out.append("import java.util.ArrayList;\n");
                 out.append("import java.util.List;\n\n");
                 out.append(generateDocumentation(BASE_INDENT, msgToken));
@@ -170,15 +188,18 @@ public class JavaDtoGenerator implements CodeGenerator
         private final String className;
         private final String indent;
         private final String modifiers;
+        private final String interfaces;
 
         private ClassBuilder(
             final String className,
             final String indent,
-            final String modifiers)
+            final String modifiers,
+            final String interfaces)
         {
             this.className = className;
             this.indent = indent;
             this.modifiers = modifiers.length() == 0 ? modifiers : modifiers + " ";
+            this.interfaces = interfaces.length() == 0 ? interfaces : " implements " + interfaces;
         }
 
         public StringBuilder appendField()
@@ -200,7 +221,7 @@ public class JavaDtoGenerator implements CodeGenerator
         {
             try
             {
-                out.append(indent).append(modifiers).append("class ").append(className).append("\n")
+                out.append(indent).append(modifiers).append("class ").append(className).append(interfaces).append("\n")
                     .append(indent).append("{\n")
                     .append(fieldSb)
                     .append(privateSb)
@@ -247,7 +268,7 @@ public class JavaDtoGenerator implements CodeGenerator
                 .append(qualifiedDtoClassName).append("> ")
                 .append(fieldName).append(" = new ArrayList<>();\n");
 
-            final ClassBuilder groupClassBuilder = new ClassBuilder(groupClassName, indent, "public static final");
+            final ClassBuilder groupClassBuilder = new ClassBuilder(groupClassName, indent, "public static final", "");
 
             i++;
             i += tokens.get(i).componentTokenCount();
@@ -405,6 +426,20 @@ public class JavaDtoGenerator implements CodeGenerator
 
         lengthBuilder.append(indent).append(INDENT).append("return encodedLength;\n")
             .append(indent).append("}\n");
+    }
+
+    private void generateComputeEncodedLengthWithHeader(
+            final ClassBuilder classBuilder,
+            final String headerEncoderClassName,
+            final String indent)
+    {
+        final StringBuilder lengthBuilder = classBuilder.appendPublic()
+            .append("\n")
+            .append(indent).append("public int computeEncodedLengthWithHeader()\n")
+            .append(indent).append("{\n");
+
+        lengthBuilder.append(indent).append(INDENT).append("return computeEncodedLength() + ").append(
+            headerEncoderClassName).append(".ENCODED_LENGTH;\n").append(indent).append("}\n");
     }
 
     private void generateCompositeDecodeWith(
@@ -962,6 +997,22 @@ public class JavaDtoGenerator implements CodeGenerator
             .append(headerEncoderClassName).append(".ENCODED_LENGTH];\n")
             .append(indent).append(INDENT).append("encodeWithHeaderWith(dto, new UnsafeBuffer(bytes), 0);\n")
             .append(indent).append(INDENT).append("return bytes;\n")
+            .append(indent).append("}\n");
+
+        classBuilder.appendPublic()
+            .append("\n")
+            .append(indent).append("public int encode(")
+            .append("MutableDirectBuffer buffer, int offset)\n")
+            .append(indent).append("{\n")
+            .append(indent).append(INDENT).append("return encodeWith(this, buffer, offset);\n")
+            .append(indent).append("}\n");
+
+        classBuilder.appendPublic()
+            .append("\n")
+            .append(indent).append("public int encodeWithHeader(")
+            .append("MutableDirectBuffer buffer, int offset)\n")
+            .append(indent).append("{\n")
+            .append(indent).append(INDENT).append("return encodeWithHeaderWith(this, buffer, offset);\n")
             .append(indent).append("}\n");
     }
 
@@ -1794,7 +1845,7 @@ public class JavaDtoGenerator implements CodeGenerator
             out.append("import org.agrona.concurrent.UnsafeBuffer;\n\n");
             out.append(generateDocumentation(BASE_INDENT, tokens.get(0)));
 
-            final ClassBuilder classBuilder = new ClassBuilder(className, BASE_INDENT, "public final");
+            final ClassBuilder classBuilder = new ClassBuilder(className, BASE_INDENT, "public final", "");
 
             generateCompositePropertyElements(classBuilder, decoderClassName, compositeTokens,
                 BASE_INDENT + INDENT);
@@ -1823,7 +1874,7 @@ public class JavaDtoGenerator implements CodeGenerator
             out.append(generateDtoFileHeader(packageName));
             out.append(generateDocumentation(BASE_INDENT, tokens.get(0)));
 
-            final ClassBuilder classBuilder = new ClassBuilder(className, BASE_INDENT, "public final");
+            final ClassBuilder classBuilder = new ClassBuilder(className, BASE_INDENT, "public final", "");
 
             generateChoices(classBuilder, className, setTokens, BASE_INDENT + INDENT);
             generateChoiceSetDecodeWith(classBuilder, className, decoderClassName, setTokens, BASE_INDENT + INDENT);
