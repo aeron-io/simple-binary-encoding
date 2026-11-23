@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   package="message.block.length"
+                   id="1"
+                   version="1"
+                   semanticVersion="1.0"
+                   description="Message root with a field and a composite member added in version 1, and a constant"
+                   byteOrder="littleEndian">
+    <types>
+        <composite name="messageHeader" description="Message identifiers and length of message root">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+        </composite>
+        <composite name="groupSizeEncoding" description="Repeating group dimensions">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="numInGroup" primitiveType="uint16"/>
+        </composite>
+        <enum name="Side" encodingType="uint8">
+            <validValue name="BUY">1</validValue>
+            <validValue name="SELL">2</validValue>
+        </enum>
+        <composite name="Px">
+            <type name="mantissa" primitiveType="int64"/>
+            <ref name="side" type="Side" sinceVersion="1"/>
+        </composite>
+        <type name="Seven" primitiveType="uint8" presence="constant">7</type>
+    </types>
+    <sbe:message name="Versioned" id="1">
+        <field name="a" id="1" type="uint64"/>
+        <field name="b" id="2" type="uint64"/>
+        <field name="px" id="3" type="Px"/>
+        <field name="seven" id="4" type="Seven"/>
+        <field name="c" id="5" type="uint8" sinceVersion="1"/>
+    </sbe:message>
+</sbe:messageSchema>

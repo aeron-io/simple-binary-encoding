@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package uk.co.real_logic.sbe.generation.java;
 import uk.co.real_logic.sbe.PrimitiveType;
 import uk.co.real_logic.sbe.generation.CodeGenerator;
 import uk.co.real_logic.sbe.generation.Generators;
+import uk.co.real_logic.sbe.generation.common.BlockLengthUtil;
 import uk.co.real_logic.sbe.generation.common.FieldPrecedenceModel;
 import uk.co.real_logic.sbe.generation.common.PrecedenceChecks;
 import uk.co.real_logic.sbe.ir.*;
@@ -824,7 +825,7 @@ public class JavaGenerator implements CodeGenerator
 
             out.append(generateDeclaration(className, implementsString, msgToken));
             out.append(generateFieldOrderStates(fieldPrecedenceModel));
-            out.append(generateDecoderFlyweightCode(fieldPrecedenceModel, className, msgToken));
+            out.append(generateDecoderFlyweightCode(fieldPrecedenceModel, className, msgToken, fields));
 
             final StringBuilder sb = new StringBuilder();
             generateDecoderFields(sb, fieldPrecedenceModel, fields, BASE_INDENT);
@@ -3441,7 +3442,8 @@ public class JavaGenerator implements CodeGenerator
     private CharSequence generateDecoderFlyweightCode(
         final FieldPrecedenceModel fieldPrecedenceModel,
         final String className,
-        final Token token)
+        final Token token,
+        final List<Token> fieldTokens)
     {
         final String headerClassName = formatClassName(ir.headerStructure().tokens().get(0).applicableTypeName());
 
@@ -3454,7 +3456,20 @@ public class JavaGenerator implements CodeGenerator
             .append("        final int offset,\n")
             .append("        final int actingBlockLength,\n")
             .append("        final int actingVersion)\n")
-            .append("    {\n")
+            .append("    {\n");
+
+        final String minBlockLength = BlockLengthUtil.minBlockLengthExpression(fieldTokens, "actingVersion");
+        if (null != minBlockLength)
+        {
+            methods.append("        if (actingBlockLength < ").append(minBlockLength).append(")\n")
+                .append("        {\n")
+                .append("            throw new IndexOutOfBoundsException(\"message blockLength=\" + ")
+                .append("actingBlockLength +\n")
+                .append("                \" is less than the fields at actingVersion=\" + actingVersion);\n")
+                .append("        }\n\n");
+        }
+
+        methods
             .append("        if (buffer != this.buffer)\n")
             .append("        {\n")
             .append("            this.buffer = buffer;\n")
