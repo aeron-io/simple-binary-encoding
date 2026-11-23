@@ -2,6 +2,8 @@
 
 == 1.43.0 (unreleased)
 
+== 1.42.1 (2026-11-23)
+
 * **[Java]** Add support for unsigned 64-bit long formatting.
 (https://github.com/aeron-io/simple-binary-encoding/pull/1196[#1196])
 * **[Java]** Fix float to double precision expansion in JSON string output.
@@ -15,6 +17,7 @@
 * **[Rust]** Honor schema header type. (https://github.com/aeron-io/simple-binary-encoding/pull/1165[#1165])
 * **[Java]** Add equals and `hashCode` to `FieldPrecedenceModel.State` to match `compareTo`.
 (https://github.com/aeron-io/simple-binary-encoding/pull/1171[#1171])
+* **[Java]** Upgrade to https://github.com/aeron-io/agrona/releases/tag/2.7.2[Agrona 2.7.2].
 * **[Java]** Upgrade to `Gradle` 9.9.2.
 
 == 1.42.0 (2026-11-06)
