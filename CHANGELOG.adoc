@@ -15,7 +15,7 @@
 * **[Rust]** Honor schema header type. (https://github.com/aeron-io/simple-binary-encoding/pull/1165[#1165])
 * **[Java]** Add equals and `hashCode` to `FieldPrecedenceModel.State` to match `compareTo`.
 (https://github.com/aeron-io/simple-binary-encoding/pull/1171[#1171])
-* **[Java]** Upgrade to `Gradle` 9.9.1.
+* **[Java]** Upgrade to `Gradle` 9.9.2.
 
 == 1.42.0 (2026-11-06)
 
