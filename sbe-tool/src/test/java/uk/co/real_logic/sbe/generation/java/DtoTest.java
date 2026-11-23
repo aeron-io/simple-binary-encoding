@@ -23,6 +23,7 @@ import dto_test.MessageHeaderEncoder;
 import extension.*;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
+import org.agrona.sbe.MessageDtoEncoder;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -60,6 +61,28 @@ public class DtoTest
     }
 
     @Test
+    void shouldRoundTripCarUsingInstanceMethods()
+    {
+        final ExpandableArrayBuffer inputBuffer = new ExpandableArrayBuffer();
+        encodeCar(inputBuffer, 0);
+
+        final CarDecoder decoder = new CarDecoder();
+        decoder.wrap(inputBuffer, 0, CarDecoder.BLOCK_LENGTH, CarDecoder.SCHEMA_VERSION);
+        final String decoderString = decoder.toString();
+
+        final CarDto dto = new CarDto();
+        CarDto.decodeWith(decoder, dto);
+
+        final ExpandableArrayBuffer outputBuffer = new ExpandableArrayBuffer();
+        dto.encode(outputBuffer, 0);
+
+        final String dtoString = dto.toString();
+
+        assertThat(outputBuffer.byteArray(), equalTo(inputBuffer.byteArray()));
+        assertThat(dtoString, equalTo(decoderString));
+    }
+
+    @Test
     void shouldRoundTripCar2()
     {
         final ExpandableArrayBuffer inputBuffer = new ExpandableArrayBuffer();
@@ -69,6 +92,21 @@ public class DtoTest
 
         final ExpandableArrayBuffer outputBuffer = new ExpandableArrayBuffer();
         final int outputLength = CarDto.encodeWith(dto, outputBuffer, 0);
+
+        assertThat(outputLength, equalTo(inputLength));
+        assertThat(outputBuffer.byteArray(), equalTo(inputBuffer.byteArray()));
+    }
+
+    @Test
+    void shouldRoundTripCar2UsingInstanceMethods()
+    {
+        final ExpandableArrayBuffer inputBuffer = new ExpandableArrayBuffer();
+        final int inputLength = encodeCar(inputBuffer, 0);
+
+        final CarDto dto = CarDto.decodeFrom(inputBuffer, 0, CarDecoder.BLOCK_LENGTH, CarDecoder.SCHEMA_VERSION);
+
+        final ExpandableArrayBuffer outputBuffer = new ExpandableArrayBuffer();
+        final int outputLength = dto.encode(outputBuffer, 0);
 
         assertThat(outputLength, equalTo(inputLength));
         assertThat(outputBuffer.byteArray(), equalTo(inputBuffer.byteArray()));
@@ -271,6 +309,36 @@ public class DtoTest
 
         encodedLength = CustomCarDto.encodeWithHeaderWith(car, inputBuffer, 0);
         computedLength = car.computeEncodedLength() + CustomMessageHeaderEncoder.ENCODED_LENGTH;
+        assertEquals(encodedLength, computedLength);
+    }
+
+    @Test
+    public void shouldEncodeDefaultCarAndComputeEncodedLengthUsingInstanceMethods()
+    {
+        final ExpandableArrayBuffer inputBuffer = new ExpandableArrayBuffer();
+        final MessageDtoEncoder encoder = new CarDto();
+
+        int encodedLength = encoder.encode(inputBuffer, 0);
+        int computedLength = encoder.computeEncodedLength();
+        assertEquals(encodedLength, computedLength);
+
+        encodedLength = encoder.encodeWithHeader(inputBuffer, 0);
+        computedLength = encoder.computeEncodedLengthWithHeader();
+        assertEquals(encodedLength, computedLength);
+    }
+
+    @Test
+    public void shouldEncodeDefaultCustomCarAndComputeEncodedLengthUsingInstanceMethods()
+    {
+        final ExpandableArrayBuffer inputBuffer = new ExpandableArrayBuffer();
+        final MessageDtoEncoder car = new CustomCarDto();
+
+        int encodedLength = car.encode(inputBuffer, 0);
+        int computedLength = car.computeEncodedLength();
+        assertEquals(encodedLength, computedLength);
+
+        encodedLength = car.encodeWithHeader(inputBuffer, 0);
+        computedLength = car.computeEncodedLengthWithHeader();
         assertEquals(encodedLength, computedLength);
     }
 

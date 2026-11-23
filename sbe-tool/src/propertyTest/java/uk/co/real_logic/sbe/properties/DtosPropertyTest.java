@@ -83,7 +83,7 @@ public class DtosPropertyTest
                     outputManager)
                     .generate();
 
-                new JavaDtoGenerator(encodedMessage.ir(), false, outputManager)
+                new JavaDtoGenerator(encodedMessage.ir(), false, false, outputManager)
                     .generate();
             }
             catch (final Exception generationException)

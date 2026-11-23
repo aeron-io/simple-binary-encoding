@@ -54,6 +54,7 @@ public enum TargetCodeGeneratorLoader implements TargetCodeGenerator
             final JavaOutputManager outputManager = new JavaOutputManager(outputDir, ir.applicableNamespace());
 
             final boolean shouldSupportTypesPackageNames = Boolean.getBoolean(TYPES_PACKAGE_OVERRIDE);
+            final boolean shouldGenerateInterfaces = Boolean.getBoolean(JAVA_GENERATE_INTERFACES);
             final JavaGenerator codecGenerator = new JavaGenerator(
                 ir,
                 System.getProperty(JAVA_ENCODING_BUFFER_TYPE, JAVA_DEFAULT_ENCODING_BUFFER_TYPE),
@@ -70,6 +71,7 @@ public enum TargetCodeGeneratorLoader implements TargetCodeGenerator
                 final JavaDtoGenerator dtoGenerator = new JavaDtoGenerator(
                     ir,
                     shouldSupportTypesPackageNames,
+                    shouldGenerateInterfaces,
                     outputManager);
                 return () ->
                 {
