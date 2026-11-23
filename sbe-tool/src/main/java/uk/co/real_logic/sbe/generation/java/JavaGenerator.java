@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1554,6 +1554,7 @@ public class JavaGenerator implements CodeGenerator
             indent + "        final int headerLength = %3$d;\n" +
             indent + "        final int limit = parentMessage.limit();\n" +
             indent + "        final int dataLength = %4$s%5$s;\n" +
+            "%7$s" +
             indent + "        final int dataOffset = limit + headerLength;\n" +
             indent + "        parentMessage.limit(dataOffset + dataLength);\n\n" +
             indent + "        return dataLength;\n" +
@@ -1563,7 +1564,8 @@ public class JavaGenerator implements CodeGenerator
             sizeOfLengthField,
             PrimitiveType.UINT32 == lengthType ? "(int)" : "",
             generateGet(lengthType, "limit", byteOrderStr),
-            accessOrderListenerCall);
+            accessOrderListenerCall,
+            generateVarDataLengthCheck(lengthType, indent));
 
         generateVarDataTypedDecoder(
             sb,
@@ -1634,6 +1636,7 @@ public class JavaGenerator implements CodeGenerator
                     indent + "        final int headerLength = %3$d;\n" +
                     indent + "        final int limit = parentMessage.limit();\n" +
                     indent + "        final int dataLength = %4$s%5$s;\n" +
+                    "%7$s" +
                     indent + "        final int dataOffset = limit + headerLength;\n\n" +
                     indent + "        parentMessage.limit(dataOffset + dataLength);\n" +
                     indent + "        buffer.getStringWithoutLengthAscii(dataOffset, dataLength, appendable);\n\n" +
@@ -1644,7 +1647,8 @@ public class JavaGenerator implements CodeGenerator
                     sizeOfLengthField,
                     PrimitiveType.UINT32 == lengthType ? "(int)" : "",
                     generateGet(lengthType, "limit", byteOrderStr),
-                    accessOrderListenerCall);
+                    accessOrderListenerCall,
+                    generateVarDataLengthCheck(lengthType, indent));
             }
         }
     }
@@ -1667,6 +1671,7 @@ public class JavaGenerator implements CodeGenerator
             indent + "        final int headerLength = %d;\n" +
             indent + "        final int limit = parentMessage.limit();\n" +
             indent + "        final int dataLength = %s%s;\n" +
+            "%s" +
             indent + "        parentMessage.limit(limit + headerLength + dataLength);\n" +
             indent + "        wrapBuffer.wrap(buffer, limit + headerLength, dataLength);\n" +
             indent + "    }\n",
@@ -1676,7 +1681,8 @@ public class JavaGenerator implements CodeGenerator
             accessOrderListenerCall,
             sizeOfLengthField,
             PrimitiveType.UINT32 == lengthType ? "(int)" : "",
-            generateGet(lengthType, "limit", byteOrderStr));
+            generateGet(lengthType, "limit", byteOrderStr),
+            generateVarDataLengthCheck(lengthType, indent));
     }
 
     private void generateDataEncodeMethods(
@@ -1842,6 +1848,7 @@ public class JavaGenerator implements CodeGenerator
             indent + "        final int headerLength = %d;\n" +
             indent + "        final int limit = parentMessage.limit();\n" +
             indent + "        final int dataLength = %s%s;\n" +
+            "%s" +
             indent + "        final int bytesCopied = Math.min(length, dataLength);\n" +
             indent + "        parentMessage.limit(limit + headerLength + dataLength);\n" +
             indent + "        buffer.getBytes(limit + headerLength, dst, dstOffset, bytesCopied);\n\n" +
@@ -1853,7 +1860,18 @@ public class JavaGenerator implements CodeGenerator
             accessOrderListenerCall,
             sizeOfLengthField,
             PrimitiveType.UINT32 == lengthType ? "(int)" : "",
-            generateGet(lengthType, "limit", byteOrderStr));
+            generateGet(lengthType, "limit", byteOrderStr),
+            generateVarDataLengthCheck(lengthType, indent));
+    }
+
+    private static String generateVarDataLengthCheck(final PrimitiveType lengthType, final String indent)
+    {
+        return
+            indent + "        if (" + (PrimitiveType.UINT32 == lengthType ? "dataLength < 0 || " : "") +
+            "dataLength > buffer.capacity() - limit - headerLength)\n" +
+            indent + "        {\n" +
+            indent + "            throw new IndexOutOfBoundsException(\"var data length=\" + dataLength);\n" +
+            indent + "        }\n\n";
     }
 
     private void generateDataTypedEncoder(
