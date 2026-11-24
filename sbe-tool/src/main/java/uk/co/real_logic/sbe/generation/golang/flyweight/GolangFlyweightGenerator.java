@@ -149,6 +149,7 @@ public class GolangFlyweightGenerator implements CodeGenerator
             indent + "\tpos *uint64,\n" +
             indent + "\tactingVersion uint64,\n" +
             indent + "\tbufferLength uint64) {\n" +
+            "%4$s" +
             indent + "\tdimensions := %2$s{}\n" +
             indent + "\tdimensions.Wrap(buffer, *pos, actingVersion, bufferLength)\n" +
             indent + "\tg.buffer = buffer\n" +
@@ -161,7 +162,26 @@ public class GolangFlyweightGenerator implements CodeGenerator
             indent + "\tg.positionPtr = pos\n" +
             indent + "\t*g.positionPtr = *g.positionPtr + %1$d\n" +
             indent + "}\n",
-            dimensionHeaderLength, dimensionsClassName, groupClassName);
+            dimensionHeaderLength,
+            dimensionsClassName,
+            groupClassName,
+            generateGroupNotPresentCondition(tokens.get(index).version(), indent));
+
+        if (tokens.get(index).version() > 0)
+        {
+            new Formatter(sb).format("\n" +
+                indent + "func (g *%1$s) notPresent(actingVersion uint64) {\n" +
+                indent + "\tg.buffer = nil\n" +
+                indent + "\tg.bufferLength = 0\n" +
+                indent + "\tg.blockLength = 0\n" +
+                indent + "\tg.count = 0\n" +
+                indent + "\tg.index = 0\n" +
+                indent + "\tg.actingVersion = actingVersion\n" +
+                indent + "\tg.initialPosition = 0\n" +
+                indent + "\tg.positionPtr = nil\n" +
+                indent + "}\n",
+                groupClassName);
+        }
 
         final long minCount = numInGroupToken.encoding().applicableMinValue().longValue();
         final String minCheck = minCount > 0 ? "count < " + minCount + " || " : "";
@@ -323,6 +343,21 @@ public class GolangFlyweightGenerator implements CodeGenerator
             propertyName,
             version,
             outerClassName);
+    }
+
+    private static CharSequence generateGroupNotPresentCondition(final int sinceVersion, final String indent)
+    {
+        if (0 == sinceVersion)
+        {
+            return "";
+        }
+
+        return String.format(
+            indent + "\tif actingVersion < %1$d {\n" +
+                indent + "\t\tg.notPresent(actingVersion)\n" +
+                indent + "\t\treturn\n" +
+                indent + "\t}\n\n",
+            sinceVersion);
     }
 
     private static CharSequence generateChoiceNotPresentCondition(final int sinceVersion)
@@ -2380,8 +2415,8 @@ public class GolangFlyweightGenerator implements CodeGenerator
 
             "func (m *%10$s) DecodeLength() uint64 {\n" +
             "\tvar skipper %10$s\n" +
-            "\tskipper.WrapForDecode(m.buffer, m.offset, uint64(m.SbeBlockLength()),\n" +
-            "\t\tuint64(m.ActingVersion()), m.bufferLength)\n" +
+            "\tskipper.WrapForDecode(m.buffer, m.offset, m.actingBlockLength,\n" +
+            "\t\tm.actingVersion, m.bufferLength)\n" +
             "\tskipper.Skip()\n" +
             "\treturn skipper.EncodedLength()\n" +
             "}\n\n" +

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+                   package="versgroup"
+                   id="4"
+                   version="1"
+                   semanticVersion="1"
+                   description="Groups that are not in the acting version"
+                   byteOrder="littleEndian">
+    <types>
+        <composite name="messageHeader" description="Message identifiers and length of message root">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+        </composite>
+        <composite name="groupSizeEncoding" description="Repeating group dimensions">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="numInGroup" primitiveType="uint16"/>
+        </composite>
+        <composite name="varStringEncoding">
+            <type name="length" primitiveType="uint16"/>
+            <type name="varData" primitiveType="uint8" length="0" characterEncoding="UTF-8"/>
+        </composite>
+    </types>
+    <sbe:message name="VersionedGroupsV1" id="1" description="Version 1 of the message">
+        <field name="FieldA1" id="1" type="uint32"/>
+        <group name="Group1" id="2" dimensionType="groupSizeEncoding">
+            <field name="FieldB1" id="3" type="uint32"/>
+        </group>
+        <data name="String1" id="10" type="varStringEncoding"/>
+    </sbe:message>
+</sbe:messageSchema>
