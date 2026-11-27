@@ -1143,7 +1143,8 @@ public class CppGenerator implements CodeGenerator
                 indent + "        %5$s lengthFieldValue;\n" +
                 indent + "        std::memcpy(&lengthFieldValue, m_buffer + lengthPosition, sizeof(%5$s));\n" +
                 indent + "        std::uint64_t dataLength = %4$s(lengthFieldValue);\n" +
-                indent + "        sbePosition(lengthPosition + lengthOfLengthField + dataLength);\n" +
+                indent + "        std::uint64_t pos = sbeCheckPosition(lengthPosition + lengthOfLengthField);\n" +
+                generateDataPositionAdvance(indent) +
                 indent + "        return dataLength;\n" +
                 indent + "    }\n",
                 propertyName,
@@ -1160,8 +1161,10 @@ public class CppGenerator implements CodeGenerator
                 "%6$s" +
                 indent + "        %4$s lengthFieldValue;\n" +
                 indent + "        std::memcpy(&lengthFieldValue, m_buffer + sbePosition(), sizeof(%4$s));\n" +
-                indent + "        const char *fieldPtr = m_buffer + sbePosition() + %3$d;\n" +
-                indent + "        sbePosition(sbePosition() + %3$d + %5$s(lengthFieldValue));\n" +
+                indent + "        std::uint64_t dataLength = %5$s(lengthFieldValue);\n" +
+                indent + "        std::uint64_t pos = sbeCheckPosition(sbePosition() + %3$d);\n" +
+                indent + "        const char *fieldPtr = m_buffer + pos;\n" +
+                generateDataPositionAdvance(indent) +
                 indent + "        return fieldPtr;\n" +
                 indent + "    }\n",
                 formatPropertyName(propertyName),
@@ -1184,7 +1187,7 @@ public class CppGenerator implements CodeGenerator
                 indent + "        std::uint64_t dataLength = %4$s(lengthFieldValue);\n" +
                 indent + "        std::uint64_t bytesToCopy = length < dataLength ? length : dataLength;\n" +
                 indent + "        std::uint64_t pos = sbePosition();\n" +
-                indent + "        sbePosition(pos + dataLength);\n" +
+                generateDataPositionAdvance(indent) +
                 indent + "        std::memcpy(dst, m_buffer + pos, static_cast<std::size_t>(bytesToCopy));\n" +
                 indent + "        return bytesToCopy;\n" +
                 indent + "    }\n",
@@ -1301,6 +1304,20 @@ public class CppGenerator implements CodeGenerator
 
             i += token.componentTokenCount();
         }
+    }
+
+    /*
+     * Advance the position past var data of dataLength bytes starting at pos, which must not lie past the end of
+     * the buffer. The check is a subtraction because pos + dataLength can wrap for a 64-bit length.
+     */
+    private static String generateDataPositionAdvance(final String indent)
+    {
+        return
+            indent + "        if (SBE_BOUNDS_CHECK_EXPECT((dataLength > (m_bufferLength - pos)), false))\n" +
+            indent + "        {\n" +
+            indent + "            throw std::runtime_error(\"buffer too short for data [E100]\");\n" +
+            indent + "        }\n" +
+            indent + "        sbePosition(pos + dataLength);\n";
     }
 
     private void generateVarDataDescriptors(
