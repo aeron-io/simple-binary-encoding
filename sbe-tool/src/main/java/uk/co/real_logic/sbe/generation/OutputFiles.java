@@ -15,8 +15,6 @@
  */
 package uk.co.real_logic.sbe.generation;
 
-import java.io.File;
-
 /**
  * Checks on the names of files the code generators write.
  */
@@ -45,7 +43,8 @@ public final class OutputFiles
         for (int i = 0, length = name.length(); i < length; i++)
         {
             final char c = name.charAt(i);
-            if ('/' == c || '\\' == c || ':' == c || File.separatorChar == c || '\0' == c)
+            // ':' is rejected on every platform: it is a drive separator on Windows and not valid in an identifier.
+            if ('/' == c || '\\' == c || ':' == c || '\0' == c)
             {
                 throw new IllegalArgumentException("output file name must not contain a path: " + name);
             }
