@@ -66,6 +66,9 @@ class SchemaInjectionTest
     {
         assertEquals("a\\\"b\\\\c\\n\\u0001", Generators.escapeStringLiteral("a\"b\\c\n\u0001", false));
         assertEquals("\\u{1}", Generators.escapeStringLiteral("\u0001", true));
+        assertEquals(
+            "a\\\"b\\\\c\\n\\001\\177\u0085",
+            Generators.escapeCppStringLiteral("a\"b\\c\n\u0001\u007f\u0085"));
         assertEquals("a b c", Generators.toSingleLine("a\nb\rc"));
         assertEquals("a *&#47; b &#92;u002a", Generators.escapeBlockComment("a */ b \\u002a"));
     }

@@ -155,6 +155,54 @@ public class Generators
     }
 
     /**
+     * Escape schema supplied text so that it can be embedded between double quotes in a C++ string literal. C++
+     * does not allow universal character names below U+00A0, so control characters are written as three digit octal
+     * escapes. Other characters are copied through unchanged.
+     *
+     * @param value to be escaped.
+     * @return the escaped text.
+     */
+    public static String escapeCppStringLiteral(final String value)
+    {
+        final StringBuilder sb = new StringBuilder(value.length() + 8);
+        for (int i = 0, length = value.length(); i < length; i++)
+        {
+            final char c = value.charAt(i);
+            switch (c)
+            {
+                case '"':
+                    sb.append("\\\"");
+                    break;
+
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+
+                case '\n':
+                    sb.append("\\n");
+                    break;
+
+                case '\r':
+                    sb.append("\\r");
+                    break;
+
+                default:
+                    if (c < ' ' || 0x7f == c)
+                    {
+                        sb.append(String.format("\\%03o", (int)c));
+                    }
+                    else
+                    {
+                        sb.append(c);
+                    }
+                    break;
+            }
+        }
+
+        return sb.toString();
+    }
+
+    /**
      * Collapse line terminators in schema supplied text so it cannot escape from a single line comment.
      *
      * @param value to be collapsed.

@@ -583,41 +583,6 @@ public class JavaUtil
      */
     public static String escapeJavaStringLiteral(final String value)
     {
-        final StringBuilder sb = new StringBuilder(value.length() + 8);
-        for (int i = 0, length = value.length(); i < length; i++)
-        {
-            final char c = value.charAt(i);
-            switch (c)
-            {
-                case '"':
-                    sb.append("\\\"");
-                    break;
-
-                case '\\':
-                    sb.append("\\\\");
-                    break;
-
-                case '\n':
-                    sb.append("\\n");
-                    break;
-
-                case '\r':
-                    sb.append("\\r");
-                    break;
-
-                default:
-                    if (c < ' ' || (c >= 0x7f && c <= 0x9f) || 0x2028 == c || 0x2029 == c)
-                    {
-                        sb.append(String.format("\\u%04x", (int)c));
-                    }
-                    else
-                    {
-                        sb.append(c);
-                    }
-                    break;
-            }
-        }
-
-        return sb.toString();
+        return Generators.escapeStringLiteral(value, false);
     }
 }

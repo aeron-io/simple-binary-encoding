@@ -1673,7 +1673,7 @@ public class CppDtoGenerator implements CodeGenerator
                 .append(indent).append("{\n")
                 .append(indent).append(INDENT)
                 .append("return \"")
-                .append(Generators.escapeStringLiteral(typeToken.encoding().constValue().toString(), false))
+                .append(Generators.escapeCppStringLiteral(typeToken.encoding().constValue().toString()))
                 .append("\";\n")
                 .append(indent).append("}\n");
         }
