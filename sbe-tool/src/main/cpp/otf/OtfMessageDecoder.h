@@ -303,7 +303,7 @@ std::size_t decodeData(
             bufferIndex += dataToken.offset();
         }
 
-        // bufferIndex <= length is established above, the subtraction cannot wrap whereas the addition can
+        // bufferIndex <= length is established by the offset check above, the subtraction cannot wrap whereas the addition can
         if (dataLength > static_cast<std::uint64_t>(length - bufferIndex))
         {
             throw std::runtime_error("length too short for data field");
