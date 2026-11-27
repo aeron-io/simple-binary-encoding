@@ -17,6 +17,7 @@
 #define _OTF_MESSAGEDECODER_H
 
 #include <functional>
+#include <stdexcept>
 #include <vector>
 
 #include "Token.h"
