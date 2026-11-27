@@ -52,7 +52,7 @@ class MinBlockLengthExpressionTest
 
         // The px composite is 8 bytes in version 0; its side member is added in version 1.
         assertEquals(
-            "(actingVersion >= 1u ? 9u : 8)",
+            "(actingVersion >= 1u ? 9u : 8u)",
             Generators.minBlockLengthExpression(tokens.subList(fieldsIndex, groupEndIndex), "actingVersion"));
     }
 }

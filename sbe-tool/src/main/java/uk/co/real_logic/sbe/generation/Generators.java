@@ -146,7 +146,7 @@ public class Generators
             {
                 extent = entry.getValue();
                 expression = 0 == version ?
-                    Integer.toString(extent) :
+                    extent + "u" :
                     "(" + actingVersionName + " >= " + version + "u ? " + extent + "u : " + expression + ")";
             }
         }
