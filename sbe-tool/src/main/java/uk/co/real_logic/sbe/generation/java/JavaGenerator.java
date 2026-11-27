@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2025 Real Logic Limited.
+ * Copyright 2013-2026 Real Logic Limited.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2502,7 +2502,7 @@ public class JavaGenerator implements CodeGenerator
             out.append(
                 "/* Generated SBE (Simple Binary Encoding) message codecs.*/\n" +
                 "/**\n" +
-                " * ").append(ir.description()).append("\n")
+                " * ").append(escapeJavadoc(String.valueOf(ir.description()))).append("\n")
                 .append(
                 " */\n" +
                 "package ").append(ir.applicableNamespace()).append(";\n");
@@ -3349,7 +3349,7 @@ public class JavaGenerator implements CodeGenerator
                 indent + "        return \"%s\";\n" +
                 indent + "    }\n\n",
                 formattedPropertyName,
-                encoding.constValue());
+                escapeJavaStringLiteral(encoding.constValue().toString()));
         }
         else
         {
