@@ -114,6 +114,7 @@ sbe_test(FieldAccessOrderCheckTest codecs)
 target_compile_definitions(FieldAccessOrderCheckTest PRIVATE SBE_ENABLE_PRECEDENCE_CHECKS_IN_TESTS)
 sbe_test(VersionedMessageTest codecs)
 sbe_test(Uint64LengthTest codecs)
+sbe_test(VarDataPutUint64LengthTest codecs)
 
 # OtfMessageEncoderTest lives in the otf/ subdirectory and provides its own main() that takes the
 # IR file path as argv[1]; it is handed the generated code-generation-schema IR.

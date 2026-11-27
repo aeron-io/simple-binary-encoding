@@ -1207,6 +1207,10 @@ public class CppGenerator implements CodeGenerator
                 indent + "        if (length != %3$s(0))\n" +
                 indent + "        {\n" +
                 indent + "            std::uint64_t pos = sbePosition();\n" +
+                indent + "            if (SBE_BOUNDS_CHECK_EXPECT((length > (m_bufferLength - pos)), false))\n" +
+                indent + "            {\n" +
+                indent + "                throw std::runtime_error(\"buffer too short [E100]\");\n" +
+                indent + "            }\n" +
                 indent + "            sbePosition(pos + length);\n" +
                 indent + "            std::memcpy(m_buffer + pos, src, length);\n" +
                 indent + "        }\n" +
