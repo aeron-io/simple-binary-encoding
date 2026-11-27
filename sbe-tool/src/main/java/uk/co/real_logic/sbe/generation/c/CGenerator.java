@@ -648,7 +648,8 @@ public class CGenerator implements CodeGenerator
 
     /*
      * Advance the position past var data of the given length starting at pos. The check is a subtraction because
-     * pos + length can wrap for a 64-bit length.
+     * pos + length can wrap for a 64-bit length, and pos is tested against buffer_length first because
+     * buffer_length - pos would itself wrap when pos is past the end.
      */
     private static String generateDataPositionAdvance(
         final String structName, final String lengthName, final String failure)
