@@ -997,7 +997,8 @@ public class JavaGenerator implements CodeGenerator
             .append(indent).append("        blockLength = ").append(blockLenCast).append(blockLengthGet).append(";\n")
             .append(indent).append("        count = ").append(numInGroupCast).append(numInGroupGet).append(";\n");
 
-        final String minBlockLength = BlockLengthUtil.minBlockLengthExpression(fieldTokens, "parentMessage.actingVersion");
+        final String minBlockLength = BlockLengthUtil.minBlockLengthExpression(
+            fieldTokens, "parentMessage.actingVersion");
         if (null != minBlockLength)
         {
             sb.append(indent).append("        if (count > 0 && blockLength < ").append(minBlockLength).append(")\n")
