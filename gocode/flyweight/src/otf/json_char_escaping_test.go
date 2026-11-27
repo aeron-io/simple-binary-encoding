@@ -71,3 +71,12 @@ func TestJsonPlainCharFieldsAreUnchanged(t *testing.T) {
 	assert.Equal(map[string]interface{}{"first": "f", "last": "l"}, decoded["Pair"])
 	assert.Equal("note", decoded["note"])
 }
+
+func TestJsonCharFieldsAboveAsciiMapToLatin1(t *testing.T) {
+	assert := assert.New(t)
+
+	decoded := decodeChars(t, printChars(t, 0xC3, "a\xe9bc", 'f', 'l', "note"))
+
+	assert.Equal("\u00c3", decoded["single"])
+	assert.Equal([]interface{}{"a", "\u00e9", "b", "c"}, decoded["array"])
+}

@@ -119,7 +119,8 @@ func (t *JsonTokenListener) escape(c rune) {
 }
 
 // appendChars writes the first arrayLength bytes of buffer, which hold a char field, as a JSON string for a single
-// character or as an array of one character strings, escaping each byte.
+// character or as an array of one character strings, escaping each byte. A byte at or above 0x80 is written as the
+// Unicode code point of the same value (Latin-1), unlike var data, which is decoded as UTF-8.
 func (t *JsonTokenListener) appendChars(buffer []byte, arrayLength int32) {
 	if arrayLength > 1 {
 		t.output.WriteString("[")
@@ -210,6 +211,7 @@ func (t *JsonTokenListener) appendEncodingAsString(
 		} else if arrayLength < 1 && encoding.PrimitiveType() == otf.CHAR {
 			t.doubleQuote()
 			t.escapePrintableChar(buffer, 0, int(arrayLength), elementSize)
+			t.doubleQuote()
 		} else {
 			encoding := typeToken.Encoding()
 			elementSize := int32(encoding.PrimitiveType().Size())
