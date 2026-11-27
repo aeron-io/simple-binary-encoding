@@ -127,6 +127,7 @@ target_link_libraries(OtfMessageEncoderTest sbe gmock_main ${CMAKE_THREAD_LIBS_I
 add_test(
     NAME OtfMessageEncoderTest
     COMMAND OtfMessageEncoderTest ${CXX_CODEC_TARGET_DIR}/code-generation-schema.sbeir
+        ${CXX_CODEC_TARGET_DIR}/uint64-length-schema.sbeir
     WORKING_DIRECTORY ${CXX_CODEC_TARGET_DIR})
 # ---------------------------------------------------------------------------------------------------
 # sbe.cpp.generate.enum.parse: compile-and-run test for the generated fromString()/operator>>.
