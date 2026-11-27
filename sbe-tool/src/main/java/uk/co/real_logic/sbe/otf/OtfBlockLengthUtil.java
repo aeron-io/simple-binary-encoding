@@ -63,7 +63,8 @@ public final class OtfBlockLengthUtil
      *
      * @param tokens         of the message or group block.
      * @param beginFieldsIdx index of the first field token in the block.
-     * @param numTokens      number of tokens in the message.
+     * @param numTokens      number of tokens in the message; the scan stops at the first token after the block's
+     *                       fields that is not a {@code BEGIN_FIELD}, so it does not need the block's end index.
      * @param actingVersion  version from the wire header.
      * @return the minimum block length, or zero if no fixed fields occupy the block.
      */
