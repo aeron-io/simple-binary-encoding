@@ -434,11 +434,6 @@ std::string encodeUint64Error(OtfMessageEncoder::BasicTokenEncoder &encoder)
 
 TEST(OtfUint64LengthEncoderTest, RejectsVarDataLengthThatWouldWrap)
 {
-    if (g_uint64IrFile.empty())
-    {
-        GTEST_SKIP() << "uint64-length schema IR not available";
-    }
-
     HugeVarDataEncoder encoder;
     EXPECT_NE(
         encodeUint64Error(encoder).find("length too short for data field"), std::string::npos);
