@@ -92,9 +92,19 @@ inline std::uint64_t maxUIntValue(const Encoding &encoding)
     }
 
     const PrimitiveValue &maxValue = encoding.maxValue();
-    if (isUnsigned && 0 != maxValue.size() && maxValue.getAsUInt() < typeMax)
+    if (0 != maxValue.size())
     {
-        return maxValue.getAsUInt();
+        if (isUnsigned)
+        {
+            if (maxValue.getAsUInt() < typeMax)
+            {
+                return maxValue.getAsUInt();
+            }
+        }
+        else if (maxValue.getAsInt() >= 0 && static_cast<std::uint64_t>(maxValue.getAsInt()) < typeMax)
+        {
+            return static_cast<std::uint64_t>(maxValue.getAsInt());
+        }
     }
 
     return typeMax;
@@ -308,13 +318,13 @@ static std::pair<std::size_t, std::size_t> encodeGroups(
         auto blockLength = static_cast<std::size_t>(token.encodedLength());
         const std::uint64_t numInGroup = isPresent ? encoder.numInGroup(token) : 0;
 
-        if (numInGroup > maxUIntValue(numInGroupToken.encoding()))
-        {
-            throw std::runtime_error("numInGroup too large for numInGroup type");
-        }
-
         if (isPresent)
         {
+            if (numInGroup > maxUIntValue(numInGroupToken.encoding()))
+            {
+                throw std::runtime_error("numInGroup too large for numInGroup type");
+            }
+
             if ((bufferIndex + dimensionsLength) > length)
             {
                 throw std::runtime_error("length too short for group dimensions");
