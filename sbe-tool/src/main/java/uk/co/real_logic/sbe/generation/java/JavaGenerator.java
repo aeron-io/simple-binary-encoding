@@ -1607,7 +1607,7 @@ public class JavaGenerator implements CodeGenerator
                 indent + "        final int headerLength = %3$d;\n" +
                 indent + "        final int limit = parentMessage.limit();\n" +
                 indent + "        final int dataLength = %4$s%5$s;\n" +
-                indent + "        if (%8$sdataLength > buffer.capacity() - limit - headerLength)\n" +
+                indent + "        if (%8$sdataLength > (buffer.capacity() - limit) - headerLength)\n" +
                 indent + "        {\n" +
                 indent + "            throw new IndexOutOfBoundsException(\"var data length=\" + dataLength);\n" +
                 indent + "        }\n\n" +
